@@ -138,7 +138,7 @@
     <!-- Config desde servidor (nunca hardcodeada aquí) -->
     <script>
         window.__ENV__ = null;
-        fetch('http://localhost:3000/api/config')
+        fetch('https://fantasyretro.onrender.com/api/config')
             .then(r => r.json())
             .then(cfg => { window.__ENV__ = cfg; })
             .catch(() => console.error('[RetroFantasy] Servidor no disponible'));

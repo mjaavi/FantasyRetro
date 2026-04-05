@@ -1098,7 +1098,7 @@
     <!-- Guard de sesión: carga config → verifica sesión → muestra la app -->
     <script type="module">
         try {
-            const res = await fetch('http://localhost:3000/api/config');
+            const res = await fetch('https://fantasyretro.onrender.com/api/config');
             window.__ENV__ = await res.json();
 
             const { supabase } = await import('./js/supabase.js');

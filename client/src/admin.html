@@ -109,7 +109,12 @@
     </div>
 
     <script type="module">
-        const API = 'http://localhost:3000/api';
+        // URL del backend: se lee del config si está disponible, si no usa producción
+        let API = 'https://fantasyretro.onrender.com/api';
+        try {
+            const cfg = await fetch('https://fantasyretro.onrender.com/api/config').then(r => r.json());
+            API = cfg?.apiUrl ?? cfg?.data?.apiUrl ?? API;
+        } catch (_) {}
         let ligasData = [];
 
         function log(msg, tipo = 'info') {
