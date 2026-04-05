@@ -1,0 +1,22 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# 🛡️  SEGURIDAD CRÍTICA: .env NUNCA debe subirse a git
+# ─────────────────────────────────────────────────────────────────────────────
+.env
+.env.local
+.env.production
+
+# Node
+node_modules/
+dist/
+
+# TypeScript
+*.js.map
+*.d.ts
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
