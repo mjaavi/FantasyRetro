@@ -5,4 +5,4 @@ Proyecto tipo fantasy football con:
 - Backend Express + TypeScript en `server/`
 - Persistencia y auth en Supabase
 
-La documentacion completa (explicacion y analisis a fondo) esta en `DOCUMENTACION_ANALISIS_RETROFANTASY.md`.
+
