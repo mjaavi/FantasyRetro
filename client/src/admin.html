@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RetroFantasy — Panel de Administración</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: #080d1a; color: white; font-family: system-ui, sans-serif; }
+        .card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 24px; }
+        .btn-primary { background: #2563eb; color: white; border: none; border-radius: 10px; padding: 10px 20px; font-weight: 700; cursor: pointer; transition: background .15s; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-primary:disabled { background: #1e3a5f; cursor: not-allowed; opacity: 0.6; }
+        .btn-danger { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; padding: 8px 16px; font-weight: 700; cursor: pointer; transition: background .15s; }
+        .btn-danger:hover { background: rgba(239,68,68,0.25); }
+        .badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .badge-blue { background: rgba(59,130,246,0.15); color: #60a5fa; }
+        .badge-green { background: rgba(34,197,94,0.15); color: #4ade80; }
+        .badge-yellow { background: rgba(234,179,8,0.15); color: #facc15; }
+        input, select { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 10px 14px; color: white; width: 100%; outline: none; }
+        input:focus, select:focus { border-color: #3b82f6; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 10px 16px; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px solid rgba(255,255,255,0.06); }
+        td { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 14px; }
+        tr:hover td { background: rgba(255,255,255,0.03); }
+        .log { background: #0a0f1e; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto; }
+        .log-ok  { color: #4ade80; }
+        .log-err { color: #f87171; }
+        .log-info { color: #60a5fa; }
+    </style>
+</head>
+<body class="min-h-screen p-6">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center font-black text-lg">R</div>
+            <div>
+                <h1 class="text-xl font-extrabold text-white">RetroFantasy Admin</h1>
+                <p class="text-xs text-slate-500">Panel de Administración</p>
+            </div>
+        </div>
+        <a href="app.html" class="text-slate-400 hover:text-white text-sm font-bold transition-colors">← Volver a la app</a>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Panel principal: ligas -->
+        <div class="lg:col-span-2 space-y-6">
+
+            <!-- Ligas activas -->
+            <div class="card">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-extrabold text-white">Ligas Activas</h2>
+                    <button onclick="cargarLigas()" class="btn-primary text-sm px-4 py-2">↻ Actualizar</button>
+                </div>
+                <div id="ligas-tabla" class="text-slate-500 text-sm text-center py-6">Cargando...</div>
+            </div>
+
+            <!-- Procesar jornada -->
+            <div class="card">
+                <h2 class="text-lg font-extrabold text-white mb-4">Procesar Jornada</h2>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 block">Liga</label>
+                        <select id="proc-league-id">
+                            <option value="">Selecciona una liga...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 block">Jornada</label>
+                        <input type="number" id="proc-jornada" min="1" max="38" placeholder="Ej: 1" />
+                    </div>
+                </div>
+                <button id="proc-btn" onclick="procesarJornada()" class="btn-primary w-full py-3">
+                    ▶ Procesar Jornada
+                </button>
+            </div>
+
+            <!-- Resultados de puntos -->
+            <div class="card" id="resultados-card" style="display:none">
+                <h2 class="text-lg font-extrabold text-white mb-4">Resultados — Jornada <span id="resultado-jornada">-</span></h2>
+                <div id="resultados-tabla"></div>
+            </div>
+        </div>
+
+        <!-- Log lateral -->
+        <div class="space-y-6">
+            <div class="card">
+                <h2 class="text-lg font-extrabold text-white mb-4">Log de operaciones</h2>
+                <div id="log" class="log">
+                    <p class="log-info">Panel iniciado. Esperando operaciones...</p>
+                </div>
+                <button onclick="document.getElementById('log').innerHTML=''" class="mt-3 text-xs text-slate-500 hover:text-white transition-colors">Limpiar log</button>
+            </div>
+
+            <!-- Info del motor -->
+            <div class="card">
+                <h2 class="text-base font-extrabold text-white mb-3">Motor de Puntuación</h2>
+                <div class="space-y-2 text-sm text-slate-400">
+                    <div class="flex justify-between"><span>Fase A</span><span class="text-white font-bold">Estadístico</span></div>
+                    <div class="flex justify-between"><span>Fase B</span><span class="text-white font-bold">Cronista Virtual</span></div>
+                    <div class="flex justify-between"><span>Cronista</span><span class="badge badge-blue">Aleatorio por partido</span></div>
+                    <div class="flex justify-between"><span>Posiciones</span><span class="badge badge-green">Coordenadas Y</span></div>
+                    <div class="flex justify-between"><span>Fuente</span><span class="text-white font-bold">Kaggle 2008-2016</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        const API = 'http://localhost:3000/api';
+        let ligasData = [];
+
+        function log(msg, tipo = 'info') {
+            const el = document.getElementById('log');
+            const p  = document.createElement('p');
+            p.className = `log-${tipo}`;
+            p.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            el.appendChild(p);
+            el.scrollTop = el.scrollHeight;
+        }
+
+        window.cargarLigas = async function() {
+            log('Cargando ligas...', 'info');
+            try {
+                const res  = await fetch(`${API}/admin/ligas`);
+                const json = await res.json();
+                ligasData  = json.data ?? [];
+
+                // Tabla de ligas
+                const tabla = document.getElementById('ligas-tabla');
+                if (!ligasData.length) {
+                    tabla.innerHTML = '<p class="text-slate-500 text-sm text-center py-4">No hay ligas.</p>';
+                    return;
+                }
+
+                tabla.innerHTML = `
+                    <table>
+                        <thead><tr>
+                            <th>ID</th><th>Nombre</th><th>Temporada</th><th>Jornada Actual</th><th>Competición</th>
+                        </tr></thead>
+                        <tbody>
+                            ${ligasData.map(l => `
+                                <tr>
+                                    <td class="text-slate-500">#${l.id}</td>
+                                    <td class="font-bold text-white">${l.name}</td>
+                                    <td>${l.season}</td>
+                                    <td>
+                                        <span class="badge ${l.jornada_actual > 0 ? 'badge-green' : 'badge-yellow'}">
+                                            J${l.jornada_actual ?? 0}
+                                        </span>
+                                    </td>
+                                    <td class="text-slate-400">${l.kaggle_league_id}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>`;
+
+                // Rellenar select de ligas
+                const sel = document.getElementById('proc-league-id');
+                sel.innerHTML = '<option value="">Selecciona una liga...</option>' +
+                    ligasData.map(l => `<option value="${l.id}">${l.name} — J${l.jornada_actual ?? 0}</option>`).join('');
+
+                log(`${ligasData.length} ligas cargadas.`, 'ok');
+            } catch (err) {
+                log(`Error cargando ligas: ${err.message}`, 'err');
+            }
+        };
+
+        window.procesarJornada = async function() {
+            const leagueId = document.getElementById('proc-league-id').value;
+            const jornada  = Number(document.getElementById('proc-jornada').value);
+            const btn      = document.getElementById('proc-btn');
+
+            if (!leagueId) { log('Selecciona una liga.', 'err'); return; }
+            if (!jornada || jornada < 1 || jornada > 38) { log('Introduce una jornada válida (1-38).', 'err'); return; }
+
+            btn.disabled = true;
+            btn.textContent = '⏳ Procesando...';
+            log(`Procesando jornada ${jornada} para liga #${leagueId}...`, 'info');
+
+            try {
+                const res  = await fetch(`${API}/admin/ligas/${leagueId}/procesar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ jornada }),
+                });
+                const json = await res.json();
+
+                if (json.status !== 'ok') throw new Error(json.message);
+
+                const d = json.data;
+                log(`✓ Jornada ${d.jornada} procesada. ${d.jugadoresPuntuados} jugadores puntuados.`, 'ok');
+                if (d.errores?.length) d.errores.forEach(e => log(`⚠ ${e}`, 'err'));
+
+                // Cargar resultados
+                await mostrarResultados(leagueId, jornada);
+                await cargarLigas();
+
+            } catch (err) {
+                log(`Error: ${err.message}`, 'err');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '▶ Procesar Jornada';
+            }
+        };
+
+        async function mostrarResultados(leagueId, jornada) {
+            const res  = await fetch(`${API}/admin/ligas/${leagueId}/jornada/${jornada}`);
+            const json = await res.json();
+            const data = json.data ?? [];
+
+            document.getElementById('resultado-jornada').textContent = jornada;
+            document.getElementById('resultados-card').style.display = '';
+
+            if (!data.length) {
+                document.getElementById('resultados-tabla').innerHTML =
+                    '<p class="text-slate-500 text-sm">Sin datos para esta jornada.</p>';
+                return;
+            }
+
+            // Agrupar por usuario
+            const porUsuario = new Map();
+            for (const row of data) {
+                if (!porUsuario.has(row.user_id)) porUsuario.set(row.user_id, { total: 0, jugadores: 0 });
+                porUsuario.get(row.user_id).total     += row.puntos_total;
+                porUsuario.get(row.user_id).jugadores += 1;
+            }
+
+            const filas = Array.from(porUsuario.entries())
+                .sort((a, b) => b[1].total - a[1].total)
+                .map(([uid, d], i) => `
+                    <tr>
+                        <td class="text-slate-500">${i+1}º</td>
+                        <td class="font-mono text-xs text-slate-400">${uid.substring(0,8)}...</td>
+                        <td class="font-black text-blue-400 text-lg">${d.total} pts</td>
+                        <td class="text-slate-400">${d.jugadores} jugadores</td>
+                    </tr>`).join('');
+
+            document.getElementById('resultados-tabla').innerHTML = `
+                <table>
+                    <thead><tr><th>Pos</th><th>Usuario</th><th>Puntos</th><th>Jugadores</th></tr></thead>
+                    <tbody>${filas}</tbody>
+                </table>`;
+        }
+
+        // Cargar al inicio
+        cargarLigas();
+    </script>
+</body>
+</html>

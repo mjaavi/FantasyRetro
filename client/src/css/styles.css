@@ -1,0 +1,19 @@
+/* Animación para el once inicial (Efecto Pop) */
+@keyframes popIn {
+    0% { opacity: 0; transform: scale(0.8) translateY(10px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.player-card {
+    opacity: 0; /* Ocultos por defecto para que la animación funcione */
+    animation-fill-mode: forwards;
+}
+
+/* Ocultar barra de scroll en paneles laterales manteniendo la funcionalidad */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}

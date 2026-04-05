@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro Fantasy | Acceso</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="./css/styles.css">
+
+    <style type="text/tailwindcss">
+        @layer components {
+            .bento-card {
+                @apply bg-slate-400/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 shadow-2xl shadow-black/50 transition-all duration-300;
+            }
+            .btn-primary {
+                @apply bg-slate-300/10 backdrop-blur-md border-2 border-blue-500 text-white rounded-2xl font-bold text-sm tracking-tight transition-all duration-300 shadow-[0_0_15px_rgba(59,130,246,0.2)] hover:bg-blue-500/20 hover:border-blue-400 hover:shadow-[0_0_25px_rgba(59,130,246,0.4)] hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center;
+            }
+            .tab-btn {
+                @apply flex-1 py-2.5 text-xs font-bold uppercase tracking-widest rounded-xl transition-all;
+            }
+            .tab-btn-active  { @apply bg-slate-300/10 border border-white/10 shadow-lg text-white; }
+            .tab-btn-inactive { @apply text-slate-400 hover:text-white hover:bg-white/5 bg-transparent border border-transparent; }
+            .form-label {
+                @apply block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5;
+            }
+            .form-input {
+                @apply w-full bg-black/20 border border-white/10 rounded-2xl px-4 py-3.5 text-white font-bold focus:outline-none focus:border-blue-500 transition-all placeholder:text-slate-600;
+            }
+        }
+    </style>
+</head>
+<body class="bg-[#0b1120] text-slate-100 font-sans antialiased min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden tracking-tight">
+
+    <!-- Fondo decorativo -->
+    <div class="fixed inset-0 z-0 pointer-events-none overflow-hidden flex items-center justify-center">
+        <div class="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-600/15 rounded-full blur-[120px]"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[120px]"></div>
+        <div class="absolute w-[180vw] md:w-[80vw] h-[150vh] border-[3px] border-white rounded-[5rem] transform -rotate-12 opacity-[0.03] flex flex-col justify-between items-center scale-110">
+            <div class="absolute top-1/2 left-0 w-full h-[3px] bg-white -translate-y-1/2"></div>
+            <div class="absolute top-1/2 left-1/2 w-[80vw] h-[80vw] md:w-[35vw] md:h-[35vw] border-[3px] border-white rounded-full -translate-x-1/2 -translate-y-1/2"></div>
+            <div class="w-[100vw] md:w-[45vw] h-[25vh] border-[3px] border-t-0 border-white rounded-b-[3rem]"></div>
+            <div class="w-[100vw] md:w-[45vw] h-[25vh] border-[3px] border-b-0 border-white rounded-t-[3rem]"></div>
+        </div>
+    </div>
+
+    <!-- Logo -->
+    <div class="relative z-10 mb-8 text-center">
+        <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight text-white drop-shadow-lg">
+            RETRO <span class="text-blue-500 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]">FANTASY</span>
+        </h1>
+        <p class="text-slate-400 mt-3 font-medium tracking-wide text-sm uppercase">El mánager de fútbol definitivo</p>
+    </div>
+
+    <main class="w-full max-w-md bento-card relative z-10">
+
+        <!-- Pestañas -->
+        <div id="tabs-bar" class="flex p-1.5 bg-black/20 rounded-2xl mb-8 border border-white/5 shadow-inner">
+            <button id="tab-login" type="button" class="tab-btn tab-btn-active">Iniciar Sesión</button>
+            <button id="tab-register" type="button" class="tab-btn tab-btn-inactive">Registrarse</button>
+        </div>
+
+        <!-- Panel Login -->
+        <div id="panel-login">
+            <form id="form-login" class="space-y-5">
+                <div>
+                    <label class="form-label">Email</label>
+                    <input id="login-email" type="email" required placeholder="manager@universidad.es" class="form-input">
+                </div>
+                <div>
+                    <label class="form-label">Contraseña</label>
+                    <input id="login-password" type="password" required placeholder="••••••••••••" class="form-input">
+                    <div class="mt-3 text-right">
+                        <a id="link-forgot-password" href="#" class="text-xs font-bold text-blue-400 hover:text-blue-300 transition-colors">¿Olvidaste tu contraseña?</a>
+                    </div>
+                </div>
+                <p id="login-error-message" class="text-sm font-bold text-red-400 text-center hidden"></p>
+                <button type="submit" class="btn-primary w-full py-4 text-sm">Entrar al Vestuario</button>
+            </form>
+        </div>
+
+        <!-- Panel Registro (oculto por defecto) -->
+        <div id="panel-register" class="hidden">
+            <form id="form-register" class="space-y-4">
+                <div>
+                    <label class="form-label">Nombre de usuario</label>
+                    <input id="register-username" type="text" required placeholder="Ej: Real TFG CF" class="form-input">
+                </div>
+                <div>
+                    <label class="form-label">Email</label>
+                    <input id="register-email" type="email" required placeholder="correo@universidad.es" class="form-input">
+                </div>
+                <div>
+                    <label class="form-label">Contraseña</label>
+                    <input id="register-password" type="password" required placeholder="Mínimo 8 caracteres" class="form-input">
+                </div>
+                <div>
+                    <label class="form-label">Confirmar Contraseña</label>
+                    <input id="register-password-confirm" type="password" required placeholder="Repite tu contraseña" class="form-input">
+                </div>
+                <p id="register-error-message" class="text-sm font-bold text-red-400 text-center hidden"></p>
+                <button type="submit" class="btn-primary w-full py-4 text-sm">Crear Cuenta</button>
+            </form>
+        </div>
+
+        <!-- Panel Recuperar Contraseña (oculto por defecto) -->
+        <div id="panel-forgot" class="hidden">
+            <div class="mb-6">
+                <p class="text-base font-bold text-white">Recuperar contraseña</p>
+                <p class="text-xs text-slate-400 mt-1">Te enviaremos un enlace para restablecer tu contraseña.</p>
+            </div>
+            <form id="form-forgot" class="space-y-5">
+                <div>
+                    <label class="form-label">Email</label>
+                    <input id="forgot-email" type="email" required placeholder="manager@universidad.es" class="form-input">
+                </div>
+                <p id="forgot-error-message" class="text-sm font-bold text-red-400 text-center hidden"></p>
+                <button type="submit" class="btn-primary w-full py-4 text-sm">Enviar enlace de recuperación</button>
+                <button type="button" id="btn-back-to-login" class="w-full text-xs font-bold text-slate-400 hover:text-white transition-colors py-2">← Volver al inicio de sesión</button>
+            </form>
+        </div>
+
+    </main>
+
+    <!-- Config desde servidor (nunca hardcodeada aquí) -->
+    <script>
+        window.__ENV__ = null;
+        fetch('http://localhost:3000/api/config')
+            .then(r => r.json())
+            .then(cfg => { window.__ENV__ = cfg; })
+            .catch(() => console.error('[RetroFantasy] Servidor no disponible'));
+    </script>
+    <script type="module" src="./js/auth.js"></script>
+</body>
+</html>
