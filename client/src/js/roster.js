@@ -176,7 +176,7 @@ function abrirPanelJugador(jugador) {
         playerApiId: jugador.player_api_id ?? jugador.id,
         name:        jugador.name,
         position:    jugador.position,
-        marketValue: (jugador.overall ?? 75) * 50000,
+        marketValue: jugador.purchase_price ?? 0,
         faceUrl:     jugador.faceUrl    ?? null,
         clubLogoUrl: jugador.clubLogoUrl ?? null,
     });
@@ -339,12 +339,13 @@ function renderCampoDashboard(titulares) {
     const campo = document.getElementById('pitch-field');
     if (!campo) return;
 
-    campo.querySelectorAll('.player-card').forEach(el => el.remove());
+    campo.querySelectorAll('.fila-delanteros').forEach(el => el.remove());
+    
     const delanteros = titulares.filter(j => j.position === 'DL').slice(0, 3);
     if (!delanteros.length) return;
 
     const fila = document.createElement('div');
-    fila.className = 'flex justify-around items-center px-4 md:px-20 z-10';
+    fila.className = 'fila-delanteros flex justify-around items-center px-4 md:px-20 z-10';
 
     for (const jugador of delanteros) {
         const pts = getPuntosJugador(jugador.player_api_id ?? jugador.id);

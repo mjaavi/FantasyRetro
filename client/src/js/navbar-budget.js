@@ -25,10 +25,17 @@ async function fetchCurrentUserBudget() {
         return null;
     }
 
+    const ligaStr = sessionStorage.getItem('ligaActiva');
+    if (!ligaStr) return null;
+    let liga;
+    try { liga = JSON.parse(ligaStr); } catch (e) { return null; }
+    if (!liga?.id) return null;
+
     const { data, error } = await supabase
-        .from('profiles')
+        .from('league_participants')
         .select('budget')
-        .eq('id', session.user.id)
+        .eq('user_id', session.user.id)
+        .eq('league_id', liga.id)
         .single();
 
     if (error) {
