@@ -63,9 +63,9 @@ export class LeagueOnboardingService {
         for (const player of selectedTeam) {
             totalValue += player.price;
             try {
-                // Al insertarlos manualmente aqui, los marcamos como titulares/suplentes despues.
+                // Al insertarlos manualmente aqui, los marcamos como titulares directamente para que el usuario no tenga que ponerlos
                 // Insertamos asincronamente.
-                await this.marketRepo.addPlayerToRoster(leagueId, userId, player.id, player.price);
+                await this.marketRepo.addPlayerToRoster(leagueId, userId, player.id, player.price, true);
             } catch (err: any) {
                 console.error(`[LeagueOnboarding] Error al insertar jugador ${player.id}: ${err.message}`);
             }

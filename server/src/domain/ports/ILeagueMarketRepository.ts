@@ -49,7 +49,7 @@ export interface ILeagueMarketRepository {
     getUserBidsForLeague(leagueId: number, userId: string): Promise<LeagueBid[]>;
     getUserBudget(userId: string, leagueId: number): Promise<number>;
     updateUserBudget(userId: string, leagueId: number, newBudget: number): Promise<void>;
-    addPlayerToRoster(leagueId: number, userId: string, playerApiId: number, purchasePrice: number): Promise<void>;
+    addPlayerToRoster(leagueId: number, userId: string, playerApiId: number, purchasePrice: number, isStarter?: boolean): Promise<void>;
 
     // ── Selección de jugadores para el mercado ─────────────────────────────
     // Responsabilidad movida desde la capa de aplicación: el servicio no debe

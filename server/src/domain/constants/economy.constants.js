@@ -1,8 +1,7 @@
 "use strict";
-var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MARKET_FLUCTUATION_CONFIG = exports.POSITION_PRICE_MULTIPLIERS = exports.INITIAL_PRICING_CONFIG = exports.ECONOMY_ENGINE_LIMITS = void 0;
-var player_models_1 = require("../models/player.models");
+const player_models_1 = require("../models/player.models");
 exports.ECONOMY_ENGINE_LIMITS = Object.freeze({
     minOverall: 1,
     maxOverall: 99,
@@ -14,12 +13,12 @@ exports.INITIAL_PRICING_CONFIG = Object.freeze({
     cubicFactorK: 2000,
     exponent: 3,
 });
-exports.POSITION_PRICE_MULTIPLIERS = Object.freeze((_a = {},
-    _a[player_models_1.PlayerPosition.PT] = 0.7,
-    _a[player_models_1.PlayerPosition.DF] = 0.8,
-    _a[player_models_1.PlayerPosition.MC] = 1.0,
-    _a[player_models_1.PlayerPosition.DL] = 1.2,
-    _a));
+exports.POSITION_PRICE_MULTIPLIERS = Object.freeze({
+    [player_models_1.PlayerPosition.PT]: 0.7,
+    [player_models_1.PlayerPosition.DF]: 0.8,
+    [player_models_1.PlayerPosition.MC]: 1.0,
+    [player_models_1.PlayerPosition.DL]: 1.2,
+});
 exports.MARKET_FLUCTUATION_CONFIG = Object.freeze({
     demandLevel: 4,
     volatilityFactor: 0.01,

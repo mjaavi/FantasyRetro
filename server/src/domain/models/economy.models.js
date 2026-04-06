@@ -7,5 +7,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PlayerPosition = void 0;
-var player_models_1 = require("./player.models");
+const player_models_1 = require("./player.models");
 Object.defineProperty(exports, "PlayerPosition", { enumerable: true, get: function () { return player_models_1.PlayerPosition; } });

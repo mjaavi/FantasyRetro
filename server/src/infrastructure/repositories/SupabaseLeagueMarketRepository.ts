@@ -280,7 +280,7 @@ export class SupabaseLeagueMarketRepository implements ILeagueMarketRepository {
         }
     }
 
-    async addPlayerToRoster(leagueId: number, userId: string, playerApiId: number, purchasePrice: number): Promise<void> {
+    async addPlayerToRoster(leagueId: number, userId: string, playerApiId: number, purchasePrice: number, isStarter: boolean = false): Promise<void> {
         const { error } = await supabaseAdmin
             .from('user_roster')
             .insert({
@@ -288,7 +288,7 @@ export class SupabaseLeagueMarketRepository implements ILeagueMarketRepository {
                 user_id: userId,
                 player_api_id: playerApiId,
                 purchase_price: purchasePrice,
-                is_starter: false,
+                is_starter: isStarter,
             });
 
         if (error) {

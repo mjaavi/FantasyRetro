@@ -4,13 +4,13 @@ exports.assertValidOverallRating = assertValidOverallRating;
 exports.assertValidPlayerPosition = assertValidPlayerPosition;
 exports.assertValidCurrentPrice = assertValidCurrentPrice;
 exports.assertValidFantasyPoints = assertValidFantasyPoints;
-var economy_constants_1 = require("../../../../domain/constants/economy.constants");
-var EconomyErrors_1 = require("../../../../domain/errors/EconomyErrors");
+const economy_constants_1 = require("../../../../domain/constants/economy.constants");
+const EconomyErrors_1 = require("../../../../domain/errors/EconomyErrors");
 function assertValidOverallRating(ovr) {
     if (!Number.isFinite(ovr)) {
         throw new EconomyErrors_1.InvalidOverallRatingError(ovr);
     }
-    var normalized = Math.round(ovr);
+    const normalized = Math.round(ovr);
     if (normalized < economy_constants_1.ECONOMY_ENGINE_LIMITS.minOverall || normalized > economy_constants_1.ECONOMY_ENGINE_LIMITS.maxOverall) {
         throw new EconomyErrors_1.InvalidOverallRatingError(ovr);
     }
