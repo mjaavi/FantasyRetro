@@ -253,28 +253,30 @@ export class SupabaseLeagueMarketRepository implements ILeagueMarketRepository {
         }));
     }
 
-    async getUserBudget(userId: string): Promise<number> {
+    async getUserBudget(userId: string, leagueId: number): Promise<number> {
         const { data, error } = await supabaseAdmin
-            .from('profiles')
+            .from('league_participants')
             .select('budget')
-            .eq('id', userId)
+            .eq('user_id', userId)
+            .eq('league_id', leagueId)
             .single();
 
         if (error || !data) {
-            throw new AppError('Error al obtener el presupuesto.', 500);
+            throw new AppError('Error al obtener el presupuesto de la liga.', 500);
         }
 
         return Number(data.budget);
     }
 
-    async updateUserBudget(userId: string, newBudget: number): Promise<void> {
+    async updateUserBudget(userId: string, leagueId: number, newBudget: number): Promise<void> {
         const { error } = await supabaseAdmin
-            .from('profiles')
+            .from('league_participants')
             .update({ budget: newBudget })
-            .eq('id', userId);
+            .eq('user_id', userId)
+            .eq('league_id', leagueId);
 
         if (error) {
-            throw new AppError('Error al actualizar el presupuesto.', 500);
+            throw new AppError('Error al actualizar el presupuesto de la liga.', 500);
         }
     }
 

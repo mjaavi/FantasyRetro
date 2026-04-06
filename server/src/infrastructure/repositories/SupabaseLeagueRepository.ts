@@ -37,7 +37,7 @@ export class SupabaseLeagueRepository implements ILeagueRepository {
     async findParticipantsByLeague(leagueId: number): Promise<LeagueParticipant[]> {
         const { data, error } = await supabaseAdmin
             .from('league_participants')
-            .select('user_id, league_id, joined_at, profiles ( username, team_name, budget )')
+            .select('user_id, league_id, joined_at, budget, profiles ( username, team_name )')
             .eq('league_id', leagueId);
 
         if (error) throw new AppError('Error al obtener participantes.', 500);
@@ -46,6 +46,7 @@ export class SupabaseLeagueRepository implements ILeagueRepository {
             user_id:   row.user_id,
             league_id: row.league_id,
             joined_at: row.joined_at,
+            budget:    Number(row.budget),
             profiles:  Array.isArray(row.profiles) ? row.profiles[0] : row.profiles,
         })) as LeagueParticipant[];
     }
@@ -53,7 +54,7 @@ export class SupabaseLeagueRepository implements ILeagueRepository {
     async findParticipant(leagueId: number, userId: string): Promise<LeagueParticipant | null> {
         const { data, error } = await supabaseAdmin
             .from('league_participants')
-            .select('user_id, league_id, joined_at')
+            .select('user_id, league_id, joined_at, budget')
             .eq('league_id', leagueId)
             .eq('user_id', userId)
             .single();

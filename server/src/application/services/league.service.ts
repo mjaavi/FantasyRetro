@@ -2,6 +2,7 @@ import { AppError } from '../../domain/errors/AppError';
 import { ILeagueRepository } from '../../domain/ports/ILeagueRepository';
 import { SupabaseLeagueRepository } from '../../infrastructure/repositories/SupabaseLeagueRepository';
 import { LeagueMarketService } from './leagueMarket.service';
+import { LeagueOnboardingService } from './leagueOnboarding.service';
 
 export const TEMPORADAS_DISPONIBLES = [
     '2008/2009', '2009/2010', '2010/2011', '2011/2012',
@@ -13,6 +14,7 @@ export class LeagueService {
     constructor(
         private readonly repo: ILeagueRepository = new SupabaseLeagueRepository(),
         private readonly marketService: LeagueMarketService,
+        private readonly onboardingService: LeagueOnboardingService
     ) {}
 
     async crearLiga(userId: string, nombre: string, season: string, kaggleLeagueId: number, userToken: string) {
@@ -29,6 +31,11 @@ export class LeagueService {
         await this.repo.addParticipantWithUserToken(
             liga.id, userId, userToken
         );
+
+        // Generar el equipo aleatorio y presupuesto base en background sin bloquear la respuesta HTTP
+        this.onboardingService.assignInitialTeam(liga.id, userId).catch(err => {
+            console.error(`[LeagueService] Fallo al generar equipo inicial para ${userId} en liga ${liga.id}:`, err);
+        });
 
         // Abrir el mercado automáticamente al crear la liga
         // Si falla no bloqueamos la creación — el admin puede abrirlo después
@@ -51,6 +58,11 @@ export class LeagueService {
         await this.repo.addParticipantWithUserToken(
             liga.id, userId, userToken
         );
+
+        // Generar el equipo aleatorio y presupuesto base en background sin bloquear la respuesta HTTP
+        this.onboardingService.assignInitialTeam(liga.id, userId).catch(err => {
+            console.error(`[LeagueService] Fallo al generar equipo inicial para ${userId} en liga ${liga.id}:`, err);
+        });
 
         return liga;
     }

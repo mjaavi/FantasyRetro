@@ -59,7 +59,7 @@ export class LeagueMarketService {
         const mercadoActivo = await this.repo.getMarketForLeague(leagueId);
         const mercadoPrevioActivo = mercadoActivo.length > 0;
         const pujas = mercadoPrevioActivo ? await this.repo.getBidsForMarket(leagueId) : [];
-        const { importeDevuelto, usuariosReembolsados } = await this.refundBids(pujas);
+        const { importeDevuelto, usuariosReembolsados } = await this.refundBids(leagueId, pujas);
 
         if (pujas.length) {
             await this.repo.clearBidsForLeague(leagueId);
@@ -120,7 +120,7 @@ export class LeagueMarketService {
         }
 
         const pujaPrevia = await this.repo.getBidByUserAndPlayer(leagueId, userId, playerApiId);
-        const budget = await this.repo.getUserBudget(userId);
+        const budget = await this.repo.getUserBudget(userId, leagueId);
         const costeReal = pujaPrevia ? amount - pujaPrevia.amount : amount;
 
         if (costeReal > budget) {
@@ -130,7 +130,7 @@ export class LeagueMarketService {
         await this.repo.upsertBid(leagueId, userId, playerApiId, amount);
 
         const nuevoBudget = budget - costeReal;
-        await this.repo.updateUserBudget(userId, nuevoBudget);
+        await this.repo.updateUserBudget(userId, leagueId, nuevoBudget);
 
         return {
             message: pujaPrevia ? 'Puja actualizada.' : 'Puja registrada.',
@@ -148,11 +148,11 @@ export class LeagueMarketService {
             throw new AppError('No tienes ninguna puja sobre este jugador.', 404);
         }
 
-        const budget = await this.repo.getUserBudget(userId);
+        const budget = await this.repo.getUserBudget(userId, leagueId);
         await this.repo.deleteBid(leagueId, userId, playerApiId);
 
         const nuevoBudget = budget + puja.amount;
-        await this.repo.updateUserBudget(userId, nuevoBudget);
+        await this.repo.updateUserBudget(userId, leagueId, nuevoBudget);
 
         return { message: 'Puja cancelada. Presupuesto devuelto.', newBudget: nuevoBudget };
     }
@@ -187,8 +187,8 @@ export class LeagueMarketService {
             }
 
             for (const perdedor of perdedores) {
-                const budgetActual = await this.repo.getUserBudget(perdedor.userId);
-                await this.repo.updateUserBudget(perdedor.userId, budgetActual + perdedor.amount);
+                const budgetActual = await this.repo.getUserBudget(perdedor.userId, leagueId);
+                await this.repo.updateUserBudget(perdedor.userId, leagueId, budgetActual + perdedor.amount);
             }
 
             resueltos++;
@@ -257,7 +257,7 @@ export class LeagueMarketService {
         };
     }
 
-    private async refundBids(bids: LeagueBid[]): Promise<{ importeDevuelto: number; usuariosReembolsados: number }> {
+    private async refundBids(leagueId: number, bids: LeagueBid[]): Promise<{ importeDevuelto: number; usuariosReembolsados: number }> {
         if (!bids.length) {
             return { importeDevuelto: 0, usuariosReembolsados: 0 };
         }
@@ -268,8 +268,8 @@ export class LeagueMarketService {
         }
 
         for (const [userId, refundAmount] of refundsByUser.entries()) {
-            const budgetActual = await this.repo.getUserBudget(userId);
-            await this.repo.updateUserBudget(userId, budgetActual + refundAmount);
+            const budgetActual = await this.repo.getUserBudget(userId, leagueId);
+            await this.repo.updateUserBudget(userId, leagueId, budgetActual + refundAmount);
         }
 
         return {

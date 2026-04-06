@@ -12,13 +12,13 @@ export interface FantasyLeague {
 export interface LeagueParticipantProfile {
     username:  string;
     team_name: string;
-    budget:    number;
 }
 
 export interface LeagueParticipant {
     user_id:   string;
     league_id: number;
     joined_at: string;
+    budget:    number;
     profiles?: LeagueParticipantProfile;
 }
 

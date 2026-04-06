@@ -67,7 +67,7 @@ export class RankingService {
                 puntosTotales:       puntosPorUsuario.get(userId) ?? 0,
                 jugadoresPuntuados:  userData?.playerIds.length ?? 0,
                 valorPlantilla:      userData?.totalGastado     ?? 0,
-                presupuestoRestante: profile?.budget            ?? 0,
+                presupuestoRestante: participante.budget        ?? 0,
             });
         }
 

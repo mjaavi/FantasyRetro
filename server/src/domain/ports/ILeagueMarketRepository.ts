@@ -47,8 +47,8 @@ export interface ILeagueMarketRepository {
     deleteBid(leagueId: number, userId: string, playerApiId: number): Promise<void>;
     clearBidsForLeague(leagueId: number): Promise<void>;
     getUserBidsForLeague(leagueId: number, userId: string): Promise<LeagueBid[]>;
-    getUserBudget(userId: string): Promise<number>;
-    updateUserBudget(userId: string, newBudget: number): Promise<void>;
+    getUserBudget(userId: string, leagueId: number): Promise<number>;
+    updateUserBudget(userId: string, leagueId: number, newBudget: number): Promise<void>;
     addPlayerToRoster(leagueId: number, userId: string, playerApiId: number, purchasePrice: number): Promise<void>;
 
     // ── Selección de jugadores para el mercado ─────────────────────────────

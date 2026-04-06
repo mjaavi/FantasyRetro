@@ -62,11 +62,13 @@ import { RankingService }      from './application/services/ranking.service';
 import { RosterService }       from './application/services/roster.service';
 import { ScoringService }      from './application/services/scoring.service';
 import { SeedService }         from './application/services/seed.service';
+import { LeagueOnboardingService } from './application/services/leagueOnboarding.service';
 import { AdminService }        from './application/services/admin.service';
 import { DashboardService }    from './application/services/dashboard.service';
 
 const leagueMarketService = new LeagueMarketService(leagueMarketRepo, leagueRepo);
-const leagueService       = new LeagueService(leagueRepo, leagueMarketService);
+const leagueOnboardingSvc = new LeagueOnboardingService(leagueMarketRepo, leagueRepo);
+const leagueService       = new LeagueService(leagueRepo, leagueMarketService, leagueOnboardingSvc);
 const marketService       = new MarketService(marketRepo);
 const rankingService      = new RankingService(leagueRepo, rankingRepo);
 const rosterService       = new RosterService(rosterRepo);
