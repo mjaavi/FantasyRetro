@@ -101,16 +101,23 @@ export async function loadLeaguePlayerData(
 }
 
 async function fetchPlayers(playerIds: number[]): Promise<Map<number, PlayerRow>> {
-    const { data, error } = await supabaseAdmin
-        .from('Player')
-        .select('player_api_id, player_name, player_fifa_api_id, player_face_url')
-        .in('player_api_id', playerIds);
+    const allData = [];
+    const CHUNK_SIZE = 100;
+    
+    for (let i = 0; i < playerIds.length; i += CHUNK_SIZE) {
+        const chunk = playerIds.slice(i, i + CHUNK_SIZE);
+        const { data, error } = await supabaseAdmin
+            .from('Player')
+            .select('player_api_id, player_name, player_fifa_api_id, player_face_url')
+            .in('player_api_id', chunk);
 
-    if (error) {
-        throw new AppError(`Error al obtener jugadores: ${error.message}`, 500);
+        if (error) {
+            throw new AppError(`Error al obtener jugadores: ${error.message}`, 500);
+        }
+        allData.push(...(data ?? []));
     }
 
-    return new Map((data ?? []).map(row => [
+    return new Map(allData.map(row => [
         Number(row.player_api_id),
         {
             player_api_id: Number(row.player_api_id),
@@ -125,19 +132,26 @@ async function fetchAttributes(
     playerIds: number[],
     leagueContext: LeagueContext | null,
 ): Promise<Map<number, PlayerAttributeRow>> {
-    const { data, error } = await supabaseAdmin
-        .from('Player_Attributes')
-        .select('player_api_id, overall_rating, date')
-        .in('player_api_id', playerIds);
+    const allData = [];
+    const CHUNK_SIZE = 30; // Cada jugador puede tener 10-30 filas de atributos. 30 * 30 = 900 (<1000 limit)
 
-    if (error) {
-        throw new AppError(`Error al obtener atributos de jugador: ${error.message}`, 500);
+    for (let i = 0; i < playerIds.length; i += CHUNK_SIZE) {
+        const chunk = playerIds.slice(i, i + CHUNK_SIZE);
+        const { data, error } = await supabaseAdmin
+            .from('Player_Attributes')
+            .select('player_api_id, overall_rating, date')
+            .in('player_api_id', chunk);
+
+        if (error) {
+            throw new AppError(`Error al obtener atributos de jugador: ${error.message}`, 500);
+        }
+        allData.push(...(data ?? []));
     }
 
     const targetTimestamp = getSeasonReferenceTimestamp(leagueContext?.season ?? null);
     const selectedAttributes = new Map<number, { row: PlayerAttributeRow; distance: number; timestamp: number }>();
 
-    for (const row of data ?? []) {
+    for (const row of allData) {
         const normalizedRow: PlayerAttributeRow = {
             player_api_id: Number(row.player_api_id),
             overall_rating: row.overall_rating === null ? null : Number(row.overall_rating),
