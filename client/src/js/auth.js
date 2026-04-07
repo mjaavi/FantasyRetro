@@ -5,6 +5,17 @@ const TAB_CLASSES = {
     inactive: 'tab-btn tab-btn-inactive',
 };
 
+const AUTH_COOLDOWN_STORAGE_KEY = 'retroFantasy.authCooldowns';
+const AUTH_SHARED_COOLDOWN_MS = 2 * 60 * 1000;
+const AUTH_EMAIL_COOLDOWN_MS = 60 * 1000;
+const AUTH_MIN_RETRY_DELAY_MS = 2500;
+
+const authActionState = {
+    login: { inFlight: false, lastAttemptAt: 0 },
+    register: { inFlight: false, lastAttemptAt: 0 },
+    forgot: { inFlight: false, lastAttemptAt: 0 },
+};
+
 async function getSupabaseClient() {
     if (!supabasePromise) {
         supabasePromise = import('./supabase.js')
@@ -16,6 +27,120 @@ async function getSupabaseClient() {
     }
 
     return supabasePromise;
+}
+
+function readAuthCooldowns() {
+    try {
+        const raw = window.localStorage.getItem(AUTH_COOLDOWN_STORAGE_KEY);
+        return raw ? JSON.parse(raw) : {};
+    } catch {
+        return {};
+    }
+}
+
+function writeAuthCooldowns(cooldowns) {
+    try {
+        window.localStorage.setItem(AUTH_COOLDOWN_STORAGE_KEY, JSON.stringify(cooldowns));
+    } catch {
+        // Si localStorage falla, seguimos funcionando sin persistencia.
+    }
+}
+
+function getCooldownRemainingMs(action) {
+    const cooldowns = readAuthCooldowns();
+    const cooldownUntil = Number(cooldowns[action] ?? 0);
+
+    if (!cooldownUntil || cooldownUntil <= Date.now()) {
+        if (cooldownUntil) {
+            delete cooldowns[action];
+            writeAuthCooldowns(cooldowns);
+        }
+        return 0;
+    }
+
+    return cooldownUntil - Date.now();
+}
+
+function setCooldown(action, durationMs) {
+    const cooldowns = readAuthCooldowns();
+    cooldowns[action] = Date.now() + durationMs;
+    writeAuthCooldowns(cooldowns);
+}
+
+function applySharedAuthCooldown() {
+    setCooldown('login', AUTH_SHARED_COOLDOWN_MS);
+    setCooldown('register', AUTH_SHARED_COOLDOWN_MS);
+}
+
+function isRateLimitError(error) {
+    const msg = error?.message?.toLowerCase() ?? '';
+    return msg.includes('too many requests') || msg.includes('rate limit');
+}
+
+function maskEmail(email) {
+    if (!email || !email.includes('@')) return null;
+
+    const [localPart, domain] = email.split('@');
+    if (!localPart || !domain) return null;
+
+    const visible = localPart.slice(0, 2);
+    return `${visible}${'*'.repeat(Math.max(1, localPart.length - visible.length))}@${domain}`;
+}
+
+function logAuthError(context, error, email = null) {
+    console.warn(`[Auth:${context}]`, {
+        message: error?.message ?? null,
+        status: error?.status ?? null,
+        code: error?.code ?? null,
+        name: error?.name ?? null,
+        email: maskEmail(email),
+    });
+}
+
+function formatRetryTime(ms) {
+    const totalSeconds = Math.max(1, Math.ceil(ms / 1000));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+
+    if (!minutes) return `${totalSeconds} s`;
+    if (!seconds) return `${minutes} min`;
+    return `${minutes} min ${seconds} s`;
+}
+
+function blockIfCooldownActive(action, messageId) {
+    const remainingMs = getCooldownRemainingMs(action);
+    if (!remainingMs) return false;
+
+    showMessage(
+        messageId,
+        `Demasiados intentos desde esta red o este correo. Espera ${formatRetryTime(remainingMs)} e intentalo de nuevo.`
+    );
+    return true;
+}
+
+function beginAuthAction(action, messageId) {
+    const state = authActionState[action];
+    if (!state) return true;
+
+    if (state.inFlight) return false;
+    if (blockIfCooldownActive(action, messageId)) return false;
+
+    const elapsedMs = Date.now() - state.lastAttemptAt;
+    if (state.lastAttemptAt && elapsedMs < AUTH_MIN_RETRY_DELAY_MS) {
+        showMessage(
+            messageId,
+            `Espera ${formatRetryTime(AUTH_MIN_RETRY_DELAY_MS - elapsedMs)} antes de volver a intentarlo.`
+        );
+        return false;
+    }
+
+    state.inFlight = true;
+    state.lastAttemptAt = Date.now();
+    return true;
+}
+
+function endAuthAction(action) {
+    if (authActionState[action]) authActionState[action].inFlight = false;
 }
 
 export function switchTab(activeTabId) {
@@ -70,8 +195,8 @@ function mapAuthError(error) {
 
     if (msg.includes('user already registered') || msg.includes('already been registered'))
         return 'Este correo ya tiene una cuenta. Inicia sesión o recupera tu contraseña.';
-    if (msg.includes('email rate limit') || msg.includes('too many requests'))
-        return 'Demasiados intentos. Espera unos minutos e intentalo de nuevo.';
+    if (isRateLimitError(error))
+        return 'Demasiados intentos desde esta red o este correo. Espera unos minutos e intentalo de nuevo.';
     if (msg.includes('invalid email') || msg.includes('unable to validate email'))
         return 'El formato del correo no es válido.';
     if (msg.includes('password') && msg.includes('characters'))
@@ -101,6 +226,7 @@ export async function handleLogin(event) {
     }
 
     const button = event.target?.querySelector('[type="submit"]');
+    if (!beginAuthAction('login', 'login-error-message')) return;
     setLoading(button, true, 'Entrar al Vestuario');
 
     try {
@@ -108,15 +234,19 @@ export async function handleLogin(event) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
 
         if (error) {
+            logAuthError('login', error, email);
+            if (isRateLimitError(error)) applySharedAuthCooldown();
             showMessage('login-error-message', mapAuthError(error));
             return;
         }
 
         window.location.href = 'app.html';
     } catch (error) {
+        logAuthError('login-unexpected', error, email);
         console.error('[Auth] Error al iniciar sesion:', error);
         showMessage('login-error-message', 'No se pudo conectar con el servicio de acceso. Intentalo de nuevo.');
     } finally {
+        endAuthAction('login');
         setLoading(button, false, 'Entrar al Vestuario');
     }
 }
@@ -146,6 +276,7 @@ export async function handleRegister(event) {
     }
 
     const button = event.target?.querySelector('[type="submit"]');
+    if (!beginAuthAction('register', 'register-error-message')) return;
     setLoading(button, true, 'Crear Cuenta');
 
     try {
@@ -157,6 +288,8 @@ export async function handleRegister(event) {
         });
 
         if (error) {
+            logAuthError('register', error, email);
+            if (isRateLimitError(error)) applySharedAuthCooldown();
             showMessage('register-error-message', mapAuthError(error));
             return;
         }
@@ -164,9 +297,11 @@ export async function handleRegister(event) {
         switchTab('login');
         showMessage('login-error-message', '\u2713 Cuenta creada. Revisa tu email para verificarla.', true);
     } catch (error) {
+        logAuthError('register-unexpected', error, email);
         console.error('[Auth] Error al registrarse:', error);
         showMessage('register-error-message', 'No se pudo conectar con el servicio de acceso. Intentalo de nuevo.');
     } finally {
+        endAuthAction('register');
         setLoading(button, false, 'Crear Cuenta');
     }
 }
@@ -182,6 +317,7 @@ export async function handleForgotPassword(event) {
     }
 
     const button = event.target?.querySelector('[type="submit"]');
+    if (!beginAuthAction('forgot', 'forgot-error-message')) return;
     setLoading(button, true, 'Enviar Enlace');
 
     try {
@@ -193,17 +329,31 @@ export async function handleForgotPassword(event) {
         const { error }  = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
 
         if (error) {
+            logAuthError('forgot-password', error, email);
+            if (isRateLimitError(error)) {
+                setCooldown('forgot', AUTH_EMAIL_COOLDOWN_MS);
+                showMessage(
+                    'forgot-error-message',
+                    `Has solicitado demasiados enlaces seguidos. Espera ${formatRetryTime(AUTH_EMAIL_COOLDOWN_MS)} e intentalo de nuevo.`
+                );
+                return;
+            }
+
             showMessage('forgot-error-message', 'No se pudo enviar el correo. Intentalo de nuevo.');
             return;
         }
+
+        setCooldown('forgot', AUTH_EMAIL_COOLDOWN_MS);
 
         // Mensaje genérico por seguridad: no revelar si el email existe o no
         switchTab('login');
         showMessage('login-error-message', 'Si el correo esta registrado, recibiras un enlace de recuperacion.', true);
     } catch (err) {
+        logAuthError('forgot-password-unexpected', err, email);
         console.error('[Auth] Error en recuperacion de contrasena:', err);
         showMessage('forgot-error-message', 'Error al conectar con el servicio. Intentalo de nuevo.');
     } finally {
+        endAuthAction('forgot');
         setLoading(button, false, 'Enviar Enlace');
     }
 }
