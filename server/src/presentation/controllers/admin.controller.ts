@@ -9,9 +9,9 @@ export class AdminController {
         private readonly leagueMarketService: LeagueMarketService,
     ) {}
 
-    getEstadoLigas = async (_req: Request, res: Response, next: NextFunction) => {
+    getEstadoLigas = async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const ligas = await this.adminService.getEstadoLigas();
+            const ligas = await this.adminService.getEstadoLigas(req.userId!);
             res.json({ status: 'ok', data: ligas });
         } catch (err) {
             next(err);

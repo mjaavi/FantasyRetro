@@ -1,38 +1,35 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// presentation/middleware/adminGuard.middleware.ts
-//
-// Middleware de autorización para rutas de administración.
-// Debe usarse SIEMPRE después de requireAuth (que ya verificó el JWT).
-//
-// Comprueba que el usuario autenticado tenga role = 'admin' en sus
-// app_metadata de Supabase Auth. Este campo solo puede ser establecido
-// por el service_role desde el servidor — los usuarios no pueden modificarlo.
-//
-// Uso en rutas:
-//   r.post('/admin/...', requireAuth, requireAdmin, ctrl.handler);
-// ─────────────────────────────────────────────────────────────────────────────
-
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
+import { ForbiddenError, InfrastructureError, ValidationError } from '../../domain/errors/AppError';
 import { supabaseAdmin } from '../../infrastructure/supabase.client';
-import { ForbiddenError } from '../../domain/errors/AppError';
 
-export async function requireAdmin(
+export async function requireLeagueAdmin(
     req: Request,
     _res: Response,
     next: NextFunction,
 ): Promise<void> {
     try {
-        // req.userId ya está verificado por requireAuth; el non-null assert es seguro.
-        const { data, error } = await supabaseAdmin.auth.admin.getUserById(req.userId!);
+        const leagueId = Number(req.params.leagueId);
 
-        if (error || !data?.user) {
-            return next(new ForbiddenError('No se pudo verificar el rol del usuario.'));
+        if (!Number.isInteger(leagueId) || leagueId <= 0) {
+            return next(new ValidationError('ID de liga invalido.'));
         }
 
-        const role = data.user.app_metadata?.role;
+        const { data, error } = await supabaseAdmin
+            .from('fantasy_leagues')
+            .select('admin_id')
+            .eq('id', leagueId)
+            .maybeSingle();
 
-        if (role !== 'admin') {
-            return next(new ForbiddenError('Acceso restringido a administradores.'));
+        if (error) {
+            return next(new InfrastructureError(`No se pudo verificar el administrador de la liga: ${error.message}`));
+        }
+
+        if (!data) {
+            return next(new ForbiddenError('Liga no encontrada o sin permisos de administracion.'));
+        }
+
+        if (data.admin_id !== req.userId) {
+            return next(new ForbiddenError('Acceso restringido al administrador de esta liga.'));
         }
 
         next();

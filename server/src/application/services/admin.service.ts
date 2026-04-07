@@ -143,8 +143,8 @@ export class AdminService {
         };
     }
 
-    async getEstadoLigas(): Promise<unknown[]> {
-        return this.repo.getEstadoLigas();
+    async getEstadoLigas(adminUserId: string): Promise<unknown[]> {
+        return this.repo.getEstadoLigas(adminUserId);
     }
 
     async getPuntosJornada(leagueId: number, jornada: number): Promise<unknown[]> {

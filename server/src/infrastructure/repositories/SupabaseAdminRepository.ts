@@ -4,8 +4,8 @@ import { supabaseAdmin } from '../supabase.client';
 
 type SupabaseClientLike = typeof supabaseAdmin;
 
-const LEAGUE_PROCESS_FIELDS = 'id, season, jornada_actual, kaggle_league_id';
-const LEAGUE_STATUS_FIELDS = 'id, name, season, jornada_actual, kaggle_league_id';
+const LEAGUE_PROCESS_FIELDS = 'id, admin_id, season, jornada_actual, kaggle_league_id';
+const LEAGUE_STATUS_FIELDS = 'id, name, admin_id, season, jornada_actual, kaggle_league_id';
 const FANTASY_SCORE_FIELDS = 'user_id, player_api_id, jornada, puntos_base, puntos_cronista, puntos_total, picas, cronista_type';
 const GLOBAL_SCORE_FIELDS = 'player_api_id, jornada, puntos_base, puntos_total, picas, cronista_type';
 
@@ -26,10 +26,11 @@ export class SupabaseAdminRepository implements IAdminRepository {
         return (data as AdminLeagueSnapshot | null) ?? null;
     }
 
-    async getEstadoLigas(): Promise<AdminLeagueStatus[]> {
+    async getEstadoLigas(adminUserId: string): Promise<AdminLeagueStatus[]> {
         const { data, error } = await this.db
             .from('fantasy_leagues')
             .select(LEAGUE_STATUS_FIELDS)
+            .eq('admin_id', adminUserId)
             .order('id', { ascending: true });
 
         if (error) {

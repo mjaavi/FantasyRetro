@@ -1,5 +1,6 @@
 export interface AdminLeagueSnapshot {
     id:               number;
+    admin_id:         string;
     season:           string;
     jornada_actual:   number | null;
     kaggle_league_id: number | null;
@@ -8,6 +9,7 @@ export interface AdminLeagueSnapshot {
 export interface AdminLeagueStatus {
     id:               number;
     name:             string;
+    admin_id:         string;
     season:           string;
     jornada_actual:   number | null;
     kaggle_league_id: number | null;
@@ -63,7 +65,7 @@ export interface AdminGlobalScoreRow {
 
 export interface IAdminRepository {
     getLeagueForProcessing(leagueId: number): Promise<AdminLeagueSnapshot | null>;
-    getEstadoLigas(): Promise<AdminLeagueStatus[]>;
+    getEstadoLigas(adminUserId: string): Promise<AdminLeagueStatus[]>;
     getLeagueRosterEntries(leagueId: number): Promise<AdminRosterEntry[]>;
     saveFantasyScores(rows: FantasyScoreWriteModel[]): Promise<void>;
     saveGlobalScores(rows: GlobalScoreWriteModel[]): Promise<void>;
