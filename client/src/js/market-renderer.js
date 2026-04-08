@@ -17,7 +17,7 @@ function createClippedClubBadge(clubLogoUrl, className, size = 98) {
     badge.className = className;
 
     const logo = createClubLogo({ clubLogoUrl: clubLogoUrl ?? null, size, alt: 'Escudo del club' });
-    logo.style.cssText += ';width:100%;height:100%;object-fit:contain;transform:translateX(28%);';
+    logo.style.cssText += ';width:100%;height:100%;object-fit:contain;transform:translateX(16%);';
     badge.appendChild(logo);
 
     return badge;

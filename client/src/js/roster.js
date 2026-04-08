@@ -125,7 +125,7 @@ function createClippedClubBadge(clubLogoUrl, className, size = 92) {
         alt: 'Escudo del club',
     });
 
-    logo.style.cssText += ';width:100%;height:100%;object-fit:contain;transform:translateX(28%);';
+    logo.style.cssText += ';width:100%;height:100%;object-fit:contain;transform:translateX(16%);';
     badge.appendChild(logo);
 
     return badge;
@@ -178,10 +178,6 @@ function rellenarSlot(slot, jugador) {
         imageClassName: 'lineup-player-portrait-media',
     }));
 
-    const club = document.createElement('div');
-    club.className = 'lineup-player-club';
-    club.textContent = jugador.real_team ?? 'Sin equipo';
-
     const scoreBadge = document.createElement('div');
     scoreBadge.className = [
         'lineup-player-score',
@@ -193,7 +189,6 @@ function rellenarSlot(slot, jugador) {
     card.appendChild(title);
     card.appendChild(logoBadge);
     card.appendChild(portraitFrame);
-    card.appendChild(club);
 
     slot.appendChild(card);
     slot.appendChild(scoreBadge);
