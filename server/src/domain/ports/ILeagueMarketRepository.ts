@@ -5,6 +5,7 @@ export interface LeagueMarketPlayerSnapshot {
     leagueId: number;
     playerApiId: number;
     playerName: string;
+    realTeam: string;
     position: PlayerPosition;
     overallRating: number;
     expiresAt: string;

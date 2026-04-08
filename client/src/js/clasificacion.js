@@ -1,4 +1,5 @@
 import { getLigaActiva } from './leagues.js';
+import { getApiBaseUrl } from './env.js';
 
 // ── Formateo ──────────────────────────────────────────────────────────────────
 
@@ -24,10 +25,11 @@ export async function loadClasificacion(jornada = '') {
         const { supabase } = await import('./supabase.js');
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token ?? null;
+        const apiUrl = await getApiBaseUrl();
 
         const url = jornada
-            ? `${window.__ENV__?.apiUrl ?? 'http://localhost:3000/api'}/ranking/${liga.id}?jornada=${jornada}`
-            : `${window.__ENV__?.apiUrl ?? 'http://localhost:3000/api'}/ranking/${liga.id}`;
+            ? `${apiUrl}/ranking/${liga.id}?jornada=${jornada}`
+            : `${apiUrl}/ranking/${liga.id}`;
 
         const res  = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
         const json = await res.json();

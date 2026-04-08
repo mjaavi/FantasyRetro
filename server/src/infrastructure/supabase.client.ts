@@ -1,18 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl        = process.env.SUPABASE_URL;
-const supabaseKey        = process.env.SUPABASE_KEY;
+const supabaseAnonKey    = process.env.SUPABASE_ANON_KEY ?? process.env.SUPABASE_KEY;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl || !supabaseKey) {
+if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error(
-        'Variables de entorno SUPABASE_URL y SUPABASE_KEY son obligatorias. ' +
-        'Copia .env.example a .env y rellena los valores.'
+        'Variables de entorno SUPABASE_URL y SUPABASE_ANON_KEY son obligatorias. ' +
+        'SUPABASE_KEY sigue aceptandose solo como fallback temporal.'
     );
 }
 
 // Cliente anon — para operaciones de lectura pública y verificación de auth
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // CAMBIO: eliminado el fragmento de la key del log — nunca loggear
 // partes de credenciales, aunque sean parciales.
@@ -35,7 +35,7 @@ export const supabaseAdmin = supabaseServiceKey
  * Necesario para operaciones de escritura sujetas a RLS.
  */
 export function supabaseAsUser(userToken: string) {
-    return createClient(supabaseUrl!, supabaseKey!, {
+    return createClient(supabaseUrl!, supabaseAnonKey!, {
         global: { headers: { Authorization: `Bearer ${userToken}` } },
     });
 }

@@ -3,6 +3,7 @@ import { abrirPlayerDrawer, cerrarPlayerDrawer } from './player-drawer.js';
 import { createPlayerCard } from './market-renderer.js';
 import { getLigaActiva } from './leagues.js';
 import { syncNavbarBudget } from './navbar-budget.js';
+import { getApiBaseUrl } from './env.js';
 
 // ── Estado ────────────────────────────────────────────────────────────────────
 
@@ -62,6 +63,7 @@ export async function loadMarket() {
                 const playerForRenderer = {
                     id:           player.playerApiId,
                     name:         player.playerName,
+                    realTeam:     player.realTeam ?? player.real_team ?? 'Sin equipo',
                     position:     player.position,
                     market_value: player.marketValue,
                     playerFifaApiId: player.playerFifaApiId ?? null,
@@ -123,10 +125,11 @@ function actualizarCuentaAtras(expiresAt) {
                 const liga = JSON.parse(sessionStorage.getItem('ligaActiva') ?? '{}');
                 if (liga?.id) {
                     import('./supabase.js').then(async ({ supabase }) => {
+                        const apiUrl = await getApiBaseUrl();
                         const { data: { session } } = await supabase.auth.getSession();
                         if (!session) return;
 
-                        fetch(`${window.__ENV__?.apiUrl ?? 'http://localhost:3000/api'}/leagues/${liga.id}/market/close`, {
+                        fetch(`${apiUrl}/leagues/${liga.id}/market/close`, {
                             method: 'POST',
                             headers: { Authorization: `Bearer ${session.access_token}` }
                         }).catch(() => {}).finally(() => {

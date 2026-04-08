@@ -1,9 +1,7 @@
 import { supabase } from './supabase.js';
+import { getEnv } from './env.js';
 
-// URL base — en desarrollo localhost, en producción viene de /api/config
-const API_BASE_URL = window.__ENV__?.apiUrl ?? 'http://localhost:3000/api';
-
-// ── Caché en memoria (TTL = 5 minutos) ───────────────────────────────────────
+// Cache en memoria (TTL = 5 minutos)
 // Evita peticiones redundantes al servidor para datos que cambian poco.
 const cache = new Map();
 const CACHE_TTL_MS = 5 * 60 * 1000;
@@ -26,17 +24,18 @@ export function invalidateCache(key) {
     cache.delete(key);
 }
 
-// ── Token de autenticación ────────────────────────────────────────────────────
+// Token de autenticacion
 // Usamos supabase.auth.getSession() en lugar de leer localStorage directamente.
-// Supabase v2 gestiona internamente la key de almacenamiento (varía por proyecto),
-// así que acceder a localStorage con una key hardcodeada siempre falla.
+// Supabase v2 gestiona internamente la key de almacenamiento (varia por proyecto),
+// asi que acceder a localStorage con una key hardcodeada siempre falla.
 async function getAuthToken() {
     const { data: { session } } = await supabase.auth.getSession();
     return session?.access_token ?? null;
 }
 
-// ── Cliente HTTP base ─────────────────────────────────────────────────────────
+// Cliente HTTP base
 export async function apiFetch(endpoint, options = {}) {
+    const env = await getEnv();
     const token = await getAuthToken();
 
     const headers = {
@@ -45,7 +44,7 @@ export async function apiFetch(endpoint, options = {}) {
         ...options.headers,
     };
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
+    const response = await fetch(`${env.apiUrl}${endpoint}`, { ...options, headers });
     const data = await response.json();
 
     if (!response.ok) {
@@ -55,16 +54,16 @@ export async function apiFetch(endpoint, options = {}) {
     return data;
 }
 
-// ── Endpoints del mercado ─────────────────────────────────────────────────────
+// Endpoints del mercado
 
-/** Jugadores del mercado con caché de 5 minutos */
+/** Jugadores del mercado con cache de 5 minutos */
 /** Jugadores del mercado activo de una liga */
 export async function fetchMarketPlayers(leagueId, page = 0) {
     if (!leagueId) return [];
 
     const cacheKey = `league-market-${leagueId}-${page}`;
     const cached   = getCached(cacheKey);
-    if (cached?.length) return cached;  // Solo usar caché si tiene datos reales
+    if (cached?.length) return cached;  // Solo usar cache si tiene datos reales
 
     const result = await apiFetch(`/leagues/${leagueId}/market`);
     if (result.data?.length) {
@@ -99,9 +98,9 @@ export async function cancelBidRequest(leagueId, playerApiId) {
 }
 
 
-// ── Endpoints de ligas ────────────────────────────────────────────────────────
+// Endpoints de ligas
 
-/** Temporadas históricas disponibles del dataset Kaggle */
+/** Temporadas historicas disponibles del dataset Kaggle */
 export async function fetchTemporadas() {
     return (await apiFetch('/temporadas')).data;
 }
@@ -124,7 +123,7 @@ export async function crearLiga(nombre, season, kaggleLeagueId) {
     })).data;
 }
 
-/** Une al usuario a una liga con su código de invitación */
+/** Une al usuario a una liga con su codigo de invitacion */
 export async function unirseALiga(inviteCode) {
     return (await apiFetch('/leagues/join', {
         method: 'POST',
@@ -132,7 +131,7 @@ export async function unirseALiga(inviteCode) {
     })).data;
 }
 
-// ── Endpoints de plantilla ────────────────────────────────────────────────────
+// Endpoints de plantilla
 
 /** Plantilla completa del usuario en una liga */
 export async function fetchRoster(leagueId) {

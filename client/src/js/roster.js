@@ -1,19 +1,32 @@
 import { fetchRoster, toggleStarter, apiFetch } from './api.js';
 import { abrirPlayerDrawer } from './player-drawer.js';
 import { getLigaActiva } from './leagues.js';
-import { createPlayerAvatar } from './player-image.js';
+import { createPlayerAvatar, createPlayerPortrait, createClubLogo } from './player-image.js';
 
-// ── Estado ────────────────────────────────────────────────────────────────────
+let _roster = [];
+let _puntos = {};
+let _jornada = 0;
 
-let _roster    = [];
-let _puntos    = {}; // { player_api_id: { total, porJornada: [{jornada, base, cronista, total, picas, tipo}] } }
-let _jornada   = 0;
+const POSICION_LABEL = {
+    PT: 'Portero',
+    DF: 'Defensa',
+    MC: 'Centrocampista',
+    DL: 'Delantero',
+};
 
-const POSICION_LABEL = { PT: 'Portero', DF: 'Defensa', MC: 'Centrocampista', DL: 'Delantero' };
-const POSICION_SHORT = { PT: 'POR', DF: 'DEF', MC: 'MED', DL: 'DEL' };
-const PICAS_LABEL    = { NEG: '👎 Negativo', SC: '—', P1: '★', P2: '★★', P3: '★★★', P4: '★★★★' };
+const POSICION_SHORT = {
+    PT: 'POR',
+    DF: 'DEF',
+    MC: 'MED',
+    DL: 'DEL',
+};
 
-// ── Carga principal ───────────────────────────────────────────────────────────
+const POS_BG = {
+    PT: 'card-accent-PT',
+    DF: 'card-accent-DF',
+    MC: 'card-accent-MC',
+    DL: 'card-accent-DL',
+};
 
 export async function loadRoster() {
     const liga = getLigaActiva();
@@ -21,7 +34,7 @@ export async function loadRoster() {
 
     try {
         [_roster] = await Promise.all([
-            fetchRoster(liga.id).then(r => r ?? []),
+            fetchRoster(liga.id).then((r) => r ?? []),
         ]);
 
         await cargarPuntos(liga.id);
@@ -33,36 +46,45 @@ export async function loadRoster() {
 
 async function cargarPuntos(ligaId) {
     try {
-        const ligaData = await apiFetch(`/admin/ligas`);
-        const ligaInfo = (ligaData.data ?? []).find(l => l.id === ligaId);
+        const ligaData = await apiFetch('/admin/ligas');
+        const ligaInfo = (ligaData.data ?? []).find((l) => l.id === ligaId);
         _jornada = ligaInfo?.jornada_actual ?? 0;
-        if (_jornada === 0) { _puntos = {}; return; }
 
-        const res    = await apiFetch(`/admin/ligas/${ligaId}/scores`);
+        if (_jornada === 0) {
+            _puntos = {};
+            return;
+        }
+
+        const res = await apiFetch(`/admin/ligas/${ligaId}/scores`);
         const scores = res.data ?? [];
 
         _puntos = {};
         const porJugador = {};
+
         for (const s of scores) {
             const id = s.player_api_id;
-            if (!porJugador[id]) porJugador[id] = { total: 0, jornadas: {} };
+            if (!porJugador[id]) {
+                porJugador[id] = { total: 0, jornadas: {} };
+            }
+
             porJugador[id].total += Number(s.puntos_total);
             porJugador[id].jornadas[s.jornada] = {
-                base:     Number(s.puntos_base).toFixed(1),
+                base: Number(s.puntos_base).toFixed(1),
                 cronista: Number(s.puntos_cronista),
-                total:    Number(s.puntos_total),
-                picas:    s.picas,
-                tipo:     s.cronista_type,
-                jugo:     true,
+                total: Number(s.puntos_total),
+                picas: s.picas,
+                tipo: s.cronista_type,
+                jugo: true,
             };
         }
 
         for (const [id, datos] of Object.entries(porJugador)) {
             const porJornada = [];
             for (let j = 1; j <= _jornada; j++) {
-                porJornada.push(datos.jornadas[j]
-                    ? { jornada: j, ...datos.jornadas[j] }
-                    : { jornada: j, jugo: false }
+                porJornada.push(
+                    datos.jornadas[j]
+                        ? { jornada: j, ...datos.jornadas[j] }
+                        : { jornada: j, jugo: false },
                 );
             }
             _puntos[id] = { total: datos.total, porJornada };
@@ -77,56 +99,106 @@ function getPuntosJugador(playerApiId) {
     return _puntos[playerApiId] ?? { total: 0, porJornada: [] };
 }
 
+function getPuntosJornadaActual(playerApiId) {
+    const puntos = getPuntosJugador(playerApiId);
+    if (!_jornada || !Array.isArray(puntos.porJornada)) return null;
+
+    const jornadaActual = puntos.porJornada.find((item) => Number(item.jornada) === Number(_jornada));
+    if (!jornadaActual) return null;
+    if (jornadaActual.jugo === false) return 0;
+
+    return Number.isFinite(Number(jornadaActual.total)) ? Number(jornadaActual.total) : null;
+}
+
+function formatScoreBadge(value) {
+    if (value === null || Number.isNaN(value)) return '-';
+    return `${Math.trunc(value)}`;
+}
+
+function createClippedClubBadge(clubLogoUrl, className, size = 92) {
+    const badge = document.createElement('div');
+    badge.className = className;
+
+    const logo = createClubLogo({
+        clubLogoUrl: clubLogoUrl ?? null,
+        size,
+        alt: 'Escudo del club',
+    });
+
+    logo.style.cssText += ';width:100%;height:100%;object-fit:contain;transform:translateX(28%);';
+    badge.appendChild(logo);
+
+    return badge;
+}
+
 function renderTodo() {
-    const titulares = _roster.filter(j => j.is_starter);
-    const suplentes = _roster.filter(j => !j.is_starter);
+    const titulares = _roster.filter((j) => j.is_starter);
+    const suplentes = _roster.filter((j) => !j.is_starter);
+
     renderCampo(titulares, suplentes);
     renderBanquillo(suplentes);
     renderCampoDashboard(titulares);
 }
 
-// ── Campo ─────────────────────────────────────────────────────────────────────
-
-const POS_BG = { PT: 'slot-bg-PT', DF: 'slot-bg-DF', MC: 'slot-bg-MC', DL: 'slot-bg-DL' };
-
 function rellenarSlot(slot, jugador) {
-    const pts = getPuntosJugador(jugador.player_api_id ?? jugador.id);
+    const jornadaPts = getPuntosJornadaActual(jugador.player_api_id ?? jugador.id);
 
     slot.className = 'player-slot';
     slot.dataset.playerId = jugador.id;
     slot.onclick = null;
+    slot.innerHTML = '';
 
-    // Usamos innerHTML solo para la estructura estática; el avatar se inyecta
-    // después con JS para poder usar createPlayerAvatar con imagen real.
-    slot.innerHTML = `
-        <div class="player-slot-card" style="cursor:pointer">
-            <button class="slot-remove" title="Al banquillo">×</button>
-            <div class="player-slot-top ${POS_BG[jugador.position] ?? 'slot-bg-MC'}" data-avatar-target></div>
-            <div class="player-slot-bottom">
-                <div class="player-slot-name">${jugador.name.split(' ').pop()}</div>
-                <div class="player-slot-ovr" style="color:${pts.total >= 0 ? '#60a5fa' : '#f87171'}">${pts.total} pts</div>
-                <div class="player-slot-pos">${POSICION_SHORT[jugador.position] ?? jugador.position}</div>
-            </div>
-        </div>`;
+    const card = document.createElement('div');
+    card.className = `lineup-player-card ${POS_BG[jugador.position] ?? 'card-accent-MC'}`;
+    card.style.cursor = 'pointer';
 
-    // Inyectar avatar con foto real en el contenedor marcado
-    const avatarTarget = slot.querySelector('[data-avatar-target]');
-    const avatar = createPlayerAvatar({
-        name:     jugador.name,
-        faceUrl:  jugador.faceUrl ?? null,
-        playerFifaApiId: jugador.playerFifaApiId ?? null,
-        position: jugador.position,
-        size:     40,
-    });
-    avatar.style.margin = 'auto';
-    avatarTarget.appendChild(avatar);
-
-    slot.querySelector('.slot-remove').addEventListener('click', (e) => {
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'slot-remove';
+    removeBtn.title = 'Al banquillo';
+    removeBtn.textContent = '×';
+    removeBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         moverJugador(jugador, false);
     });
 
-    slot.querySelector('.player-slot-card').addEventListener('click', (e) => {
+    const title = document.createElement('div');
+    title.className = 'lineup-player-name';
+    title.textContent = jugador.name;
+
+    const logoBadge = createClippedClubBadge(jugador.clubLogoUrl ?? null, 'lineup-player-logo-clip');
+
+    const portraitFrame = document.createElement('div');
+    portraitFrame.className = 'lineup-player-portrait-frame';
+    portraitFrame.appendChild(createPlayerPortrait({
+        name: jugador.name,
+        faceUrl: jugador.faceUrl ?? null,
+        playerFifaApiId: jugador.playerFifaApiId ?? null,
+        position: jugador.position,
+        className: 'lineup-player-portrait',
+        imageClassName: 'lineup-player-portrait-media',
+    }));
+
+    const club = document.createElement('div');
+    club.className = 'lineup-player-club';
+    club.textContent = jugador.real_team ?? 'Sin equipo';
+
+    const scoreBadge = document.createElement('div');
+    scoreBadge.className = [
+        'lineup-player-score',
+        jornadaPts !== null && jornadaPts < 0 ? 'lineup-player-score-negative' : '',
+    ].join(' ').trim();
+    scoreBadge.textContent = formatScoreBadge(jornadaPts);
+
+    card.appendChild(removeBtn);
+    card.appendChild(title);
+    card.appendChild(logoBadge);
+    card.appendChild(portraitFrame);
+    card.appendChild(club);
+
+    slot.appendChild(card);
+    slot.appendChild(scoreBadge);
+
+    card.addEventListener('click', (e) => {
         e.stopPropagation();
         abrirPanelJugador(jugador);
     });
@@ -144,7 +216,10 @@ function vaciarSlot(slot, posicion, suplentesDisponibles) {
         </div>`;
 
     if (suplentesDisponibles.length > 0) {
-        slot.onclick = (e) => { e.stopPropagation(); abrirSelectorPosicion(slot, posicion, suplentesDisponibles); };
+        slot.onclick = (e) => {
+            e.stopPropagation();
+            abrirSelectorPosicion(slot, posicion, suplentesDisponibles);
+        };
     } else {
         slot.onclick = null;
         slot.style.cursor = 'default';
@@ -159,9 +234,11 @@ function renderCampo(titulares, suplentes) {
         DF: document.querySelectorAll('#pitch-main [data-pos="DF"]'),
         PT: document.querySelectorAll('#pitch-main [data-pos="PT"]'),
     };
+
     for (const [pos, slots] of Object.entries(filas)) {
-        const jugadoresPos = titulares.filter(j => j.position === pos);
-        const suplentesPos = suplentes.filter(j => j.position === pos);
+        const jugadoresPos = titulares.filter((j) => j.position === pos);
+        const suplentesPos = suplentes.filter((j) => j.position === pos);
+
         slots.forEach((slot, i) => {
             if (jugadoresPos[i]) rellenarSlot(slot, jugadoresPos[i]);
             else vaciarSlot(slot, pos, suplentesPos);
@@ -169,20 +246,16 @@ function renderCampo(titulares, suplentes) {
     }
 }
 
-// ── Panel de detalle del jugador ──────────────────────────────────────────────
-
 function abrirPanelJugador(jugador) {
     abrirPlayerDrawer({
         playerApiId: jugador.player_api_id ?? jugador.id,
-        name:        jugador.name,
-        position:    jugador.position,
+        name: jugador.name,
+        position: jugador.position,
         marketValue: jugador.purchase_price ?? 0,
-        faceUrl:     jugador.faceUrl    ?? null,
+        faceUrl: jugador.faceUrl ?? null,
         clubLogoUrl: jugador.clubLogoUrl ?? null,
     });
 }
-
-// ── Selector de posición ──────────────────────────────────────────────────────
 
 function abrirSelectorPosicion(slotEl, posicion, suplentes) {
     cerrarTodosLosSelectores();
@@ -198,23 +271,26 @@ function abrirSelectorPosicion(slotEl, posicion, suplentes) {
 
     const titulo = document.createElement('p');
     titulo.style.cssText = 'font-size:9px;font-weight:700;color:#3b82f6;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px';
-    titulo.textContent = `Añadir ${POSICION_LABEL[posicion] ?? posicion}`;
+    titulo.textContent = `Anadir ${POSICION_LABEL[posicion] ?? posicion}`;
     popup.appendChild(titulo);
 
     for (const jugador of suplentes) {
         const pts = getPuntosJugador(jugador.player_api_id ?? jugador.id);
         const btn = document.createElement('button');
         btn.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;width:100%;background:transparent;border:none;cursor:pointer';
-        btn.onmouseenter = () => btn.style.background = 'rgba(255,255,255,0.07)';
-        btn.onmouseleave = () => btn.style.background = 'transparent';
+        btn.onmouseenter = () => {
+            btn.style.background = 'rgba(255,255,255,0.07)';
+        };
+        btn.onmouseleave = () => {
+            btn.style.background = 'transparent';
+        };
 
-        // Avatar pequeño con foto real (28px)
         const avatar = createPlayerAvatar({
-            name:     jugador.name,
-            faceUrl:  jugador.faceUrl ?? null,
+            name: jugador.name,
+            faceUrl: jugador.faceUrl ?? null,
             playerFifaApiId: jugador.playerFifaApiId ?? null,
             position: jugador.position,
-            size:     28,
+            size: 28,
         });
 
         const info = document.createElement('div');
@@ -238,23 +314,24 @@ function abrirSelectorPosicion(slotEl, posicion, suplentes) {
             cerrarTodosLosSelectores();
             moverJugador(jugador, true);
         });
+
         popup.appendChild(btn);
     }
 
     document.body.appendChild(popup);
-    const rect   = slotEl.getBoundingClientRect();
+    const rect = slotEl.getBoundingClientRect();
     const popupH = suplentes.length * 44 + 32;
-    popup.style.top  = `${Math.max(8, rect.top - popupH - 8)}px`;
+    popup.style.top = `${Math.max(8, rect.top - popupH - 8)}px`;
     popup.style.left = `${Math.max(8, Math.min(rect.left + rect.width / 2 - 90, window.innerWidth - 196))}px`;
 
-    setTimeout(() => document.addEventListener('click', cerrarTodosLosSelectores, { once: true }), 10);
+    setTimeout(() => {
+        document.addEventListener('click', cerrarTodosLosSelectores, { once: true });
+    }, 10);
 }
 
 function cerrarTodosLosSelectores() {
     document.getElementById('position-selector-popup')?.remove();
 }
-
-// ── Banquillo ─────────────────────────────────────────────────────────────────
 
 function renderBanquillo(suplentes) {
     const container = document.getElementById('bench-players');
@@ -263,8 +340,8 @@ function renderBanquillo(suplentes) {
     if (!suplentes.length) {
         container.innerHTML = `
             <div class="flex-1 border-2 border-dashed border-white/10 rounded-3xl flex flex-col items-center justify-center text-center p-8 bg-white/5">
-                <p class="text-sm font-bold text-slate-300">Banquillo vacío</p>
-                <p class="text-xs text-slate-500 mt-2">Todos tus jugadores están en el once.</p>
+                <p class="text-sm font-bold text-slate-300">Banquillo vacio</p>
+                <p class="text-xs text-slate-500 mt-2">Todos tus jugadores estan en el once.</p>
             </div>`;
         return;
     }
@@ -272,16 +349,24 @@ function renderBanquillo(suplentes) {
     container.innerHTML = '';
     const fragment = document.createDocumentFragment();
     const porPosicion = { PT: [], DF: [], MC: [], DL: [] };
-    for (const j of suplentes) (porPosicion[j.position] ?? porPosicion['MC']).push(j);
+
+    for (const j of suplentes) {
+        (porPosicion[j.position] ?? porPosicion.MC).push(j);
+    }
 
     for (const [pos, jugadores] of Object.entries(porPosicion)) {
         if (!jugadores.length) continue;
+
         const label = document.createElement('p');
         label.className = 'text-[10px] font-black text-slate-500 uppercase tracking-widest mt-3 mb-1 first:mt-0';
         label.textContent = POSICION_LABEL[pos];
         fragment.appendChild(label);
-        for (const jugador of jugadores) fragment.appendChild(crearTarjetaSuplente(jugador));
+
+        for (const jugador of jugadores) {
+            fragment.appendChild(crearTarjetaSuplente(jugador));
+        }
     }
+
     container.appendChild(fragment);
 }
 
@@ -290,13 +375,12 @@ function crearTarjetaSuplente(jugador) {
     const div = document.createElement('div');
     div.className = 'flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/5 hover:border-blue-500/30 transition-colors cursor-pointer';
 
-    // Avatar con foto real (reemplaza el div.user-avatar con iniciales)
     const avatar = createPlayerAvatar({
-        name:     jugador.name,
-        faceUrl:  jugador.faceUrl ?? null,
+        name: jugador.name,
+        faceUrl: jugador.faceUrl ?? null,
         playerFifaApiId: jugador.playerFifaApiId ?? null,
         position: jugador.position,
-        size:     40,
+        size: 40,
     });
 
     const info = document.createElement('div');
@@ -322,7 +406,10 @@ function crearTarjetaSuplente(jugador) {
     const addBtn = document.createElement('button');
     addBtn.className = 'text-blue-400 hover:text-blue-300 text-xs font-bold shrink-0 px-2 py-1 bg-blue-500/10 rounded-lg border border-blue-500/20 hover:bg-blue-500/20 transition-all';
     addBtn.textContent = '+ Once';
-    addBtn.addEventListener('click', (e) => { e.stopPropagation(); moverJugador(jugador, true); });
+    addBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        moverJugador(jugador, true);
+    });
 
     div.appendChild(avatar);
     div.appendChild(info);
@@ -333,15 +420,13 @@ function crearTarjetaSuplente(jugador) {
     return div;
 }
 
-// ── Dashboard mini ────────────────────────────────────────────────────────────
-
 function renderCampoDashboard(titulares) {
     const campo = document.getElementById('pitch-field');
     if (!campo) return;
 
-    campo.querySelectorAll('.fila-delanteros').forEach(el => el.remove());
-    
-    const delanteros = titulares.filter(j => j.position === 'DL').slice(0, 3);
+    campo.querySelectorAll('.fila-delanteros').forEach((el) => el.remove());
+
+    const delanteros = titulares.filter((j) => j.position === 'DL').slice(0, 3);
     if (!delanteros.length) return;
 
     const fila = document.createElement('div');
@@ -355,13 +440,12 @@ function renderCampoDashboard(titulares) {
         const wrapper = document.createElement('div');
         wrapper.className = 'relative';
 
-        // Avatar con foto real (reemplaza div.pitch-player-avatar con iniciales)
         const avatar = createPlayerAvatar({
-            name:     jugador.name,
-            faceUrl:  jugador.faceUrl ?? null,
+            name: jugador.name,
+            faceUrl: jugador.faceUrl ?? null,
             playerFifaApiId: jugador.playerFifaApiId ?? null,
             position: jugador.position,
-            size:     48,
+            size: 48,
             className: 'pitch-player-avatar',
         });
 
@@ -380,27 +464,24 @@ function renderCampoDashboard(titulares) {
         div.appendChild(nombre);
         fila.appendChild(div);
     }
+
     campo.insertBefore(fila, campo.firstChild);
 }
-
-// ── Mover jugador ─────────────────────────────────────────────────────────────
 
 async function moverJugador(jugador, hacerTitular) {
     const liga = getLigaActiva();
     if (!liga) return;
 
-    _roster = _roster.map(j => j.id === jugador.id ? { ...j, is_starter: hacerTitular } : j);
+    _roster = _roster.map((j) => (j.id === jugador.id ? { ...j, is_starter: hacerTitular } : j));
     renderTodo();
 
     try {
         await toggleStarter(liga.id, jugador.id, hacerTitular);
     } catch (err) {
         console.error('[Roster] Error al mover jugador:', err.message);
-        _roster = _roster.map(j => j.id === jugador.id ? { ...j, is_starter: !hacerTitular } : j);
+        _roster = _roster.map((j) => (j.id === jugador.id ? { ...j, is_starter: !hacerTitular } : j));
         renderTodo();
     }
 }
-
-// ── Exposición global ─────────────────────────────────────────────────────────
 
 window.loadRoster = loadRoster;

@@ -308,6 +308,7 @@ export class SupabaseLeagueMarketRepository implements ILeagueMarketRepository {
                 leagueId: row.league_id as number,
                 playerApiId: row.player_api_id as number,
                 playerName: player?.name ?? 'Desconocido',
+                realTeam: player?.realTeam ?? 'Sin equipo',
                 position: (player?.position ?? 'MC') as PlayerPosition,
                 overallRating: player?.overall ?? 50,
                 expiresAt: row.expires_at as string,

@@ -109,11 +109,11 @@
     </div>
 
     <script type="module">
+        import { getApiBaseUrlSync, getEnv } from './js/env.js';
         // URL del backend: se lee del config si está disponible, si no usa producción
-        let API = 'https://fantasyretro.onrender.com/api';
+        let API = getApiBaseUrlSync();
         try {
-            const cfg = await fetch('https://fantasyretro.onrender.com/api/config').then(r => r.json());
-            API = cfg?.apiUrl ?? cfg?.data?.apiUrl ?? API;
+            API = (await getEnv()).apiUrl ?? API;
         } catch (_) {}
         let ligasData = [];
 

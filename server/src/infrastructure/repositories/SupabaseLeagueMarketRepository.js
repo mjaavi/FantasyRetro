@@ -283,20 +283,21 @@ class SupabaseLeagueMarketRepository {
             const playerIds = marketData.map(row => row.player_api_id);
             const playerData = yield (0, leaguePlayerDataHelper_1.loadLeaguePlayerData)(leagueId, playerIds);
             return marketData.map(row => {
-                var _a, _b, _c, _d, _e, _f;
+                var _a, _b, _c, _d, _e, _f, _g;
                 const player = playerData.get(row.player_api_id);
                 return {
                     id: row.id,
                     leagueId: row.league_id,
                     playerApiId: row.player_api_id,
                     playerName: (_a = player === null || player === void 0 ? void 0 : player.name) !== null && _a !== void 0 ? _a : 'Desconocido',
-                    position: ((_b = player === null || player === void 0 ? void 0 : player.position) !== null && _b !== void 0 ? _b : 'MC'),
-                    overallRating: (_c = player === null || player === void 0 ? void 0 : player.overall) !== null && _c !== void 0 ? _c : 50,
+                    realTeam: (_b = player === null || player === void 0 ? void 0 : player.realTeam) !== null && _b !== void 0 ? _b : 'Sin equipo',
+                    position: ((_c = player === null || player === void 0 ? void 0 : player.position) !== null && _c !== void 0 ? _c : 'MC'),
+                    overallRating: (_d = player === null || player === void 0 ? void 0 : player.overall) !== null && _d !== void 0 ? _d : 50,
                     expiresAt: row.expires_at,
                     isActive: row.is_active,
-                    playerFifaApiId: (_d = player === null || player === void 0 ? void 0 : player.playerFifaApiId) !== null && _d !== void 0 ? _d : null,
-                    faceUrl: (_e = player === null || player === void 0 ? void 0 : player.faceUrl) !== null && _e !== void 0 ? _e : null,
-                    clubLogoUrl: (_f = player === null || player === void 0 ? void 0 : player.clubLogoUrl) !== null && _f !== void 0 ? _f : null,
+                    playerFifaApiId: (_e = player === null || player === void 0 ? void 0 : player.playerFifaApiId) !== null && _e !== void 0 ? _e : null,
+                    faceUrl: (_f = player === null || player === void 0 ? void 0 : player.faceUrl) !== null && _f !== void 0 ? _f : null,
+                    clubLogoUrl: (_g = player === null || player === void 0 ? void 0 : player.clubLogoUrl) !== null && _g !== void 0 ? _g : null,
                 };
             });
         });

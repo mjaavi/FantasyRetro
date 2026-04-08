@@ -1,13 +1,19 @@
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');
 const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 // 1. Credenciales
-const supabaseUrl = 'https://umnpkstcvgqnsipllmxd.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVtbnBrc3RjdmdxbnNpcGxsbXhkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDc5OTMwMSwiZXhwIjoyMDg2Mzc1MzAxfQ.KgvpcHjeQX7huH5l9chLYRWdL5VcuhDJPySPnWfdNJs'; 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// 2. Definición de tareas (Carpeta local -> Bucket en Supabase)
+if (!supabaseUrl || !supabaseServiceRoleKey) {
+    throw new Error('Faltan SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY en server/.env');
+}
+
+const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+
+// 2. Definicion de tareas (Carpeta local -> Bucket en Supabase)
 const tareas = [
     {
         local: path.join(__dirname, '..', 'client', 'public', 'players_webp'),
@@ -22,12 +28,12 @@ const tareas = [
 async function ejecutarSubida() {
     for (const tarea of tareas) {
         if (!fs.existsSync(tarea.local)) {
-            console.log(`⚠️ La carpeta ${tarea.local} no existe. Saltando...`);
+            console.log(`La carpeta ${tarea.local} no existe. Saltando...`);
             continue;
         }
 
         const archivos = fs.readdirSync(tarea.local);
-        console.log(`\n🚀 Subiendo ${archivos.length} archivos al bucket "${tarea.bucket}"...`);
+        console.log(`\nSubiendo ${archivos.length} archivos al bucket "${tarea.bucket}"...`);
 
         for (const archivo of archivos) {
             const rutaArchivo = path.join(tarea.local, archivo);
@@ -37,17 +43,17 @@ async function ejecutarSubida() {
                 .from(tarea.bucket)
                 .upload(archivo, fileBuffer, {
                     contentType: 'image/webp',
-                    upsert: true 
+                    upsert: true
                 });
 
             if (error) {
-                console.error(`❌ Error en ${archivo}:`, error.message);
+                console.error(`Error en ${archivo}:`, error.message);
             } else {
-                console.log(`✅ [${tarea.bucket}] Subido: ${archivo}`);
+                console.log(`[${tarea.bucket}] Subido: ${archivo}`);
             }
         }
     }
-    console.log('\n✨ ¡Proceso completado! Todos los cromos y escudos están en la nube.');
+    console.log('\nProceso completado. Todos los cromos y escudos estan en la nube.');
 }
 
 ejecutarSubida();

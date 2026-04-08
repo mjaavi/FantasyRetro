@@ -1,6 +1,7 @@
+import { getApiBaseUrlSync } from './env.js';
+
 const POS_COLOR = { PT: '#f59e0b', DF: '#22c55e', MC: '#a855f7', DL: '#ef4444' };
 const DEFAULT_COLOR = '#3b82f6';
-const API_BASE_URL = window.__ENV__?.apiUrl ?? 'http://localhost:3000/api';
 const FACE_CACHE_BUST_VERSION = '2026-04-04-facefix-2';
 
 function getInitials(name) {
@@ -63,7 +64,10 @@ function extractSofifaFaceEdition(url) {
 function buildPlayerFaceProxyUrl(fifaId, preferredEdition = null) {
     if (!fifaId) return null;
 
-    const url = new URL(`${API_BASE_URL}/assets/player-face/${encodeURIComponent(String(fifaId))}`, window.location.href);
+    const url = new URL(
+        `${getApiBaseUrlSync()}/assets/player-face/${encodeURIComponent(String(fifaId))}`,
+        window.location.href
+    );
     if (preferredEdition) {
         url.searchParams.set('edition', preferredEdition);
     }
@@ -130,7 +134,10 @@ function extractTeamFifaId(url) {
 
 function buildClubLogoProxyUrl(teamFifaId) {
     if (!teamFifaId) return null;
-    return new URL(`${API_BASE_URL}/assets/club-logo/${encodeURIComponent(String(teamFifaId))}`, window.location.href).toString();
+    return new URL(
+        `${getApiBaseUrlSync()}/assets/club-logo/${encodeURIComponent(String(teamFifaId))}`,
+        window.location.href
+    ).toString();
 }
 
 function getClubLogoFallbacks(url) {
@@ -202,6 +209,70 @@ export function createPlayerAvatar({ name, faceUrl, playerFifaApiId = null, posi
         wrapper.appendChild(img);
     } else {
         wrapper.textContent = initials;
+    }
+
+    return wrapper;
+}
+
+export function createPlayerPortrait({
+    name,
+    faceUrl,
+    playerFifaApiId = null,
+    position,
+    className = '',
+    imageClassName = '',
+}) {
+    const color = POS_COLOR[position] ?? DEFAULT_COLOR;
+    const initials = getInitials(name);
+
+    const wrapper = document.createElement('div');
+    wrapper.className = className;
+    wrapper.style.cssText = `
+        position:relative; overflow:hidden;
+        display:flex; align-items:flex-end; justify-content:center;
+        background:linear-gradient(180deg, ${color}22 0%, rgba(2,6,23,0) 68%);
+        color:${color};
+    `;
+
+    const faceCandidateUrls = getPlayerFaceFallbacks(faceUrl, playerFifaApiId);
+
+    if (faceCandidateUrls.length) {
+        const img = document.createElement('img');
+        img.src = withCacheBust(faceCandidateUrls[0]);
+        img.alt = name ?? '';
+        img.loading = 'lazy';
+        img.className = imageClassName;
+        img.style.cssText = `
+            width:100%; height:100%;
+            object-fit:contain; object-position:center bottom;
+            position:absolute; inset:0;
+        `;
+
+        img.onerror = () => {
+            const nextIndex = Number(img.dataset.playerFaceFallbackIndex ?? '1');
+            const nextFallbackUrl = faceCandidateUrls[nextIndex];
+
+            if (nextFallbackUrl) {
+                img.dataset.playerFaceFallbackIndex = String(nextIndex + 1);
+                img.src = withCacheBust(nextFallbackUrl, `${FACE_CACHE_BUST_VERSION}-${nextIndex}`);
+                return;
+            }
+
+            img.remove();
+            wrapper.textContent = initials;
+            wrapper.style.cssText += `
+                font-weight:900; font-size:1.8rem;
+                letter-spacing:-0.04em;
+            `;
+        };
+
+        wrapper.appendChild(img);
+    } else {
+        wrapper.textContent = initials;
+        wrapper.style.cssText += `
+            font-weight:900; font-size:1.8rem;
+            letter-spacing:-0.04em;
+        `;
     }
 
     return wrapper;

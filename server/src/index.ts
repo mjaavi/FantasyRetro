@@ -196,7 +196,15 @@ app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 // En ambos casos ../../client/src resuelve correctamente.
 if (process.env.NODE_ENV !== 'production') {
     const clientDir = path.join(__dirname, '../../client/src');
-    app.use(express.static(clientDir));
+    app.use(express.static(clientDir, {
+        etag: false,
+        lastModified: false,
+        setHeaders: (res) => {
+            res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+        },
+    }));
     console.log(`🗂️  Frontend estático: ${clientDir}`);
 }
 
