@@ -125,6 +125,13 @@ const marketCron = new MarketCron(leagueMarketService);
 const app  = express();
 const PORT = process.env.PORT ?? 3000;
 
+// IMPORTANTE: Render y Cloudflare actúan como proxies inversos.
+// Sin trust proxy, express-rate-limit ve la IP del proxy (compartida por TODOS
+// los usuarios) en lugar de la IP real del cliente, lo que provoca que el rate
+// limit se alcance rápidamente y bloquee a todos los usuarios a la vez.
+// Con trust proxy = 1 Express usa X-Forwarded-For para la IP real del cliente.
+app.set('trust proxy', 1);
+
 // En producción Helmet usa sus defaults estrictos (solo se expone la API, no HTML).
 // En dev también servimos las páginas HTML estáticas, que usan CDNs externos
 // (Tailwind, Supabase vía JSDelivr, Google Fonts) y scripts inline.
@@ -168,7 +175,11 @@ app.use(express.json({ limit: '10kb' }));
 
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: process.env.NODE_ENV === 'production' ? 100 : 1000,
+    // 300 requests por IP real cada 15 min en producción.
+    // Con trust proxy activo, cada usuario usa su IP real (no la del proxy
+    // compartido), por lo que este límite es realmente por usuario individual.
+    // La app hace ~10-15 llamadas al cargar, así que 300 es más que suficiente.
+    max: process.env.NODE_ENV === 'production' ? 300 : 1000,
     standardHeaders: true, legacyHeaders: false,
     message: { status: 'error', message: 'Demasiadas peticiones. Inténtalo de nuevo en 15 minutos.' },
 });
@@ -210,7 +221,7 @@ if (process.env.NODE_ENV !== 'production') {
 
 app.use(errorHandler);
 
-// ── 9. Arranque ───────────────────────────────────────────────────────────────
+// ── 10. Arranque ──────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
     console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
     marketCron.iniciar();

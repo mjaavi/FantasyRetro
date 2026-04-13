@@ -52,6 +52,21 @@ export interface ILeagueMarketRepository {
     updateUserBudget(userId: string, leagueId: number, newBudget: number): Promise<void>;
     addPlayerToRoster(leagueId: number, userId: string, playerApiId: number, purchasePrice: number, isStarter?: boolean): Promise<void>;
 
+    /**
+     * Inserta los 11 jugadores iniciales de un usuario en UNA SOLA TRANSACCIÓN
+     * atómica via RPC de Supabase. Si cualquier jugador falla (ej. UNIQUE violation),
+     * se hace ROLLBACK completo y el usuario no queda con un equipo incompleto.
+     *
+     * @param leagueId - ID de la liga
+     * @param userId   - UUID del usuario
+     * @param players  - Array de exactamente 11 jugadores con su id y precio de compra
+     */
+    addPlayersToRosterBatch(
+        leagueId: number,
+        userId: string,
+        players: { playerApiId: number; purchasePrice: number }[],
+    ): Promise<void>;
+
     // ── Selección de jugadores para el mercado ─────────────────────────────
     // Responsabilidad movida desde la capa de aplicación: el servicio no debe
     // conocer detalles de Supabase ni la estructura de la tabla Match.

@@ -296,6 +296,42 @@ export class SupabaseLeagueMarketRepository implements ILeagueMarketRepository {
         }
     }
 
+    /**
+     * Inserta los 11 jugadores iniciales en UNA SOLA TRANSACCIÓN atómica
+     * via la función RPC `assign_initial_roster` de Supabase/PostgreSQL.
+     * Si cualquier inserción falla (ej. UNIQUE violation), PostgreSQL hace
+     * ROLLBACK automáticamente: el usuario no queda con un equipo incompleto.
+     */
+    async addPlayersToRosterBatch(
+        leagueId: number,
+        userId: string,
+        players: { playerApiId: number; purchasePrice: number }[],
+    ): Promise<void> {
+        if (players.length !== 11) {
+            throw new AppError(
+                `addPlayersToRosterBatch requiere exactamente 11 jugadores, se recibieron ${players.length}.`,
+                400,
+            );
+        }
+
+        const playerIds = players.map(p => p.playerApiId);
+        const prices    = players.map(p => p.purchasePrice);
+
+        const { error } = await supabaseAdmin.rpc('assign_initial_roster', {
+            p_league_id:  leagueId,
+            p_user_id:    userId,
+            p_player_ids: playerIds,
+            p_prices:     prices,
+        });
+
+        if (error) {
+            throw new AppError(
+                `Error en la transacción de asignación inicial del equipo: ${error.message}`,
+                500,
+            );
+        }
+    }
+
     private async enriquecerJugadores(leagueId: number, marketData: Array<Record<string, unknown>>): Promise<LeagueMarketPlayerSnapshot[]> {
         const playerIds = marketData.map(row => row.player_api_id as number);
         const playerData = await loadLeaguePlayerData(leagueId, playerIds);
