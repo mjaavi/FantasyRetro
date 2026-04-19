@@ -1,4 +1,4 @@
-import { fetchRoster, toggleStarter, apiFetch } from './api.js';
+import { fetchRoster, fetchRosterScores, toggleStarter } from './api.js';
 import { abrirPlayerDrawer } from './player-drawer.js';
 import { getLigaActiva } from './leagues.js';
 import { createPlayerAvatar, createPlayerPortrait, createClubLogo } from './player-image.js';
@@ -33,30 +33,29 @@ export async function loadRoster() {
     if (!liga) return;
 
     try {
-        [_roster] = await Promise.all([
-            fetchRoster(liga.id).then((r) => r ?? []),
+        const [roster, scoreSummary] = await Promise.all([
+            fetchRoster(liga.id).then(r => r ?? []),
+            fetchRosterScores(liga.id).catch(() => ({ jornadaActual: 0, scores: [] })),
         ]);
 
-        await cargarPuntos(liga.id);
+        _roster = roster;
+        cargarPuntos(scoreSummary);
         renderTodo();
     } catch (err) {
         console.error('[Roster]', err.message);
     }
 }
 
-async function cargarPuntos(ligaId) {
+function cargarPuntos(scoreSummary) {
     try {
-        const ligaData = await apiFetch('/admin/ligas');
-        const ligaInfo = (ligaData.data ?? []).find((l) => l.id === ligaId);
-        _jornada = ligaInfo?.jornada_actual ?? 0;
+        _jornada = Number(scoreSummary?.jornadaActual ?? 0);
 
         if (_jornada === 0) {
             _puntos = {};
             return;
         }
 
-        const res = await apiFetch(`/admin/ligas/${ligaId}/scores`);
-        const scores = res.data ?? [];
+        const scores = scoreSummary?.scores ?? [];
 
         _puntos = {};
         const porJugador = {};

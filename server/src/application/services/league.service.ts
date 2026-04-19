@@ -10,56 +10,49 @@ export const TEMPORADAS_DISPONIBLES = [
 ];
 
 export class LeagueService {
-
     constructor(
         private readonly repo: ILeagueRepository = new SupabaseLeagueRepository(),
         private readonly marketService: LeagueMarketService,
-        private readonly onboardingService: LeagueOnboardingService
+        private readonly onboardingService: LeagueOnboardingService,
     ) {}
 
     async crearLiga(userId: string, nombre: string, season: string, kaggleLeagueId: number, userToken: string) {
         if (!TEMPORADAS_DISPONIBLES.includes(season)) {
-            throw new AppError(`Temporada no válida. Opciones: ${TEMPORADAS_DISPONIBLES.join(', ')}`, 400);
+            throw new AppError(`Temporada no valida. Opciones: ${TEMPORADAS_DISPONIBLES.join(', ')}`, 400);
         }
 
         const inviteCode = this.generarCodigoInvitacion();
         const liga = await this.repo.createWithUserToken(
             { name: nombre, invite_code: inviteCode, admin_id: userId, season, kaggle_league_id: kaggleLeagueId },
-            userToken
+            userToken,
         );
 
-        await this.repo.addParticipantWithUserToken(
-            liga.id, userId, userToken
-        );
+        await this.repo.addParticipantWithUserToken(liga.id, userId, userToken);
 
-        // Generar el equipo aleatorio y presupuesto base en background sin bloquear la respuesta HTTP
+        // El equipo inicial puede tardar bastante porque enriquece muchos jugadores.
+        // Lo dejamos en background para no bloquear la creacion de la liga.
         this.onboardingService.assignInitialTeam(liga.id, userId).catch(err => {
             console.error(`[LeagueService] Fallo al generar equipo inicial para ${userId} en liga ${liga.id}:`, err);
         });
 
-        // Abrir el mercado automáticamente al crear la liga
-        // Si falla no bloqueamos la creación — el admin puede abrirlo después
-        try {
-            await this.marketService.openMarket(liga.id);
-        } catch (err: any) {
-            console.warn(`[LeagueService] Mercado no abierto automáticamente para liga ${liga.id}:`, err.message);
-        }
+        // Abrir mercado en background acelera la respuesta inicial.
+        // Si falla, el primer acceso a mercado volvera a intentarlo.
+        this.marketService.openMarket(liga.id).catch((err: any) => {
+            console.warn(`[LeagueService] Mercado no abierto automaticamente para liga ${liga.id}:`, err.message);
+        });
 
         return liga;
     }
 
     async unirseALiga(userId: string, inviteCode: string, userToken: string) {
         const liga = await this.repo.findByInviteCode(inviteCode);
-        if (!liga) throw new AppError('Código de invitación inválido.', 404);
+        if (!liga) throw new AppError('Codigo de invitacion invalido.', 404);
 
         const yaParticipa = await this.repo.findParticipant(liga.id, userId);
         if (yaParticipa) throw new AppError('Ya eres participante de esta liga.', 409);
 
-        await this.repo.addParticipantWithUserToken(
-            liga.id, userId, userToken
-        );
+        await this.repo.addParticipantWithUserToken(liga.id, userId, userToken);
 
-        // Generar el equipo aleatorio y presupuesto base en background sin bloquear la respuesta HTTP
         this.onboardingService.assignInitialTeam(liga.id, userId).catch(err => {
             console.error(`[LeagueService] Fallo al generar equipo inicial para ${userId} en liga ${liga.id}:`, err);
         });

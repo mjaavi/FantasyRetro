@@ -3,11 +3,6 @@ import { Request, Response, NextFunction } from 'express';
 import { RosterService }   from '../../application/services/roster.service';
 import { ValidationError } from '../../domain/errors/AppError';
 
-function extractToken(req: Request): string {
-    const h = req.headers.authorization ?? '';
-    return h.startsWith('Bearer ') ? h.slice(7) : '';
-}
-
 export class RosterController {
     constructor(private readonly rosterService: RosterService) {}
 
@@ -17,6 +12,15 @@ export class RosterController {
             if (!Number.isInteger(leagueId) || leagueId <= 0) throw new ValidationError('ID de liga inválido.');
             const roster = await this.rosterService.getRoster(req.userId!, leagueId);
             res.json({ status: 'ok', data: roster });
+        } catch (err) { next(err); }
+    };
+
+    getRosterScores = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const leagueId = Number(req.params.leagueId);
+            if (!Number.isInteger(leagueId) || leagueId <= 0) throw new ValidationError('ID de liga invÃ¡lido.');
+            const summary = await this.rosterService.getRosterScores(req.userId!, leagueId);
+            res.json({ status: 'ok', data: summary });
         } catch (err) { next(err); }
     };
 

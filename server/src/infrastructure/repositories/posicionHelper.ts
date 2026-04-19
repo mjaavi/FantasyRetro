@@ -1,47 +1,68 @@
 import { supabaseAdmin } from '../supabase.client';
 
+const DEFAULT_POSITION = 'MC';
+const positionCache = new Map<number, string>();
+
 /**
- * Infiere la posición de cada jugador usando la función SQL get_player_avg_y
- * que calcula la Y media táctica del jugador en la tabla Match de Kaggle.
- *
- * Y = 1        → PT
- * Y = 2..4     → DF
- * Y = 5..8     → MC
- * Y = 9..11    → DL
+ * Infiere la posicion media del jugador a partir de la RPC `get_player_avg_y`.
+ * Como la posicion historica no cambia entre llamadas, cacheamos el resultado
+ * para evitar repetir decenas de RPCs en mercado, roster y dashboard.
  */
-export async function inferirPosicionesDesdeMatch(
-    playerIds: number[]
-): Promise<Map<number, string>> {
+export async function inferirPosicionesDesdeMatch(playerIds: number[]): Promise<Map<number, string>> {
     const result = new Map<number, string>();
     if (!playerIds.length) return result;
 
-    const CHUNK_SIZE = 50;
-    
-    for (let i = 0; i < playerIds.length; i += CHUNK_SIZE) {
-        const chunk = playerIds.slice(i, i + CHUNK_SIZE);
-        const promises = chunk.map(async (playerId) => {
-            const { data, error } = await supabaseAdmin
-                .rpc('get_player_avg_y', { p_player_id: playerId });
+    const uniqueIds = [...new Set(playerIds.filter(playerId => Number.isInteger(playerId) && playerId > 0))];
+    const uncachedIds: number[] = [];
 
-            if (error) {
-                console.error(`[Posicion] RPC error para ${playerId}:`, error.message, error.code);
-                result.set(playerId, 'MC');
-            } else if (data === null || data === undefined) {
-                result.set(playerId, 'MC');
-            } else {
-                const pos = yMediaAPosicion(Number(data));
-                result.set(playerId, pos);
-            }
-        });
-        await Promise.all(promises);
+    for (const playerId of uniqueIds) {
+        const cachedPosition = positionCache.get(playerId);
+        if (cachedPosition) {
+            result.set(playerId, cachedPosition);
+            continue;
+        }
+
+        uncachedIds.push(playerId);
+    }
+
+    const CHUNK_SIZE = 50;
+    for (let i = 0; i < uncachedIds.length; i += CHUNK_SIZE) {
+        const chunk = uncachedIds.slice(i, i + CHUNK_SIZE);
+        const resolvedChunk = await Promise.all(chunk.map(resolvePlayerPosition));
+
+        for (const [playerId, position] of resolvedChunk) {
+            positionCache.set(playerId, position);
+            result.set(playerId, position);
+        }
+    }
+
+    for (const playerId of uniqueIds) {
+        if (!result.has(playerId)) {
+            result.set(playerId, positionCache.get(playerId) ?? DEFAULT_POSITION);
+        }
     }
 
     return result;
 }
 
+async function resolvePlayerPosition(playerId: number): Promise<[number, string]> {
+    const { data, error } = await supabaseAdmin.rpc('get_player_avg_y', { p_player_id: playerId });
+
+    if (error) {
+        console.error(`[Posicion] RPC error para ${playerId}:`, error.message, error.code);
+        return [playerId, DEFAULT_POSITION];
+    }
+
+    if (data === null || data === undefined) {
+        return [playerId, DEFAULT_POSITION];
+    }
+
+    return [playerId, yMediaAPosicion(Number(data))];
+}
+
 function yMediaAPosicion(y: number): string {
-    if (y <= 1.5)             return 'PT';
-    if (y >= 2 && y <= 4.5)   return 'DF';
+    if (y <= 1.5) return 'PT';
+    if (y >= 2 && y <= 4.5) return 'DF';
     if (y >= 4.5 && y <= 8.5) return 'MC';
     return 'DL';
 }

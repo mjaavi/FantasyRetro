@@ -1,4 +1,4 @@
-import { IRosterRepository, RosterPlayer } from '../../domain/ports/IRosterRepository';
+import { IRosterRepository, RosterPlayer, RosterScoreSummary } from '../../domain/ports/IRosterRepository';
 import { SupabaseRosterRepository } from '../../infrastructure/repositories/SupabaseRosterRepository';
 
 /**
@@ -11,6 +11,10 @@ export class RosterService {
 
     async getRoster(userId: string, leagueId: number): Promise<RosterPlayer[]> {
         return this.repo.findByUserAndLeague(userId, leagueId);
+    }
+
+    async getRosterScores(userId: string, leagueId: number): Promise<RosterScoreSummary> {
+        return this.repo.findScoresByUserAndLeague(userId, leagueId);
     }
 
     async toggleStarter(userId: string, leagueId: number, playerApiId: number, isStarter: boolean): Promise<void> {

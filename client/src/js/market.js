@@ -1,4 +1,4 @@
-import { fetchMarketPlayers, fetchUserBids, submitBidRequest, cancelBidRequest, invalidateCache, apiFetch } from './api.js';
+import { fetchMarketPlayers, fetchUserBids, submitBidRequest, cancelBidRequest, invalidateCache } from './api.js';
 import { abrirPlayerDrawer, cerrarPlayerDrawer } from './player-drawer.js';
 import { createPlayerCard } from './market-renderer.js';
 import { getLigaActiva } from './leagues.js';
@@ -25,7 +25,6 @@ export async function loadMarket() {
     }
 
     // Limpiar caché para forzar datos frescos del servidor
-    invalidateCache(`league-market-${liga.id}-0`);
 
     grid.innerHTML = '<p class="text-slate-500 font-bold col-span-full text-center py-10">Cargando mercado...</p>';
 
@@ -37,19 +36,8 @@ export async function loadMarket() {
 
         // Map para lookup O(1): playerApiId → puja del usuario
         const bidsByPlayerId = new Map(bids.map(bid => [bid.playerApiId, bid]));
-
-        // Cargar puntos globales de TODOS los jugadores de la liga
-        let puntosMap = new Map();
-        try {
-            const liga = getLigaActiva();
-            if (liga) {
-                const res = await apiFetch(`/admin/ligas/${liga.id}/global-scores`);
-                const totals = res.data ?? {};
-                for (const [id, pts] of Object.entries(totals)) {
-                    puntosMap.set(Number(id), pts);
-                }
-            }
-        } catch (_) {}
+        state.currentBids = bidsByPlayerId;
+        state.playerPositions = new Map(players.map(player => [player.playerApiId, player.position]));
 
         const fragment = document.createDocumentFragment();
 
@@ -69,7 +57,6 @@ export async function loadMarket() {
                     playerFifaApiId: player.playerFifaApiId ?? null,
                     faceUrl:      player.faceUrl ?? null,
                     clubLogoUrl:  player.clubLogoUrl ?? null,
-                    totalPts:     puntosMap.has(player.playerApiId) ? puntosMap.get(player.playerApiId) : null,
                 };
                 fragment.appendChild(createPlayerCard(playerForRenderer, bidsByPlayerId.get(player.playerApiId)));
             }

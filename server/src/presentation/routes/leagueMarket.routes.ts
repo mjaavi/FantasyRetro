@@ -12,6 +12,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { requireAuth } from '../middleware/auth.middleware';
+import { requireLeagueAdmin, requireLeagueParticipant } from '../middleware/adminGuard.middleware';
 import { validateBody } from '../middleware/validation.middleware';
 import { LeagueMarketController } from '../controllers/leagueMarket.controller';
 
@@ -31,13 +32,15 @@ export type PlaceLeagueBidDto = z.infer<typeof PlaceLeagueBidSchema>;
 
 export function createLeagueMarketRouter(ctrl: LeagueMarketController): Router {
     const r = Router();
+    const participantGuard = [requireAuth, requireLeagueParticipant] as const;
+    const adminGuard = [requireAuth, requireLeagueAdmin] as const;
 
-    r.get('/leagues/:leagueId/market',                       requireAuth, ctrl.getLeagueMarket);
-    r.get('/leagues/:leagueId/market/bids',                  requireAuth, ctrl.getMyLeagueBids);
-    r.post('/leagues/:leagueId/market/bids',                 requireAuth, validateBody(PlaceLeagueBidSchema), ctrl.placeLeagueBid);
-    r.delete('/leagues/:leagueId/market/bids/:playerApiId',  requireAuth, ctrl.cancelLeagueBid);
-    r.post('/leagues/:leagueId/market/open',                 requireAuth, ctrl.openLeagueMarket);
-    r.post('/leagues/:leagueId/market/close',                requireAuth, ctrl.closeLeagueMarket);
+    r.get('/leagues/:leagueId/market',                       ...participantGuard, ctrl.getLeagueMarket);
+    r.get('/leagues/:leagueId/market/bids',                  ...participantGuard, ctrl.getMyLeagueBids);
+    r.post('/leagues/:leagueId/market/bids',                 ...participantGuard, validateBody(PlaceLeagueBidSchema), ctrl.placeLeagueBid);
+    r.delete('/leagues/:leagueId/market/bids/:playerApiId',  ...participantGuard, ctrl.cancelLeagueBid);
+    r.post('/leagues/:leagueId/market/open',                 ...adminGuard, ctrl.openLeagueMarket);
+    r.post('/leagues/:leagueId/market/close',                ...adminGuard, ctrl.closeLeagueMarket);
     r.post('/market/process-expired',                                     ctrl.processExpiredMarkets);
 
     return r;

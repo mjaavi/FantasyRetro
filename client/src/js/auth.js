@@ -42,7 +42,6 @@ function writeAuthCooldowns(cooldowns) {
     try {
         window.localStorage.setItem(AUTH_COOLDOWN_STORAGE_KEY, JSON.stringify(cooldowns));
     } catch {
-        // Si localStorage falla, seguimos funcionando sin persistencia.
     }
 }
 

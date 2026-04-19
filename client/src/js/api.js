@@ -138,6 +138,11 @@ export async function fetchRoster(leagueId) {
     return (await apiFetch(`/roster/${leagueId}`)).data;
 }
 
+/** Resumen de puntos de la plantilla del usuario */
+export async function fetchRosterScores(leagueId) {
+    return (await apiFetch(`/roster/${leagueId}/scores`)).data;
+}
+
 /** Cambia el estado titular/suplente de un jugador */
 export async function toggleStarter(leagueId, playerApiId, isStarter) {
     return apiFetch(`/roster/${leagueId}/${playerApiId}`, {
