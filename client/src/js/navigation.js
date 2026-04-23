@@ -17,7 +17,7 @@ function ocultarCarga() {
 
 // --- NAVEGACIÓN ENTRE PANTALLAS (SPA) ---
 function switchView(viewId, clickedButton) {
-    const views = ['view-dashboard', 'view-liga', 'view-mercado', 'view-equipo', 'view-perfil', 'view-admin'];
+    const views = ['view-dashboard', 'view-liga', 'view-mercado', 'view-equipo', 'view-perfil', 'view-admin', 'view-catalogo'];
 
     mostrarCarga();
     
@@ -59,6 +59,8 @@ function switchView(viewId, clickedButton) {
             Promise.resolve(window.loadProfile()).finally(ocultarCarga);
         } else if (viewId === 'view-admin' && typeof window.loadAdmin === 'function') {
             Promise.resolve(window.loadAdmin()).finally(ocultarCarga);
+        } else if (viewId === 'view-catalogo' && typeof window.loadCatalog === 'function') {
+            Promise.resolve(window.loadCatalog()).finally(ocultarCarga);
         } else {
             setTimeout(ocultarCarga, 300);
         }

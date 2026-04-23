@@ -894,6 +894,10 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                     <span class="nav-btn-label">Equipo</span>
                 </button>
+                <button onclick="switchView('view-catalogo', this)" id="btn-catalogo" class="nav-btn hidden">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M4 12h16M4 17h10"></path></svg>
+                    <span class="nav-btn-label">Catalogo</span>
+                </button>
                 <button onclick="switchView('view-admin', this)" id="btn-admin" class="nav-btn hidden">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                     <span class="nav-btn-label">Admin</span>
@@ -1384,6 +1388,72 @@
                 </div>
             </div>
         </section>
+        <section id="view-catalogo" style="display:none;" class="transition-all duration-300 opacity-0 z-10 relative">
+            <div class="flex items-end justify-between mb-8">
+                <div>
+                    <h2 class="section-title">Catalogo e Imports</h2>
+                    <p class="section-subtitle">Centro global para competiciones, temporadas e historial de cargas</p>
+                </div>
+                <span id="catalog-access-badge" class="px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-400 text-xs font-black uppercase tracking-wider">Catalog Admin</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="bento-card p-5">
+                    <p class="stat-label mb-2">Competiciones Activas</p>
+                    <p id="catalog-competitions-count" class="text-3xl font-black text-white">-</p>
+                </div>
+                <div class="bento-card p-5">
+                    <p class="stat-label mb-2">Temporadas Activas</p>
+                    <p id="catalog-seasons-count" class="text-3xl font-black text-white">-</p>
+                </div>
+                <div class="bento-card p-5">
+                    <p class="stat-label mb-2">Import Jobs Visibles</p>
+                    <p id="catalog-imports-count" class="text-3xl font-black text-white">-</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="bento-card p-6">
+                        <div class="flex items-center justify-between gap-4 mb-4">
+                            <div>
+                                <h3 class="text-xl font-extrabold text-white">Import Jobs Recientes</h3>
+                                <p class="text-slate-400 text-sm">Aqui aparecera la trazabilidad de las cargas CSV del catalogo.</p>
+                            </div>
+                            <button onclick="loadCatalog()" class="btn-glass px-4 py-2 text-xs">Actualizar</button>
+                        </div>
+                        <div id="catalog-jobs-table">
+                            <p class="text-slate-500 text-sm">Cargando import jobs...</p>
+                        </div>
+                    </div>
+
+                    <div class="bento-card p-6">
+                        <h3 class="text-xl font-extrabold text-white mb-2">Siguiente Paso</h3>
+                        <p id="catalog-status" class="text-slate-400 text-sm">Preparando contexto del catalogo...</p>
+                        <div class="mt-4 rounded-2xl border border-dashed border-white/10 bg-black/20 p-4">
+                            <p class="text-white font-bold mb-1">Subida de CSV</p>
+                            <p class="text-slate-400 text-sm">La siguiente iteracion conectara esta vista con el flujo real de upload, validacion, staging y publish.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="bento-card p-6">
+                        <h3 class="text-lg font-extrabold text-white mb-4">Competiciones</h3>
+                        <div id="catalog-competitions-list" class="space-y-3">
+                            <p class="text-slate-500 text-sm">Cargando competiciones...</p>
+                        </div>
+                    </div>
+
+                    <div class="bento-card p-6">
+                        <h3 class="text-lg font-extrabold text-white mb-4">Temporadas</h3>
+                        <div id="catalog-seasons-list" class="space-y-3">
+                            <p class="text-slate-500 text-sm">Cargando temporadas...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
         <!-- ── Vista Admin ── -->
         <section id="view-admin" style="display:none;" class="transition-all duration-300 opacity-0 z-10 relative">
             <div class="flex items-end justify-between mb-8">
@@ -1618,6 +1688,7 @@
                         import('./js/roster.js'),
                         import('./js/profile.js'),
                         import('./js/admin.js'),
+                        import('./js/catalog.js'),
                         import('./js/player-drawer.js'),
                         import('./js/dashboard.js'),
                     ]);

@@ -120,6 +120,26 @@ export async function fetchLeagueCreationOptions() {
     return data;
 }
 
+/** Contexto del catalogo para el usuario autenticado */
+export async function fetchCatalogMe() {
+    const cacheKey = 'catalog-me';
+    const cached = getCached(cacheKey);
+    if (cached) return cached;
+
+    const data = (await apiFetch('/catalog/me')).data ?? {
+        isCatalogAdmin: false,
+        userId: null,
+    };
+
+    setCached(cacheKey, data);
+    return data;
+}
+
+/** Jobs recientes del modulo de imports */
+export async function fetchCatalogImportJobs(limit = 20) {
+    return (await apiFetch(`/catalog/import-jobs?limit=${limit}`)).data ?? [];
+}
+
 /** Ligas en las que participa el usuario */
 export async function fetchMisLigas() {
     return (await apiFetch('/leagues')).data;

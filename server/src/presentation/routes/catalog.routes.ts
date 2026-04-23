@@ -9,6 +9,7 @@ export function createCatalogRouter(ctrl: CatalogController): Router {
     router.get('/catalog/league-options', ctrl.getLeagueCreationOptions);
     router.get('/catalog/competitions', ctrl.getCompetitions);
     router.get('/catalog/seasons', ctrl.getSeasons);
+    router.get('/catalog/me', requireAuth, ctrl.getCatalogMe);
     router.get('/catalog/import-jobs', requireAuth, requireCatalogAdmin, ctrl.getImportJobs);
 
     return router;

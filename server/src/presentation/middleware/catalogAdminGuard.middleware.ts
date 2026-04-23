@@ -9,7 +9,7 @@ const ENV_CATALOG_ADMIN_IDS = new Set(
         .filter(Boolean),
 );
 
-function isBootstrapCatalogAdmin(userId: string | undefined): boolean {
+export function isBootstrapCatalogAdmin(userId: string | undefined): boolean {
     return Boolean(userId && ENV_CATALOG_ADMIN_IDS.has(userId));
 }
 

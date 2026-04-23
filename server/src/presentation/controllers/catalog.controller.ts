@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { CatalogService } from '../../application/services/catalog.service';
 import { ValidationError } from '../../domain/errors/AppError';
+import { isBootstrapCatalogAdmin } from '../middleware/catalogAdminGuard.middleware';
 
 export class CatalogController {
     constructor(
@@ -29,6 +30,24 @@ export class CatalogController {
         try {
             const data = await this.catalogService.getActiveSeasons();
             res.json({ status: 'ok', data });
+        } catch (err) {
+            next(err);
+        }
+    };
+
+    getCatalogMe = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const userId = req.userId!;
+            const isCatalogAdmin = isBootstrapCatalogAdmin(userId)
+                || await this.catalogService.isCatalogAdmin(userId);
+
+            res.json({
+                status: 'ok',
+                data: {
+                    userId,
+                    isCatalogAdmin,
+                },
+            });
         } catch (err) {
             next(err);
         }
