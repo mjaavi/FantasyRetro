@@ -105,6 +105,21 @@ export async function fetchTemporadas() {
     return (await apiFetch('/temporadas')).data;
 }
 
+/** Opciones dinamicas para crear ligas desde el catalogo */
+export async function fetchLeagueCreationOptions() {
+    const cacheKey = 'league-creation-options';
+    const cached = getCached(cacheKey);
+    if (cached) return cached;
+
+    const data = (await apiFetch('/catalog/league-options')).data ?? {
+        competitions: [],
+        seasons: [],
+    };
+
+    setCached(cacheKey, data);
+    return data;
+}
+
 /** Ligas en las que participa el usuario */
 export async function fetchMisLigas() {
     return (await apiFetch('/leagues')).data;
@@ -116,10 +131,10 @@ export async function fetchLiga(leagueId) {
 }
 
 /** Crea una nueva liga */
-export async function crearLiga(nombre, season, kaggleLeagueId) {
+export async function crearLiga(nombre, season, competitionId) {
     return (await apiFetch('/leagues', {
         method: 'POST',
-        body: JSON.stringify({ nombre, season, kaggleLeagueId }),
+        body: JSON.stringify({ nombre, season, competitionId }),
     })).data;
 }
 

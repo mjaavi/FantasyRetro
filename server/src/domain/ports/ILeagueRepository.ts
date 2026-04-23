@@ -4,7 +4,9 @@ export interface FantasyLeague {
     invite_code:      string;
     season:           string;
     admin_id:         string;
+    competition_id?:  number | null;
     kaggle_league_id: number | null;
+    dataset_version_id?: number | null;
     jornada_actual?:  number | null;
     created_at:       string;
 }
@@ -27,6 +29,7 @@ export interface CreateLeagueInput {
     invite_code:      string;
     admin_id:         string;
     season:           string;
+    competition_id?:  number | null;
     kaggle_league_id: number;
 }
 

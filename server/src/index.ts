@@ -36,6 +36,7 @@ import { SupabaseSeedRepository }          from './infrastructure/repositories/S
 import { SupabaseDashboardRepository }     from './infrastructure/repositories/SupabaseDashboardRepository';
 import { SupabaseAdminRepository }         from './infrastructure/repositories/SupabaseAdminRepository';
 import { SupabaseFixturesRepository }      from './infrastructure/repositories/SupabaseFixturesRepository';
+import { SupabaseCatalogRepository }       from './infrastructure/repositories/SupabaseCatalogRepository';
 
 const leagueRepo       = new SupabaseLeagueRepository();
 const leagueMarketRepo = new SupabaseLeagueMarketRepository();
@@ -48,6 +49,7 @@ const dashboardRepo    = new SupabaseDashboardRepository();
 const adminRepo        = new SupabaseAdminRepository(supabaseAdmin);
 const fixturesRepo     = new SupabaseFixturesRepository(supabaseAdmin);
 const datasetParser    = new DatasetParser(supabaseAdmin);
+const catalogRepo      = new SupabaseCatalogRepository(supabaseAdmin);
 
 // ── 2. Application: Servicios puros (sin I/O) ─────────────────────────────────
 import { ScoringEngine }             from './application/services/scoring/ScoringEngine';
@@ -65,10 +67,12 @@ import { SeedService }         from './application/services/seed.service';
 import { LeagueOnboardingService } from './application/services/leagueOnboarding.service';
 import { AdminService }        from './application/services/admin.service';
 import { DashboardService }    from './application/services/dashboard.service';
+import { CatalogService }      from './application/services/catalog.service';
 
 const leagueMarketService = new LeagueMarketService(leagueMarketRepo, leagueRepo);
 const leagueOnboardingSvc = new LeagueOnboardingService(leagueMarketRepo, leagueRepo);
-const leagueService       = new LeagueService(leagueRepo, leagueMarketService, leagueOnboardingSvc);
+const catalogService      = new CatalogService(catalogRepo);
+const leagueService       = new LeagueService(leagueRepo, catalogService, leagueMarketService, leagueOnboardingSvc);
 const marketService       = new MarketService(marketRepo);
 const rankingService      = new RankingService(leagueRepo, rankingRepo);
 const rosterService       = new RosterService(rosterRepo);
@@ -89,8 +93,9 @@ import { AdminController }        from './presentation/controllers/admin.control
 import { DashboardController }    from './presentation/controllers/dashboard.controller';
 import { FixturesController }     from './presentation/controllers/fixtures.controller';
 import { AssetsController }       from './presentation/controllers/assets.controller';
+import { CatalogController }      from './presentation/controllers/catalog.controller';
 
-const leagueCtrl       = new LeagueController(leagueService);
+const leagueCtrl       = new LeagueController(leagueService, catalogService);
 const leagueMarketCtrl = new LeagueMarketController(leagueMarketService);
 const marketCtrl       = new MarketController(marketService);
 const rankingCtrl      = new RankingController(rankingService);
@@ -101,6 +106,7 @@ const adminCtrl        = new AdminController(adminService, leagueMarketService);
 const dashboardCtrl    = new DashboardController(dashboardService);
 const fixturesCtrl     = new FixturesController(fixturesRepo);
 const assetsCtrl       = new AssetsController();
+const catalogCtrl      = new CatalogController(catalogService);
 
 // ── 5. Infrastructure: Routers ────────────────────────────────────────────────
 import { createLeagueRouter }       from './presentation/routes/league.routes';
@@ -115,6 +121,7 @@ import { createDashboardRouter }    from './presentation/routes/dashboard.routes
 import { createFixturesRouter }     from './presentation/routes/fixtures.routes';
 import { createConfigRouter }       from './presentation/routes/config.routes';
 import { createAssetsRouter }       from './presentation/routes/assets.routes';
+import { createCatalogRouter }      from './presentation/routes/catalog.routes';
 import { errorHandler }             from './presentation/middleware/errorHandler.middleware';
 
 // ── 6. Infrastructure: Cron ───────────────────────────────────────────────────
@@ -198,6 +205,7 @@ app.use('/api', createAdminRouter(adminCtrl));
 app.use('/api', createDashboardRouter(dashboardCtrl));
 app.use('/api', createFixturesRouter(fixturesCtrl));
 app.use('/api', createConfigRouter());
+app.use('/api', createCatalogRouter(catalogCtrl));
 
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 

@@ -1,6 +1,6 @@
-// infrastructure/http/controllers/league.controller.ts
 import { Request, Response, NextFunction } from 'express';
-import { LeagueService, TEMPORADAS_DISPONIBLES } from '../../application/services/league.service';
+import { CatalogService } from '../../application/services/catalog.service';
+import { LeagueService } from '../../application/services/league.service';
 import { ValidationError } from '../../domain/errors/AppError';
 
 function extractToken(req: Request): string {
@@ -8,16 +8,34 @@ function extractToken(req: Request): string {
     return h.startsWith('Bearer ') ? h.slice(7) : '';
 }
 
+function normalizeOptionalPositiveInt(value: unknown): number | null {
+    const normalized = Number(value);
+    return Number.isInteger(normalized) && normalized > 0 ? normalized : null;
+}
+
 export class LeagueController {
-    constructor(private readonly leagueService: LeagueService) {}
+    constructor(
+        private readonly leagueService: LeagueService,
+        private readonly catalogService: CatalogService,
+    ) {}
 
     crearLiga = async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const { nombre, season, kaggleLeagueId } = req.body;
+            const { nombre, season, competitionId, kaggleLeagueId } = req.body;
             if (!nombre?.trim())  throw new ValidationError('El nombre de la liga es obligatorio.');
             if (!season)          throw new ValidationError('La temporada es obligatoria.');
-            if (!kaggleLeagueId)  throw new ValidationError('La competición es obligatoria.');
-            const liga = await this.leagueService.crearLiga(req.userId!, nombre.trim(), season, Number(kaggleLeagueId), extractToken(req));
+            if (!competitionId && !kaggleLeagueId) {
+                throw new ValidationError('La competicion es obligatoria.');
+            }
+
+            const liga = await this.leagueService.crearLiga({
+                userId: req.userId!,
+                nombre: nombre.trim(),
+                season: String(season),
+                competitionId: normalizeOptionalPositiveInt(competitionId),
+                kaggleLeagueId: normalizeOptionalPositiveInt(kaggleLeagueId),
+                userToken: extractToken(req),
+            });
             res.status(201).json({ status: 'ok', data: liga });
         } catch (err) { next(err); }
     };
@@ -25,7 +43,7 @@ export class LeagueController {
     unirseALiga = async (req: Request, res: Response, next: NextFunction) => {
         try {
             const { inviteCode } = req.body;
-            if (!inviteCode?.trim()) throw new ValidationError('El código de invitación es obligatorio.');
+            if (!inviteCode?.trim()) throw new ValidationError('El codigo de invitacion es obligatorio.');
             const liga = await this.leagueService.unirseALiga(req.userId!, inviteCode.trim(), extractToken(req));
             res.json({ status: 'ok', data: liga });
         } catch (err) { next(err); }
@@ -41,13 +59,18 @@ export class LeagueController {
     getLiga = async (req: Request, res: Response, next: NextFunction) => {
         try {
             const leagueId = parseInt(req.params.leagueId, 10);
-            if (isNaN(leagueId)) throw new ValidationError('ID de liga inválido.');
+            if (Number.isNaN(leagueId)) throw new ValidationError('ID de liga invalido.');
             const liga = await this.leagueService.getLiga(leagueId, req.userId!);
             res.json({ status: 'ok', data: liga });
         } catch (err) { next(err); }
     };
 
-    getTemporadas = (_req: Request, res: Response) => {
-        res.json({ status: 'ok', data: TEMPORADAS_DISPONIBLES });
+    getTemporadas = async (_req: Request, res: Response, next: NextFunction) => {
+        try {
+            const temporadas = await this.catalogService.getAvailableSeasonLabels();
+            res.json({ status: 'ok', data: temporadas });
+        } catch (err) {
+            next(err);
+        }
     };
 }

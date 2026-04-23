@@ -1,38 +1,53 @@
 import { AppError } from '../../domain/errors/AppError';
 import { ILeagueRepository } from '../../domain/ports/ILeagueRepository';
 import { SupabaseLeagueRepository } from '../../infrastructure/repositories/SupabaseLeagueRepository';
+import { CatalogService, LEGACY_CATALOG_SEASONS } from './catalog.service';
 import { LeagueMarketService } from './leagueMarket.service';
 import { LeagueOnboardingService } from './leagueOnboarding.service';
 
-export const TEMPORADAS_DISPONIBLES = [
-    '2008/2009', '2009/2010', '2010/2011', '2011/2012',
-    '2012/2013', '2013/2014', '2014/2015', '2015/2016',
-];
+export const TEMPORADAS_DISPONIBLES = [...LEGACY_CATALOG_SEASONS];
 
 export class LeagueService {
     constructor(
         private readonly repo: ILeagueRepository = new SupabaseLeagueRepository(),
+        private readonly catalogService: CatalogService,
         private readonly marketService: LeagueMarketService,
         private readonly onboardingService: LeagueOnboardingService,
     ) {}
 
-    async crearLiga(userId: string, nombre: string, season: string, kaggleLeagueId: number, userToken: string) {
-        if (!TEMPORADAS_DISPONIBLES.includes(season)) {
-            throw new AppError(`Temporada no valida. Opciones: ${TEMPORADAS_DISPONIBLES.join(', ')}`, 400);
-        }
+    async crearLiga(input: {
+        userId: string;
+        nombre: string;
+        season: string;
+        competitionId?: number | null;
+        kaggleLeagueId?: number | null;
+        userToken: string;
+    }) {
+        const resolvedCatalog = await this.catalogService.resolveLeagueCreationInput({
+            season: input.season,
+            competitionId: input.competitionId ?? null,
+            kaggleLeagueId: input.kaggleLeagueId ?? null,
+        });
 
         const inviteCode = this.generarCodigoInvitacion();
         const liga = await this.repo.createWithUserToken(
-            { name: nombre, invite_code: inviteCode, admin_id: userId, season, kaggle_league_id: kaggleLeagueId },
-            userToken,
+            {
+                name: input.nombre,
+                invite_code: inviteCode,
+                admin_id: input.userId,
+                season: resolvedCatalog.season,
+                competition_id: resolvedCatalog.competitionId,
+                kaggle_league_id: resolvedCatalog.kaggleLeagueId,
+            },
+            input.userToken,
         );
 
-        await this.repo.addParticipantWithUserToken(liga.id, userId, userToken);
+        await this.repo.addParticipantWithUserToken(liga.id, input.userId, input.userToken);
 
         // El equipo inicial puede tardar bastante porque enriquece muchos jugadores.
         // Lo dejamos en background para no bloquear la creacion de la liga.
-        this.onboardingService.assignInitialTeam(liga.id, userId).catch(err => {
-            console.error(`[LeagueService] Fallo al generar equipo inicial para ${userId} en liga ${liga.id}:`, err);
+        this.onboardingService.assignInitialTeam(liga.id, input.userId).catch(err => {
+            console.error(`[LeagueService] Fallo al generar equipo inicial para ${input.userId} en liga ${liga.id}:`, err);
         });
 
         // Abrir mercado en background acelera la respuesta inicial.

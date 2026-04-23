@@ -3,7 +3,6 @@ import { AppError } from '../../domain/errors/AppError';
 import { FantasyLeague, ILeagueRepository, LeagueParticipant } from '../../domain/ports/ILeagueRepository';
 
 export class SupabaseLeagueRepository implements ILeagueRepository {
-
     async findById(leagueId: number): Promise<FantasyLeague | null> {
         const { data, error } = await supabaseAdmin
             .from('fantasy_leagues')
@@ -24,7 +23,14 @@ export class SupabaseLeagueRepository implements ILeagueRepository {
         return data as FantasyLeague;
     }
 
-    async create(payload: { name: string; invite_code: string; admin_id: string; season: string; kaggle_league_id: number }): Promise<FantasyLeague> {
+    async create(payload: {
+        name: string;
+        invite_code: string;
+        admin_id: string;
+        season: string;
+        competition_id?: number | null;
+        kaggle_league_id: number;
+    }): Promise<FantasyLeague> {
         const { data, error } = await supabaseAdmin
             .from('fantasy_leagues')
             .insert(payload)
@@ -65,7 +71,7 @@ export class SupabaseLeagueRepository implements ILeagueRepository {
     async findLeaguesByUser(userId: string): Promise<(FantasyLeague & { joined_at: string; esAdmin: boolean })[]> {
         const { data, error } = await supabaseAdmin
             .from('league_participants')
-            .select('joined_at, fantasy_leagues ( id, name, invite_code, season, admin_id, kaggle_league_id, created_at )')
+            .select('joined_at, fantasy_leagues ( id, name, invite_code, season, admin_id, competition_id, kaggle_league_id, dataset_version_id, created_at )')
             .eq('user_id', userId);
 
         if (error) throw new AppError('Error al obtener las ligas del usuario.', 500);
@@ -88,8 +94,15 @@ export class SupabaseLeagueRepository implements ILeagueRepository {
     }
 
     async createWithUserToken(
-        payload: { name: string; invite_code: string; admin_id: string; season: string; kaggle_league_id: number },
-        userToken: string
+        payload: {
+            name: string;
+            invite_code: string;
+            admin_id: string;
+            season: string;
+            competition_id?: number | null;
+            kaggle_league_id: number;
+        },
+        userToken: string,
     ): Promise<FantasyLeague> {
         const db = supabaseAsUser(userToken);
         const { data, error } = await db
