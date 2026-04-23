@@ -140,6 +140,32 @@ export async function fetchCatalogImportJobs(limit = 20) {
     return (await apiFetch(`/catalog/import-jobs?limit=${limit}`)).data ?? [];
 }
 
+/** Plantillas soportadas por el modulo de imports */
+export async function fetchCatalogImportTemplates() {
+    return (await apiFetch('/catalog/import-templates')).data ?? [];
+}
+
+/** Crea un import job validando un CSV contra una plantilla */
+export async function createCatalogImportJob({ templateKey, filename, csvContent }) {
+    return (await apiFetch('/catalog/import-jobs', {
+        method: 'POST',
+        body: JSON.stringify({ templateKey, filename, csvContent }),
+    })).data;
+}
+
+/** Carga el detalle de un import job */
+export async function fetchCatalogImportJob(jobId) {
+    return (await apiFetch(`/catalog/import-jobs/${jobId}`)).data;
+}
+
+/** Publica un import job previamente validado */
+export async function publishCatalogImportJob(jobId) {
+    return (await apiFetch(`/catalog/import-jobs/${jobId}/publish`, {
+        method: 'POST',
+        body: JSON.stringify({}),
+    })).data;
+}
+
 /** Ligas en las que participa el usuario */
 export async function fetchMisLigas() {
     return (await apiFetch('/leagues')).data;

@@ -1415,10 +1415,37 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="lg:col-span-2 space-y-6">
                     <div class="bento-card p-6">
+                        <div class="flex items-start justify-between gap-4 mb-5">
+                            <div>
+                                <h3 class="text-xl font-extrabold text-white">Nuevo Import CSV</h3>
+                                <p class="text-slate-400 text-sm">Sube un CSV, validalo contra una plantilla versionada y solo publica si pasa limpio.</p>
+                            </div>
+                            <span class="px-3 py-1 rounded-xl bg-white/5 border border-white/10 text-slate-400 text-xs font-black uppercase tracking-wider">v1</span>
+                        </div>
+                        <form id="catalog-import-form" class="space-y-4">
+                            <div>
+                                <label class="form-label" for="catalog-template-select">Plantilla</label>
+                                <select id="catalog-template-select" class="form-select">
+                                    <option value="">Cargando plantillas...</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label" for="catalog-csv-file">Archivo CSV</label>
+                                <input id="catalog-csv-file" type="file" accept=".csv,text/csv" class="form-input py-2.5">
+                            </div>
+                            <p id="catalog-import-feedback" class="text-sm text-slate-400">Tamano recomendado: hasta 1 MB. Esta primera version valida y publica competiciones o temporadas.</p>
+                            <div class="flex flex-col sm:flex-row gap-3">
+                                <button id="catalog-import-submit" type="submit" class="btn-primary px-5 py-3 sm:w-auto">Validar CSV</button>
+                                <button type="button" onclick="loadCatalog()" class="btn-glass px-5 py-3 sm:w-auto">Recargar panel</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="bento-card p-6">
                         <div class="flex items-center justify-between gap-4 mb-4">
                             <div>
                                 <h3 class="text-xl font-extrabold text-white">Import Jobs Recientes</h3>
-                                <p class="text-slate-400 text-sm">Aqui aparecera la trazabilidad de las cargas CSV del catalogo.</p>
+                                <p class="text-slate-400 text-sm">Cada validacion queda trazada con su checksum, errores y estado de publicacion.</p>
                             </div>
                             <button onclick="loadCatalog()" class="btn-glass px-4 py-2 text-xs">Actualizar</button>
                         </div>
@@ -1428,16 +1455,27 @@
                     </div>
 
                     <div class="bento-card p-6">
-                        <h3 class="text-xl font-extrabold text-white mb-2">Siguiente Paso</h3>
-                        <p id="catalog-status" class="text-slate-400 text-sm">Preparando contexto del catalogo...</p>
-                        <div class="mt-4 rounded-2xl border border-dashed border-white/10 bg-black/20 p-4">
-                            <p class="text-white font-bold mb-1">Subida de CSV</p>
-                            <p class="text-slate-400 text-sm">La siguiente iteracion conectara esta vista con el flujo real de upload, validacion, staging y publish.</p>
+                        <div class="flex items-center justify-between gap-4 mb-3">
+                            <div>
+                                <h3 class="text-xl font-extrabold text-white">Revision del Import</h3>
+                                <p id="catalog-status" class="text-slate-400 text-sm">Selecciona un import job para revisar su preview y decidir si se publica.</p>
+                            </div>
+                            <button id="catalog-publish-selected" type="button" class="btn-primary px-4 py-2 text-xs hidden">Publicar seleccion</button>
+                        </div>
+                        <div id="catalog-job-detail" class="rounded-2xl border border-dashed border-white/10 bg-black/20 p-4">
+                            <p class="text-slate-500 text-sm">Aun no hay un import job seleccionado.</p>
                         </div>
                     </div>
                 </div>
 
                 <div class="space-y-6">
+                    <div class="bento-card p-6">
+                        <h3 class="text-lg font-extrabold text-white mb-4">Plantillas Soportadas</h3>
+                        <div id="catalog-templates-list" class="space-y-3">
+                            <p class="text-slate-500 text-sm">Cargando plantillas...</p>
+                        </div>
+                    </div>
+
                     <div class="bento-card p-6">
                         <h3 class="text-lg font-extrabold text-white mb-4">Competiciones</h3>
                         <div id="catalog-competitions-list" class="space-y-3">

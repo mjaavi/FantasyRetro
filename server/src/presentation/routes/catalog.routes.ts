@@ -10,7 +10,11 @@ export function createCatalogRouter(ctrl: CatalogController): Router {
     router.get('/catalog/competitions', ctrl.getCompetitions);
     router.get('/catalog/seasons', ctrl.getSeasons);
     router.get('/catalog/me', requireAuth, ctrl.getCatalogMe);
+    router.get('/catalog/import-templates', requireAuth, requireCatalogAdmin, ctrl.getImportTemplates);
     router.get('/catalog/import-jobs', requireAuth, requireCatalogAdmin, ctrl.getImportJobs);
+    router.post('/catalog/import-jobs', requireAuth, requireCatalogAdmin, ctrl.createImportJob);
+    router.get('/catalog/import-jobs/:jobId', requireAuth, requireCatalogAdmin, ctrl.getImportJobReview);
+    router.post('/catalog/import-jobs/:jobId/publish', requireAuth, requireCatalogAdmin, ctrl.publishImportJob);
 
     return router;
 }

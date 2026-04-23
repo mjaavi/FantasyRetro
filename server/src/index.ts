@@ -68,10 +68,12 @@ import { LeagueOnboardingService } from './application/services/leagueOnboarding
 import { AdminService }        from './application/services/admin.service';
 import { DashboardService }    from './application/services/dashboard.service';
 import { CatalogService }      from './application/services/catalog.service';
+import { CatalogImportService } from './application/services/catalogImport.service';
 
 const leagueMarketService = new LeagueMarketService(leagueMarketRepo, leagueRepo);
 const leagueOnboardingSvc = new LeagueOnboardingService(leagueMarketRepo, leagueRepo);
 const catalogService      = new CatalogService(catalogRepo);
+const catalogImportService = new CatalogImportService(catalogRepo);
 const leagueService       = new LeagueService(leagueRepo, catalogService, leagueMarketService, leagueOnboardingSvc);
 const marketService       = new MarketService(marketRepo);
 const rankingService      = new RankingService(leagueRepo, rankingRepo);
@@ -106,7 +108,7 @@ const adminCtrl        = new AdminController(adminService, leagueMarketService);
 const dashboardCtrl    = new DashboardController(dashboardService);
 const fixturesCtrl     = new FixturesController(fixturesRepo);
 const assetsCtrl       = new AssetsController();
-const catalogCtrl      = new CatalogController(catalogService);
+const catalogCtrl      = new CatalogController(catalogService, catalogImportService);
 
 // ── 5. Infrastructure: Routers ────────────────────────────────────────────────
 import { createLeagueRouter }       from './presentation/routes/league.routes';
@@ -178,7 +180,7 @@ app.use(cors({
     credentials: true,
 }));
 
-app.use(express.json({ limit: '10kb' }));
+app.use(express.json({ limit: process.env.API_JSON_LIMIT ?? '1mb' }));
 
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
