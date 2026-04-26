@@ -10,6 +10,9 @@ import {
     CatalogImportJobUpdate,
     CatalogSeason,
     CatalogSeasonWriteModel,
+    CatalogPlayerWriteModel,
+    CatalogMatchWriteModel,
+    CatalogTeamWriteModel,
     CreateCatalogImportJobInput,
     ICatalogRepository,
 } from '../../domain/ports/ICatalogRepository';
@@ -431,6 +434,33 @@ export class SupabaseCatalogRepository implements ICatalogRepository {
         if (error) {
             throw new AppError(`Error al publicar temporadas del catalogo: ${error.message}`, 500);
         }
+    }
+
+    async upsertPlayers(rows: CatalogPlayerWriteModel[]): Promise<void> {
+        if (!rows.length) return;
+        const { error } = await this.db
+            .from('players')
+            .upsert(rows, { onConflict: 'id' });
+            
+        if (error) throw new AppError(`Error al publicar jugadores: ${error.message}`, 500);
+    }
+
+    async upsertMatches(rows: CatalogMatchWriteModel[]): Promise<void> {
+        if (!rows.length) return;
+        const { error } = await this.db
+            .from('Match')
+            .upsert(rows); // Assumes Match has standard primary key or duplicates are okay, or no onConflict needed for raw dump
+            
+        if (error) throw new AppError(`Error al publicar Partidos / Fixtures: ${error.message}`, 500);
+    }
+
+    async upsertTeams(rows: CatalogTeamWriteModel[]): Promise<void> {
+        if (!rows.length) return;
+        const { error } = await this.db
+            .from('Team')
+            .upsert(rows, { onConflict: 'team_api_id' });
+            
+        if (error) throw new AppError(`Error al publicar Teams: ${error.message}`, 500);
     }
 
     async userHasRole(userId: string, role: string): Promise<boolean> {

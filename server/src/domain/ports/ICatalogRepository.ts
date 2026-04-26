@@ -114,6 +114,29 @@ export interface CatalogSeasonWriteModel {
     is_active: boolean;
 }
 
+export interface CatalogPlayerWriteModel {
+    id: string; // The player ID
+    name: string;
+    position: string;
+    real_team: string; // the name or ID of the real club team
+    market_value: number;
+}
+
+export interface CatalogMatchWriteModel {
+    home_team_api_id: number;
+    away_team_api_id: number;
+    season: string;
+    stage: number;
+    league_id: number;
+    [key: string]: any; // Allow the 22 player spots
+}
+
+export interface CatalogTeamWriteModel {
+    team_api_id: number;
+    team_long_name: string;
+    team_fifa_api_id: number | null;
+}
+
 export interface ICatalogRepository {
     getActiveCompetitions(): Promise<CatalogCompetition[]>;
     getActiveSeasons(): Promise<CatalogSeason[]>;
@@ -129,5 +152,8 @@ export interface ICatalogRepository {
     getImportJobRows(jobId: number): Promise<CatalogImportJobRow[]>;
     upsertCompetitions(rows: CatalogCompetitionWriteModel[]): Promise<void>;
     upsertSeasons(rows: CatalogSeasonWriteModel[]): Promise<void>;
+    upsertPlayers(rows: CatalogPlayerWriteModel[]): Promise<void>;
+    upsertMatches(rows: CatalogMatchWriteModel[]): Promise<void>;
+    upsertTeams(rows: CatalogTeamWriteModel[]): Promise<void>;
     userHasRole(userId: string, role: string): Promise<boolean>;
 }
