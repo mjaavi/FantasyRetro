@@ -66,26 +66,41 @@ function switchView(viewId, clickedButton) {
         }
     }
 
+    // Si no pasaron el botón (ej. llamado desde código), deducirlo por la vista
+    if (!clickedButton) {
+        const viewToBtn = {
+            'view-dashboard': 'btn-dashboard',
+            'view-liga': 'btn-liga',
+            'view-mercado': 'btn-mercado',
+            'view-equipo': 'btn-equipo',
+            'view-catalogo': 'btn-catalogo',
+            'view-admin': 'btn-admin',
+            'view-perfil': 'btn-perfil'
+        };
+        const idMap = viewToBtn[viewId];
+        if (idMap) clickedButton = document.getElementById(idMap);
+    }
+
     // 3. Estilos de los botones Pill Nav (VERSIÓN LIQUID GLASS)
     if (clickedButton) {
         // Reiniciamos a estado inactivo (pero respetando los estilos base y hidden)
         document.querySelectorAll('.nav-btn').forEach(btn => {
             // Removemos las clases de estado activo
-            btn.classList.remove('bg-slate-300/10', 'border-blue-500', 'text-white', 'shadow-[0_0_15px_rgba(59,130,246,0.2)]', 'border-2');
+            btn.classList.remove('nav-btn-active');
             
-            // Re-agregamos las clases de estado inactivo si corresponde
-            if (btn.id !== 'btn-perfil') {
-                btn.classList.add('text-slate-400', 'border-transparent');
-                // IMPORTANTE: NO usamos force className = "..." porque borra la clase 'hidden' de los admins!
+            // Si es el de perfil gestionamos su borde personalizado
+            if (btn.id === 'btn-perfil') {
+                btn.classList.remove('border-blue-500');
+                btn.classList.add('border-white/20');
             }
         });
         
         // Encendemos el botón pulsado
         if (clickedButton.id !== 'btn-perfil') {
-            clickedButton.classList.remove('text-slate-400', 'border-transparent');
-            clickedButton.classList.add('bg-slate-300/10', 'border-blue-500', 'text-white', 'shadow-[0_0_15px_rgba(59,130,246,0.2)]');
+            clickedButton.classList.add('nav-btn-active');
         } else {
-            clickedButton.classList.add('bg-slate-300/10', 'border-2', 'border-blue-500', 'text-white', 'shadow-[0_0_15px_rgba(59,130,246,0.2)]');
+            clickedButton.classList.remove('border-white/20');
+            clickedButton.classList.add('border-blue-500');
         }
     }
 }

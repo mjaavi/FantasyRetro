@@ -121,6 +121,13 @@ function activarLiga(liga) {
     if (seasonEl) seasonEl.textContent = liga.season ?? '-';
     void refreshNavbarBudget();
 
+    // Actualizamos visibilidad del admin tras refrescar el navegador (importante!)
+    setTimeout(() => {
+        if (typeof window.actualizarBotonAdmin === 'function') {
+            window.actualizarBotonAdmin(liga);
+        }
+    }, 100);
+
     // Boton "cambiar" -> vuelve al selector con todas las ligas
     const cambiarBtn = document.getElementById('btn-cambiar-liga-dashboard');
     if (cambiarBtn) {
