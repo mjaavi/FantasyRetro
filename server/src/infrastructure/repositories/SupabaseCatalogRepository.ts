@@ -445,6 +445,24 @@ export class SupabaseCatalogRepository implements ICatalogRepository {
         if (error) throw new AppError(`Error al publicar jugadores: ${error.message}`, 500);
     }
 
+    async upsertRawPlayers(rows: any[]): Promise<void> {
+        if (!rows.length) return;
+        const { error } = await this.db
+            .from('Player')
+            .upsert(rows, { onConflict: 'player_api_id' });
+            
+        if (error) throw new AppError(`Error al publicar Player raw: ${error.message}`, 500);
+    }
+
+    async upsertPlayerAttributes(rows: any[]): Promise<void> {
+        if (!rows.length) return;
+        const { error } = await this.db
+            .from('Player_Attributes')
+            .upsert(rows);
+            
+        if (error) throw new AppError(`Error al publicar Player Attributes raw: ${error.message}`, 500);
+    }
+
     async upsertMatches(rows: CatalogMatchWriteModel[]): Promise<void> {
         if (!rows.length) return;
         const { error } = await this.db

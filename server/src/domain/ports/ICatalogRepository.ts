@@ -153,6 +153,8 @@ export interface ICatalogRepository {
     upsertCompetitions(rows: CatalogCompetitionWriteModel[]): Promise<void>;
     upsertSeasons(rows: CatalogSeasonWriteModel[]): Promise<void>;
     upsertPlayers(rows: CatalogPlayerWriteModel[]): Promise<void>;
+    upsertRawPlayers(rows: any[]): Promise<void>;
+    upsertPlayerAttributes(rows: any[]): Promise<void>;
     upsertMatches(rows: CatalogMatchWriteModel[]): Promise<void>;
     upsertTeams(rows: CatalogTeamWriteModel[]): Promise<void>;
     userHasRole(userId: string, role: string): Promise<boolean>;

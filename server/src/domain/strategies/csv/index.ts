@@ -5,12 +5,17 @@ import { PlayersValidationStrategy } from './PlayersValidationStrategy';
 import { TeamsValidationStrategy } from './TeamsValidationStrategy';
 import { MatchesValidationStrategy } from './MatchesValidationStrategy';
 
+import { KagglePlayerStrategy } from './KagglePlayerStrategy';
+import { KagglePlayerAttributesStrategy } from './KagglePlayerAttributesStrategy';
+
 export const CSV_STRATEGIES: ICsvValidationStrategy[] = [
     new CompetitionsValidationStrategy(),
     new SeasonsValidationStrategy(),
     new PlayersValidationStrategy(),
     new TeamsValidationStrategy(),
     new MatchesValidationStrategy(),
+    new KagglePlayerStrategy(),
+    new KagglePlayerAttributesStrategy(),
 ];
 
 export function getStrategyByKey(key: string): ICsvValidationStrategy | undefined {
