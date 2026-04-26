@@ -6,6 +6,8 @@ import { createPlayerAvatar, createPlayerPortrait, createClubLogo } from './play
 let _roster = [];
 let _puntos = {};
 let _jornada = 0;
+let _jornadaSeleccionada = null;
+let _historicoData = {};
 
 const POSICION_LABEL = {
     PT: 'Portero',
@@ -49,15 +51,18 @@ export async function loadRoster() {
 function cargarPuntos(scoreSummary) {
     try {
         _jornada = Number(scoreSummary?.jornadaActual ?? 0);
+        _jornadaSeleccionada = _jornada + 1;
 
         if (_jornada === 0) {
             _puntos = {};
+            _historicoData = {};
             return;
         }
 
         const scores = scoreSummary?.scores ?? [];
 
         _puntos = {};
+        _historicoData = {};
         const porJugador = {};
 
         for (const s of scores) {
@@ -75,6 +80,14 @@ function cargarPuntos(scoreSummary) {
                 tipo: s.cronista_type,
                 jugo: true,
             };
+            
+            if (!_historicoData[s.jornada]) {
+                _historicoData[s.jornada] = { titulares: [], stats: {} };
+            }
+            if (s.is_starter) {
+                _historicoData[s.jornada].titulares.push(s);
+            }
+            _historicoData[s.jornada].stats[id] = Number(s.puntos_total);
         }
 
         for (const [id, datos] of Object.entries(porJugador)) {
@@ -91,6 +104,7 @@ function cargarPuntos(scoreSummary) {
     } catch (err) {
         console.warn('[Roster] No se pudieron cargar puntos:', err.message);
         _puntos = {};
+        _historicoData = {};
     }
 }
 
@@ -131,16 +145,74 @@ function createClippedClubBadge(clubLogoUrl, className, size = 92) {
 }
 
 function renderTodo() {
-    const titulares = _roster.filter((j) => j.is_starter);
-    const suplentes = _roster.filter((j) => !j.is_starter);
+    renderSlider();
 
-    renderCampo(titulares, suplentes);
-    renderBanquillo(suplentes);
-    renderCampoDashboard(titulares);
+    if (_jornadaSeleccionada <= _jornada) {
+        const hData = _historicoData[_jornadaSeleccionada];
+        if (!hData) {
+            renderCampo([], []);
+            renderBanquillo([]);
+            renderCampoDashboard([]);
+            return;
+        }
+
+        const titularesSnapshot = hData.titulares.map(s => ({
+            id: s.player_api_id,
+            player_api_id: s.player_api_id,
+            name: s.name ?? 'Desconocido',
+            position: s.position ?? 'MC',
+            faceUrl: s.faceUrl,
+            clubLogoUrl: s.clubLogoUrl,
+            is_starter: true,
+            jornada_pts: s.total
+        }));
+
+        renderCampo(titularesSnapshot, [], true);
+        renderBanquillo([]); // Empty bench for history
+        renderCampoDashboard(titularesSnapshot);
+    } else {
+        const titulares = _roster.filter((j) => j.is_starter);
+        const suplentes = _roster.filter((j) => !j.is_starter);
+
+        renderCampo(titulares, suplentes, false);
+        renderBanquillo(suplentes);
+        renderCampoDashboard(titulares);
+    }
 }
 
+function renderSlider() {
+    const slider = document.getElementById('roster-jornadas-slider');
+    if (!slider) return;
+    
+    slider.innerHTML = '';
+    const actual = _jornada + 1;
+    
+    for (let j = 1; j <= actual; j++) {
+        const esSeleccionada = j === _jornadaSeleccionada;
+        const esEdicion = j === actual;
+        
+        const btn = document.createElement('button');
+        btn.className = `px-4 py-2 rounded-xl border min-w-fit shadow-sm transition-all text-left ${esSeleccionada ? 'bg-blue-500/20 border-blue-500/50' : 'bg-white/5 border-white/10 hover:bg-white/10'}`;
+        
+        btn.innerHTML = `
+            <p class="text-[10px] font-black uppercase ${esSeleccionada ? 'text-blue-400' : 'text-slate-500'} tracking-wider">Jornada ${j}</p>
+            <p class="text-xs font-bold ${esSeleccionada ? 'text-white' : 'text-slate-400'} mt-0.5 whitespace-nowrap">${esEdicion ? 'Actual · Edición' : 'Histórico'}</p>
+        `;
+        
+        btn.onclick = () => {
+            _jornadaSeleccionada = j;
+            renderTodo();
+        };
+        
+        slider.appendChild(btn);
+    }
+}
+
+
 function rellenarSlot(slot, jugador) {
-    const jornadaPts = getPuntosJornadaActual(jugador.player_api_id ?? jugador.id);
+    const jornadaPts = jugador.jornada_pts !== undefined 
+        ? jugador.jornada_pts 
+        : getPuntosJornadaActual(jugador.player_api_id ?? jugador.id);
 
     slot.className = 'player-slot';
     slot.dataset.playerId = jugador.id;
@@ -151,14 +223,17 @@ function rellenarSlot(slot, jugador) {
     card.className = `lineup-player-card ${POS_BG[jugador.position] ?? 'card-accent-MC'}`;
     card.style.cursor = 'pointer';
 
-    const removeBtn = document.createElement('button');
-    removeBtn.className = 'slot-remove';
-    removeBtn.title = 'Al banquillo';
-    removeBtn.textContent = '×';
-    removeBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        moverJugador(jugador, false);
-    });
+    if (_jornadaSeleccionada > _jornada) {
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'slot-remove';
+        removeBtn.title = 'Al banquillo';
+        removeBtn.textContent = '×';
+        removeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            moverJugador(jugador, false);
+        });
+        card.appendChild(removeBtn);
+    }
 
     const title = document.createElement('div');
     title.className = 'lineup-player-name';
@@ -209,7 +284,7 @@ function vaciarSlot(slot, posicion, suplentesDisponibles) {
             </div>
         </div>`;
 
-    if (suplentesDisponibles.length > 0) {
+    if (suplentesDisponibles.length > 0 && _jornadaSeleccionada > _jornada) {
         slot.onclick = (e) => {
             e.stopPropagation();
             abrirSelectorPosicion(slot, posicion, suplentesDisponibles);

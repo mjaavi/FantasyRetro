@@ -1185,7 +1185,7 @@
         <section id="view-equipo" style="display: none;" class="transition-all duration-300 opacity-0">
             <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 relative z-10">
                 <div class="xl:col-span-2 bento-card p-4 md:p-6 relative overflow-hidden flex flex-col z-10">
-                    <div class="flex justify-between items-center mb-4 relative z-10">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 relative z-10 gap-3">
                         <div>
                             <h2 class="text-2xl font-extrabold text-white tracking-tight mb-1">Alineación</h2>
                             <p class="text-slate-400 text-sm font-medium">Pulsa un jugador para moverlo al banquillo</p>
@@ -1218,11 +1218,16 @@
                     </div>
                 </div>
 
-                <div class="bento-card flex flex-col min-h-[620px]">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="font-extrabold text-white text-xl tracking-tight">Banquillo</h3>
-                        <span class="px-2 py-1 bg-white/5 border border-white/10 rounded text-[10px] font-black text-slate-400 uppercase">Sustitutos</span>
+                <div class="flex flex-col gap-6">
+                    <div class="bg-white/5 border border-white/10 rounded-2xl p-2 flex items-center gap-2 overflow-x-auto w-full max-w-full no-scrollbar relative shadow-inner bento-card" id="roster-jornadas-slider">
+                        <!-- JS will inject matchday blocks here -->
                     </div>
+
+                    <div class="bento-card flex flex-col min-h-[500px] flex-1">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-extrabold text-white text-xl tracking-tight">Banquillo</h3>
+                            <span class="px-2 py-1 bg-white/5 border border-white/10 rounded text-[10px] font-black text-slate-400 uppercase">Sustitutos</span>
+                        </div>
                     <div id="bench-players" class="flex flex-col gap-2 flex-1 overflow-y-auto">
                         <div class="skeleton h-14 w-full rounded-xl"></div>
                         <div class="skeleton h-14 w-full rounded-xl"></div>

@@ -18,6 +18,7 @@ export interface AdminLeagueStatus {
 export interface AdminRosterEntry {
     user_id:       string;
     player_api_id: number;
+    is_starter: boolean;
 }
 
 export interface FantasyScoreWriteModel {
@@ -31,6 +32,7 @@ export interface FantasyScoreWriteModel {
     picas:           string;
     cronista_type:   string;
     calculado_en:    string;
+    is_starter:      boolean;
 }
 
 export interface GlobalScoreWriteModel {

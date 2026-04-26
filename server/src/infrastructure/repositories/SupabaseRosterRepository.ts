@@ -51,7 +51,7 @@ export class SupabaseRosterRepository implements IRosterRepository {
                 .maybeSingle(),
             supabaseAdmin
                 .from('fantasy_scores')
-                .select('player_api_id, jornada, puntos_base, puntos_cronista, puntos_total, picas, cronista_type')
+                .select('player_api_id, jornada, puntos_base, puntos_cronista, puntos_total, picas, cronista_type, is_starter')
                 .eq('league_id', leagueId)
                 .eq('user_id', userId)
                 .order('jornada', { ascending: true })
@@ -66,17 +66,30 @@ export class SupabaseRosterRepository implements IRosterRepository {
             throw new AppError(`Error al obtener los puntos de la plantilla: ${scoreError.message}`, 500);
         }
 
+        const playerIds = Array.from(new Set((scoreData ?? []).map(row => Number(row.player_api_id))));
+        const playerData = await loadLeaguePlayerData(leagueId, playerIds);
+
         return {
             jornadaActual: Number(leagueData?.jornada_actual ?? 0),
-            scores: (scoreData ?? []).map(row => ({
-                player_api_id: Number(row.player_api_id),
-                jornada: Number(row.jornada),
-                puntos_base: Number(row.puntos_base ?? 0),
-                puntos_cronista: Number(row.puntos_cronista ?? 0),
-                puntos_total: Number(row.puntos_total ?? 0),
-                picas: String(row.picas ?? 'SC'),
-                cronista_type: String(row.cronista_type ?? 'analitico'),
-            })) satisfies RosterScoreRow[],
+            scores: (scoreData ?? []).map(row => {
+                const apiId = Number(row.player_api_id);
+                const player = playerData.get(apiId);
+                return {
+                    player_api_id: apiId,
+                    jornada: Number(row.jornada),
+                    puntos_base: Number(row.puntos_base ?? 0),
+                    puntos_cronista: Number(row.puntos_cronista ?? 0),
+                    puntos_total: Number(row.puntos_total ?? 0),
+                    picas: String(row.picas ?? 'SC'),
+                    cronista_type: String(row.cronista_type ?? 'analitico'),
+                    is_starter: Boolean(row.is_starter),
+                    name: player?.name ?? 'Desconocido',
+                    position: player?.position ?? 'MC',
+                    faceUrl: player?.faceUrl ?? null,
+                    clubLogoUrl: player?.clubLogoUrl ?? null,
+                    real_team: player?.realTeam ?? null,
+                };
+            }) satisfies RosterScoreRow[],
         };
     }
 

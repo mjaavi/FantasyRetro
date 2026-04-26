@@ -19,6 +19,12 @@ export interface RosterScoreRow {
     puntos_total:    number;
     picas:           string;
     cronista_type:   string;
+    is_starter: boolean;
+    name: string;
+    position: string;
+    faceUrl: string | null;
+    clubLogoUrl: string | null;
+    real_team: string | null;
 }
 
 export interface RosterScoreSummary {

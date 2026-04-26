@@ -102,6 +102,7 @@ export class AdminService {
                 picas: puntos?.picas ?? 'SC',
                 cronista_type: puntos?.cronista ?? 'analitico',
                 calculado_en: new Date().toISOString(),
+                is_starter: entry.is_starter,
             };
         });
 

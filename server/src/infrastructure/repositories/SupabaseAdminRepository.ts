@@ -43,7 +43,7 @@ export class SupabaseAdminRepository implements IAdminRepository {
     async getLeagueRosterEntries(leagueId: number): Promise<AdminRosterEntry[]> {
         const { data, error } = await this.db
             .from('user_roster')
-            .select('user_id, player_api_id')
+            .select('user_id, player_api_id, is_starter')
             .eq('league_id', leagueId);
 
         if (error) {

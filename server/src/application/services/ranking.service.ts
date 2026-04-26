@@ -38,7 +38,8 @@ export class RankingService {
         let puntosQuery = supabaseAdmin
             .from('fantasy_scores')
             .select('user_id, puntos_total')
-            .eq('league_id', leagueId);
+            .eq('league_id', leagueId)
+            .eq('is_starter', true);
 
         if (jornada !== undefined) {
             puntosQuery = puntosQuery.eq('jornada', jornada);
