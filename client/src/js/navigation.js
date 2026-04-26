@@ -68,20 +68,24 @@ function switchView(viewId, clickedButton) {
 
     // 3. Estilos de los botones Pill Nav (VERSIÓN LIQUID GLASS)
     if (clickedButton) {
-        // Reiniciamos a estado inactivo
+        // Reiniciamos a estado inactivo (pero respetando los estilos base y hidden)
         document.querySelectorAll('.nav-btn').forEach(btn => {
+            // Removemos las clases de estado activo
+            btn.classList.remove('bg-slate-300/10', 'border-blue-500', 'text-white', 'shadow-[0_0_15px_rgba(59,130,246,0.2)]', 'border-2');
+            
+            // Re-agregamos las clases de estado inactivo si corresponde
             if (btn.id !== 'btn-perfil') {
-                btn.className = "nav-btn flex items-center gap-1 md:gap-2 px-4 py-2.5 rounded-xl text-slate-400 hover:bg-white/10 hover:text-white transition-all";
-            } else {
-                btn.className = "nav-btn w-10 h-10 bg-white/5 backdrop-blur-md rounded-xl border border-white/20 flex items-center justify-center text-white font-bold text-sm hover:border-blue-500 hover:bg-white/10 transition-all";
+                btn.classList.add('text-slate-400', 'border-transparent');
+                // IMPORTANTE: NO usamos force className = "..." porque borra la clase 'hidden' de los admins!
             }
         });
         
         // Encendemos el botón pulsado
         if (clickedButton.id !== 'btn-perfil') {
-            clickedButton.className = "nav-btn flex items-center gap-1 md:gap-2 px-4 py-2.5 rounded-xl bg-slate-300/10 backdrop-blur-md border border-blue-500 text-white shadow-[0_0_15px_rgba(59,130,246,0.2)] transition-all";
+            clickedButton.classList.remove('text-slate-400', 'border-transparent');
+            clickedButton.classList.add('bg-slate-300/10', 'border-blue-500', 'text-white', 'shadow-[0_0_15px_rgba(59,130,246,0.2)]');
         } else {
-            clickedButton.className = "nav-btn w-10 h-10 bg-slate-300/10 backdrop-blur-md rounded-xl border-2 border-blue-500 flex items-center justify-center text-white font-bold text-sm transition-all shadow-[0_0_15px_rgba(59,130,246,0.2)]";
+            clickedButton.classList.add('bg-slate-300/10', 'border-2', 'border-blue-500', 'text-white', 'shadow-[0_0_15px_rgba(59,130,246,0.2)]');
         }
     }
 }

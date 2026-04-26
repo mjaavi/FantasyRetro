@@ -10,7 +10,6 @@ import {
     CatalogImportJobUpdate,
     CatalogSeason,
     CatalogSeasonWriteModel,
-    CatalogPlayerWriteModel,
     CatalogMatchWriteModel,
     CatalogTeamWriteModel,
     CreateCatalogImportJobInput,
@@ -434,15 +433,6 @@ export class SupabaseCatalogRepository implements ICatalogRepository {
         if (error) {
             throw new AppError(`Error al publicar temporadas del catalogo: ${error.message}`, 500);
         }
-    }
-
-    async upsertPlayers(rows: CatalogPlayerWriteModel[]): Promise<void> {
-        if (!rows.length) return;
-        const { error } = await this.db
-            .from('players')
-            .upsert(rows, { onConflict: 'id' });
-            
-        if (error) throw new AppError(`Error al publicar jugadores: ${error.message}`, 500);
     }
 
     async upsertRawPlayers(rows: any[]): Promise<void> {

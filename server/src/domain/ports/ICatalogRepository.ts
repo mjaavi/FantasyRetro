@@ -114,14 +114,6 @@ export interface CatalogSeasonWriteModel {
     is_active: boolean;
 }
 
-export interface CatalogPlayerWriteModel {
-    id: string; // The player ID
-    name: string;
-    position: string;
-    real_team: string; // the name or ID of the real club team
-    market_value: number;
-}
-
 export interface CatalogMatchWriteModel {
     home_team_api_id: number;
     away_team_api_id: number;
@@ -152,7 +144,6 @@ export interface ICatalogRepository {
     getImportJobRows(jobId: number): Promise<CatalogImportJobRow[]>;
     upsertCompetitions(rows: CatalogCompetitionWriteModel[]): Promise<void>;
     upsertSeasons(rows: CatalogSeasonWriteModel[]): Promise<void>;
-    upsertPlayers(rows: CatalogPlayerWriteModel[]): Promise<void>;
     upsertRawPlayers(rows: any[]): Promise<void>;
     upsertPlayerAttributes(rows: any[]): Promise<void>;
     upsertMatches(rows: CatalogMatchWriteModel[]): Promise<void>;
