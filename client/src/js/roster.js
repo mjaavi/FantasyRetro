@@ -285,7 +285,6 @@ function rellenarSlot(slot, jugador) {
     ].join(' ').trim();
     scoreBadge.textContent = formatScoreBadge(jornadaPts);
 
-    card.appendChild(removeBtn);
     card.appendChild(title);
     card.appendChild(logoBadge);
     card.appendChild(portraitFrame);
