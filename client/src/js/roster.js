@@ -169,7 +169,7 @@ function renderTodo() {
                 faceUrl: s.faceUrl ?? null,
                 clubLogoUrl: s.clubLogoUrl ?? null,
                 is_starter: true,
-                jornada_pts: s.total ?? 0,
+                jornada_pts: Number(s.puntos_total ?? s.total ?? 0),
             }));
 
             renderCampo(titularesSnapshot ?? [], []);
@@ -218,7 +218,7 @@ function renderSlider() {
         }
         
         const btn = document.createElement('button');
-        btn.className = `px-3 py-1.5 rounded-xl border min-w-[70px] flex flex-col items-center justify-center shadow-sm transition-all text-center ${esSeleccionada ? 'bg-blue-500/20 border-blue-500/50' : 'bg-white/5 border-white/10 hover:bg-white/10'}`;
+        btn.className = `px-3 py-1.5 rounded-xl border min-w-[70px] shrink-0 flex flex-col items-center justify-center shadow-sm transition-all text-center ${esSeleccionada ? 'bg-blue-500/20 border-blue-500/50' : 'bg-white/5 border-white/10 hover:bg-white/10'}`;
         
         btn.innerHTML = `
             <p class="text-[11px] font-black uppercase ${esSeleccionada ? 'text-blue-400' : 'text-slate-500'} tracking-wide">J${j}</p>
@@ -231,6 +231,26 @@ function renderSlider() {
         };
         
         slider.appendChild(btn);
+    }
+
+    if (!slider.dataset.draggable) {
+        let isDown = false;
+        let startX, scrollLeft;
+        slider.addEventListener('mousedown', (e) => {
+            isDown = true;
+            slider.style.cursor = 'grabbing';
+            startX = e.pageX - slider.offsetLeft;
+            scrollLeft = slider.scrollLeft;
+        });
+        slider.addEventListener('mouseleave', () => { isDown = false; slider.style.cursor = ''; });
+        slider.addEventListener('mouseup', () => { isDown = false; slider.style.cursor = ''; });
+        slider.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const walk = (e.pageX - slider.offsetLeft - startX) * 1.5;
+            slider.scrollLeft = scrollLeft - walk;
+        });
+        slider.dataset.draggable = "true";
     }
 }
 
