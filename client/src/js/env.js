@@ -31,7 +31,7 @@ function buildConfigCandidates() {
     const isLocalOrigin = /:\/\/(localhost|127\.0\.0\.1)(?::|\/|$)/i.test(origin ?? '');
     const fallbackUrls = isLocalOrigin
         ? [DEV_CONFIG_URL, PROD_CONFIG_URL]
-        : [PROD_CONFIG_URL, DEV_CONFIG_URL];
+        : [PROD_CONFIG_URL];
 
     return unique([
         origin ? new URL('/api/config', origin).toString() : null,

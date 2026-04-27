@@ -145,38 +145,47 @@ function createClippedClubBadge(clubLogoUrl, className, size = 92) {
 }
 
 function renderTodo() {
-    renderSlider();
+    try {
+        renderSlider();
+    } catch (e) {
+        console.error('[Roster] Error en renderSlider:', e);
+    }
 
-    if (_jornadaSeleccionada <= _jornada) {
-        const hData = _historicoData[_jornadaSeleccionada];
-        if (!hData) {
-            renderCampo([], []);
-            renderBanquillo([]);
-            renderCampoDashboard([]);
-            return;
+    try {
+        if (_jornadaSeleccionada <= _jornada) {
+            const hData = _historicoData[_jornadaSeleccionada];
+            if (!hData) {
+                renderCampo([], []);
+                renderBanquillo([]);
+                renderCampoDashboard([]);
+                return;
+            }
+
+            const titularesSnapshot = hData.titulares.map((s) => ({
+                id: s.player_api_id,
+                player_api_id: s.player_api_id,
+                name: s.name ?? 'Desconocido',
+                position: s.position ?? 'MC',
+                faceUrl: s.faceUrl ?? null,
+                clubLogoUrl: s.clubLogoUrl ?? null,
+                is_starter: true,
+                jornada_pts: s.total ?? 0,
+            }));
+
+            renderCampo(titularesSnapshot ?? [], []);
+            renderBanquillo([]); 
+            renderCampoDashboard(titularesSnapshot ?? []);
+        } else {
+            const sRoster = Array.isArray(_roster) ? _roster : [];
+            const titulares = sRoster.filter((j) => j?.is_starter);
+            const suplentes = sRoster.filter((j) => !j?.is_starter);
+
+            renderCampo(titulares, suplentes);
+            renderBanquillo(suplentes);
+            renderCampoDashboard(titulares);
         }
-
-        const titularesSnapshot = hData.titulares.map(s => ({
-            id: s.player_api_id,
-            player_api_id: s.player_api_id,
-            name: s.name ?? 'Desconocido',
-            position: s.position ?? 'MC',
-            faceUrl: s.faceUrl,
-            clubLogoUrl: s.clubLogoUrl,
-            is_starter: true,
-            jornada_pts: s.total
-        }));
-
-        renderCampo(titularesSnapshot, [], true);
-        renderBanquillo([]); // Empty bench for history
-        renderCampoDashboard(titularesSnapshot);
-    } else {
-        const titulares = _roster.filter((j) => j.is_starter);
-        const suplentes = _roster.filter((j) => !j.is_starter);
-
-        renderCampo(titulares, suplentes, false);
-        renderBanquillo(suplentes);
-        renderCampoDashboard(titulares);
+    } catch (err) {
+        console.error('[Roster] Error fatal en renderTodo:', err);
     }
 }
 
@@ -304,13 +313,25 @@ function renderCampo(titulares, suplentes) {
         PT: document.querySelectorAll('#pitch-main [data-pos="PT"]'),
     };
 
+    if (!Array.isArray(titulares)) titulares = [];
+    if (!Array.isArray(suplentes)) suplentes = [];
+
     for (const [pos, slots] of Object.entries(filas)) {
-        const jugadoresPos = titulares.filter((j) => j.position === pos);
-        const suplentesPos = suplentes.filter((j) => j.position === pos);
+        if (!slots) continue;
+        
+        const jugadoresPos = titulares.filter((j) => j?.position === pos);
+        const suplentesPos = suplentes.filter((j) => j?.position === pos);
 
         slots.forEach((slot, i) => {
-            if (jugadoresPos[i]) rellenarSlot(slot, jugadoresPos[i]);
-            else vaciarSlot(slot, pos, suplentesPos);
+            try {
+                if (jugadoresPos[i]) {
+                    rellenarSlot(slot, jugadoresPos[i]);
+                } else {
+                    vaciarSlot(slot, pos, suplentesPos);
+                }
+            } catch (err) {
+                console.error(`[Roster] Error renderizando slot de pos ${pos} en indice ${i}:`, err);
+            }
         });
     }
 }
