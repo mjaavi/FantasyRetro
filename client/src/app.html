@@ -1187,7 +1187,18 @@
                 <div class="xl:col-span-2 bento-card p-4 md:p-6 relative overflow-hidden flex flex-col z-10">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 relative z-10 gap-3">
                         <div>
-                            <h2 class="text-2xl font-extrabold text-white tracking-tight mb-1">Alineación</h2>
+                            <h2 class="text-2xl font-extrabold text-white tracking-tight mb-1 flex items-center gap-4">
+                                Alineación
+                                <select id="liga-formation-selector" class="form-select text-sm py-1 px-3 bg-white/5 border border-white/10 text-white font-mono rounded-lg">
+                                    <option value="4-4-2">4-4-2</option>
+                                    <option value="3-5-2">3-5-2</option>
+                                    <option value="3-4-3">3-4-3</option>
+                                    <option value="4-5-1">4-5-1</option>
+                                    <option value="4-3-3">4-3-3</option>
+                                    <option value="5-3-2">5-3-2</option>
+                                    <option value="5-2-3">5-2-3</option>
+                                </select>
+                            </h2>
                             <p class="text-slate-400 text-sm font-medium">Pulsa un jugador para moverlo al banquillo</p>
                         </div>
                     </div>
@@ -1195,26 +1206,7 @@
                     <div id="pitch-main" class="relative w-full flex-1 min-h-[560px] bg-[#0c2415] rounded-2xl border border-white/10 overflow-hidden flex flex-col justify-around py-8 gap-3 shadow-2xl" style="background-image: repeating-linear-gradient(0deg, transparent, transparent 10%, rgba(0,0,0,0.2) 10%, rgba(0,0,0,0.2) 20%);">
                         <div class="absolute top-1/2 left-0 w-full h-px bg-white/10 -translate-y-1/2"></div>
                         <div class="absolute top-1/2 left-1/2 w-28 h-28 border border-white/10 rounded-full -translate-x-1/2 -translate-y-1/2"></div>
-
-                        <div class="relative z-10 flex justify-center gap-6 md:gap-14 w-full px-6 mb-3">
-                            <div class="player-slot player-slot-interactive" data-pos="DL"><span class="player-slot-label">DEL</span></div>
-                            <div class="player-slot player-slot-interactive" data-pos="DL"><span class="player-slot-label">DEL</span></div>
-                        </div>
-                        <div class="relative z-10 flex justify-center gap-4 md:gap-10 w-full px-4 mb-3">
-                            <div class="player-slot" data-pos="MC"><span class="player-slot-label">MED</span></div>
-                            <div class="player-slot" data-pos="MC"><span class="player-slot-label">MED</span></div>
-                            <div class="player-slot" data-pos="MC"><span class="player-slot-label">MED</span></div>
-                            <div class="player-slot" data-pos="MC"><span class="player-slot-label">MED</span></div>
-                        </div>
-                        <div class="relative z-10 flex justify-center gap-4 md:gap-10 w-full px-4 mb-3">
-                            <div class="player-slot" data-pos="DF"><span class="player-slot-label">DEF</span></div>
-                            <div class="player-slot" data-pos="DF"><span class="player-slot-label">DEF</span></div>
-                            <div class="player-slot" data-pos="DF"><span class="player-slot-label">DEF</span></div>
-                            <div class="player-slot" data-pos="DF"><span class="player-slot-label">DEF</span></div>
-                        </div>
-                        <div class="relative z-10 flex justify-center w-full px-4">
-                            <div class="player-slot" data-pos="PT"><span class="player-slot-label">POR</span></div>
-                        </div>
+                        <!-- Los divs de filas y slots se generarán dinámicamente desde roster.js -->
                     </div>
                 </div>
 
@@ -1709,6 +1701,7 @@
         </div>
     </div>
 
+    <script src="./js/formations.js"></script>
     <script src="./js/navigation.js"></script>
     <!-- Guard de sesión: carga config → verifica sesión → muestra la app -->
     <script type="module">

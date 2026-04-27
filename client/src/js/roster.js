@@ -42,6 +42,22 @@ export async function loadRoster() {
 
         _roster = roster;
         cargarPuntos(scoreSummary);
+        
+        // Inicializar formaciones UI si existe selector
+        const sel = document.getElementById('liga-formation-selector');
+        if (sel && !sel.dataset.initialized) {
+            sel.dataset.initialized = 'true';
+            sel.addEventListener('change', async (e) => {
+                const target = e.target.value;
+                const toDemote = window.calcFormationDemotions(_roster, target);
+                for (const demoteId of toDemote) {
+                    const j = _roster.find(x => x.id === demoteId);
+                    if (j) await moverJugador(j, false);
+                }
+                renderTodo();
+            });
+        }
+        
         renderTodo();
     } catch (err) {
         console.error('[Roster]', err.message);
@@ -208,7 +224,9 @@ function renderSlider() {
         
         let ptsTexto = '0 pts';
         if (esEdicion) {
-            ptsTexto = 'Edición';
+            const titulares = Array.isArray(_roster) ? _roster.filter(j => j?.is_starter) : [];
+            const total = titulares.reduce((acc, p) => acc + (getPuntosJornadaActual(p.player_api_id ?? p.id) || 0), 0);
+            ptsTexto = `${Math.trunc(total)} pts`;
         } else {
             const hData = _historicoData[j];
             if (hData && Array.isArray(hData.titulares)) {
@@ -341,7 +359,54 @@ function vaciarSlot(slot, posicion, suplentesDisponibles) {
     }
 }
 
+function buildPitchDOM(formationKey) {
+    const pitch = document.getElementById('pitch-main');
+    if (!pitch) return;
+    
+    pitch.innerHTML = `
+        <div class="absolute top-1/2 left-0 w-full h-px bg-white/10 -translate-y-1/2"></div>
+        <div class="absolute top-1/2 left-1/2 w-28 h-28 border border-white/10 rounded-full -translate-x-1/2 -translate-y-1/2"></div>
+    `;
+    
+    const layout = window.AVAILABLE_FORMATIONS ? window.AVAILABLE_FORMATIONS[formationKey] : { DF: 4, MC: 4, DL: 2, PT: 1 };
+    if (!layout) return;
+
+    const order = ['DL', 'MC', 'DF', 'PT'];
+    
+    for (const pos of order) {
+        const count = layout[pos] || 0;
+        if (count === 0) continue;
+        
+        const rowDiv = document.createElement('div');
+        rowDiv.className = `relative z-10 flex justify-center gap-4 ${pos === 'DL' ? 'md:gap-14' : 'md:gap-10'} w-full px-4 mb-3`;
+        
+        for (let i = 0; i < count; i++) {
+            const slot = document.createElement('div');
+            slot.dataset.pos = pos;
+            slot.className = 'player-slot player-slot-interactive player-slot-empty';
+            const label = document.createElement('span');
+            label.className = 'player-slot-label';
+            label.textContent = POSICION_SHORT[pos] || pos;
+            slot.appendChild(label);
+            rowDiv.appendChild(slot);
+        }
+        pitch.appendChild(rowDiv);
+    }
+}
+
 function renderCampo(titulares, suplentes) {
+    let formationKey = '4-4-2';
+    
+    if (_jornadaSeleccionada <= _jornada) {
+        formationKey = window.inferFormation ? window.inferFormation(titulares) : '4-4-2';
+    } else {
+        const sel = document.getElementById('liga-formation-selector');
+        formationKey = window.inferFormation ? window.inferFormation(_roster) : '4-4-2';
+        if (sel) sel.value = formationKey;
+    }
+    
+    buildPitchDOM(formationKey);
+
     const filas = {
         DL: document.querySelectorAll('#pitch-main [data-pos="DL"]'),
         MC: document.querySelectorAll('#pitch-main [data-pos="MC"]'),
