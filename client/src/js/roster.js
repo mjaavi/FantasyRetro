@@ -189,6 +189,12 @@ function renderTodo() {
     }
 }
 
+function formatLineupValue(val) {
+    if (val >= 1000000) return (val / 1000000).toFixed(1).replace(/\.0$/, '') + 'M €';
+    if (val >= 1000) return (val / 1000).toFixed(0) + 'k €';
+    return new Intl.NumberFormat('es-ES').format(val) + ' €';
+}
+
 function renderSlider() {
     const slider = document.getElementById('roster-jornadas-slider');
     if (!slider) return;
@@ -200,12 +206,23 @@ function renderSlider() {
         const esSeleccionada = j === _jornadaSeleccionada;
         const esEdicion = j === actual;
         
+        let ptsTexto = '0 pts';
+        if (esEdicion) {
+            ptsTexto = 'Edición';
+        } else {
+            const hData = _historicoData[j];
+            if (hData && Array.isArray(hData.titulares)) {
+                const total = hData.titulares.reduce((s, p) => s + (Number(p.total ?? p.puntos_total) || 0), 0);
+                ptsTexto = `${Math.trunc(total)} pts`;
+            }
+        }
+        
         const btn = document.createElement('button');
-        btn.className = `px-4 py-2 rounded-xl border min-w-fit shadow-sm transition-all text-left ${esSeleccionada ? 'bg-blue-500/20 border-blue-500/50' : 'bg-white/5 border-white/10 hover:bg-white/10'}`;
+        btn.className = `px-3 py-1.5 rounded-xl border min-w-[70px] flex flex-col items-center justify-center shadow-sm transition-all text-center ${esSeleccionada ? 'bg-blue-500/20 border-blue-500/50' : 'bg-white/5 border-white/10 hover:bg-white/10'}`;
         
         btn.innerHTML = `
-            <p class="text-[10px] font-black uppercase ${esSeleccionada ? 'text-blue-400' : 'text-slate-500'} tracking-wider">Jornada ${j}</p>
-            <p class="text-xs font-bold ${esSeleccionada ? 'text-white' : 'text-slate-400'} mt-0.5 whitespace-nowrap">${esEdicion ? 'Actual · Edición' : 'Histórico'}</p>
+            <p class="text-[11px] font-black uppercase ${esSeleccionada ? 'text-blue-400' : 'text-slate-500'} tracking-wide">J${j}</p>
+            <p class="text-xs font-bold ${esSeleccionada ? 'text-white' : 'text-slate-400'} mt-0.5">${ptsTexto}</p>
         `;
         
         btn.onclick = () => {
