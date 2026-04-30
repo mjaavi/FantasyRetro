@@ -9,6 +9,8 @@ export function createRosterRouter(ctrl: RosterController): Router {
 
     r.get('/roster/:leagueId',                    ...participantGuard, ctrl.getRoster);
     r.get('/roster/:leagueId/scores',             ...participantGuard, ctrl.getRosterScores);
+    r.get('/roster/:leagueId/lineups',            ...participantGuard, ctrl.getLineupPreferences);
+    r.patch('/roster/:leagueId/lineups',          ...participantGuard, ctrl.saveLineupFormation);
     r.patch('/roster/:leagueId/:playerApiId',     ...participantGuard, ctrl.toggleStarter);
     return r;
 }

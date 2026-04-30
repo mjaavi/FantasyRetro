@@ -204,6 +204,19 @@ export async function fetchRosterScores(leagueId) {
     return (await apiFetch(`/roster/${leagueId}/scores`)).data;
 }
 
+/** Preferencias de alineacion guardadas por jornada */
+export async function fetchRosterLineups(leagueId) {
+    return (await apiFetch(`/roster/${leagueId}/lineups`)).data;
+}
+
+/** Guarda la formacion de la jornada abierta */
+export async function saveRosterFormation(leagueId, jornada, formationKey) {
+    return (await apiFetch(`/roster/${leagueId}/lineups`, {
+        method: 'PATCH',
+        body: JSON.stringify({ jornada, formationKey }),
+    })).data;
+}
+
 /** Cambia el estado titular/suplente de un jugador */
 export async function toggleStarter(leagueId, playerApiId, isStarter) {
     return apiFetch(`/roster/${leagueId}/${playerApiId}`, {

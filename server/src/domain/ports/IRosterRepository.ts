@@ -32,9 +32,24 @@ export interface RosterScoreSummary {
     scores: RosterScoreRow[];
 }
 
+export interface LineupPreference {
+    jornada:       number;
+    formation_key: string;
+    updated_at:    string | null;
+}
+
+export interface LineupPreferenceSummary {
+    jornadaActual:   number;
+    editableJornada: number;
+    lineups:         LineupPreference[];
+}
+
 export interface IRosterRepository {
     findByUserAndLeague(userId: string, leagueId: number): Promise<RosterPlayer[]>;
     findScoresByUserAndLeague(userId: string, leagueId: number): Promise<RosterScoreSummary>;
+    findLeagueCurrentRound(leagueId: number): Promise<number>;
+    findLineupPreferencesByUserAndLeague(userId: string, leagueId: number, maxJornada: number): Promise<LineupPreference[]>;
+    upsertLineupPreference(userId: string, leagueId: number, jornada: number, formationKey: string): Promise<LineupPreference>;
     updateStarter(userId: string, leagueId: number, playerApiId: number, isStarter: boolean): Promise<void>;
     addPlayer(userId: string, leagueId: number, playerApiId: number, purchasePrice: number, userToken: string): Promise<void>;
 }

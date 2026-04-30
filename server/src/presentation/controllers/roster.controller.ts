@@ -24,6 +24,28 @@ export class RosterController {
         } catch (err) { next(err); }
     };
 
+    getLineupPreferences = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const leagueId = Number(req.params.leagueId);
+            if (!Number.isInteger(leagueId) || leagueId <= 0) throw new ValidationError('ID de liga invalido.');
+            const summary = await this.rosterService.getLineupPreferences(req.userId!, leagueId);
+            res.json({ status: 'ok', data: summary });
+        } catch (err) { next(err); }
+    };
+
+    saveLineupFormation = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const leagueId = Number(req.params.leagueId);
+            const jornada = Number(req.body?.jornada);
+            const formationKey = String(req.body?.formationKey ?? '');
+
+            if (!Number.isInteger(leagueId) || leagueId <= 0) throw new ValidationError('ID de liga invalido.');
+
+            const lineup = await this.rosterService.saveLineupFormation(req.userId!, leagueId, jornada, formationKey);
+            res.json({ status: 'ok', data: lineup });
+        } catch (err) { next(err); }
+    };
+
     toggleStarter = async (req: Request, res: Response, next: NextFunction) => {
         try {
             const leagueId    = Number(req.params.leagueId);

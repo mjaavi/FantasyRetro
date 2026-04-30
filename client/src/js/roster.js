@@ -1,4 +1,4 @@
-import { fetchRoster, fetchRosterScores, toggleStarter } from './api.js';
+import { fetchRoster, fetchRosterLineups, fetchRosterScores, saveRosterFormation, toggleStarter } from './api.js';
 import { abrirPlayerDrawer } from './player-drawer.js';
 import { getLigaActiva } from './leagues.js';
 import { createPlayerAvatar, createPlayerPortrait, createClubLogo } from './player-image.js';
@@ -8,6 +8,7 @@ let _puntos = {};
 let _jornada = 0;
 let _jornadaSeleccionada = null;
 let _historicoData = {};
+let _lineupFormations = {};
 
 const POSICION_LABEL = {
     PT: 'Portero',
@@ -30,32 +31,85 @@ const POS_BG = {
     DL: 'card-accent-DL',
 };
 
+const DEFAULT_FORMATION = '4-4-2';
+
+function getEditableJornada() {
+    return _jornada + 1;
+}
+
+function isEditableJornada(jornada = _jornadaSeleccionada) {
+    return Number(jornada) === getEditableJornada();
+}
+
+function isValidFormation(formationKey) {
+    return Boolean(window.AVAILABLE_FORMATIONS?.[formationKey]);
+}
+
+function inferFormationFrom(players) {
+    return window.inferFormation ? window.inferFormation(players ?? []) : DEFAULT_FORMATION;
+}
+
+function getFormationForJornada(jornada, playersForInference = _roster) {
+    const savedFormation = _lineupFormations[Number(jornada)];
+    if (isValidFormation(savedFormation)) return savedFormation;
+    return inferFormationFrom(playersForInference);
+}
+
+function getCurrentFormation() {
+    if (_jornadaSeleccionada <= _jornada) {
+        const titulares = _historicoData[_jornadaSeleccionada]?.titulares ?? [];
+        return getFormationForJornada(_jornadaSeleccionada, titulares);
+    }
+
+    return getFormationForJornada(getEditableJornada(), _roster);
+}
+
+function canPromoteToCurrentFormation(jugador) {
+    if (!isEditableJornada()) return false;
+
+    const layout = window.AVAILABLE_FORMATIONS?.[getCurrentFormation()];
+    const position = jugador?.position ?? 'MC';
+    if (!layout || !Number.isFinite(Number(layout[position]))) return false;
+
+    const startersInPosition = _roster.filter((item) =>
+        item?.is_starter && item.position === position,
+    ).length;
+
+    return startersInPosition < Number(layout[position]);
+}
+
+function syncFormationSelector(formationKey = getCurrentFormation()) {
+    const sel = document.getElementById('liga-formation-selector');
+    if (!sel) return;
+
+    sel.value = isValidFormation(formationKey) ? formationKey : DEFAULT_FORMATION;
+    sel.disabled = !isEditableJornada();
+    sel.classList.toggle('lineup-formation-select-readonly', sel.disabled);
+    sel.title = sel.disabled
+        ? 'Las jornadas cerradas no admiten cambios de alineacion'
+        : 'Formacion de la jornada abierta';
+}
+
 export async function loadRoster() {
     const liga = getLigaActiva();
     if (!liga) return;
 
     try {
-        const [roster, scoreSummary] = await Promise.all([
+        const [roster, scoreSummary, lineupSummary] = await Promise.all([
             fetchRoster(liga.id).then(r => r ?? []),
             fetchRosterScores(liga.id).catch(() => ({ jornadaActual: 0, scores: [] })),
+            fetchRosterLineups(liga.id).catch(() => ({ lineups: [] })),
         ]);
 
         _roster = roster;
         cargarPuntos(scoreSummary);
+        cargarLineups(lineupSummary);
         
         // Inicializar formaciones UI si existe selector
         const sel = document.getElementById('liga-formation-selector');
         if (sel && !sel.dataset.initialized) {
             sel.dataset.initialized = 'true';
-            sel.addEventListener('change', async (e) => {
-                const target = e.target.value;
-                const toDemote = window.calcFormationDemotions(_roster, target);
-                for (const demoteId of toDemote) {
-                    const j = _roster.find(x => x.id === demoteId);
-                    if (j) await moverJugador(j, false);
-                }
-                renderTodo();
-            });
+            sel.addEventListener('change', handleFormationChange);
         }
         
         renderTodo();
@@ -121,6 +175,52 @@ function cargarPuntos(scoreSummary) {
         console.warn('[Roster] No se pudieron cargar puntos:', err.message);
         _puntos = {};
         _historicoData = {};
+    }
+}
+
+function cargarLineups(lineupSummary) {
+    _lineupFormations = {};
+
+    for (const lineup of lineupSummary?.lineups ?? []) {
+        const jornada = Number(lineup?.jornada);
+        const formationKey = lineup?.formation_key;
+        if (Number.isInteger(jornada) && isValidFormation(formationKey)) {
+            _lineupFormations[jornada] = formationKey;
+        }
+    }
+}
+
+async function handleFormationChange(e) {
+    const liga = getLigaActiva();
+    const target = e.target.value;
+    const jornada = getEditableJornada();
+    const previous = getFormationForJornada(jornada, _roster);
+
+    if (!liga || !isEditableJornada() || !isValidFormation(target)) {
+        syncFormationSelector(previous);
+        return;
+    }
+
+    _lineupFormations[jornada] = target;
+    syncFormationSelector(target);
+    renderTodo();
+
+    try {
+        await saveRosterFormation(liga.id, jornada, target);
+
+        const toDemote = window.calcFormationDemotions
+            ? window.calcFormationDemotions(_roster, target)
+            : [];
+
+        for (const demoteId of toDemote) {
+            const jugador = _roster.find((x) => x.id === demoteId);
+            if (jugador) await moverJugador(jugador, false);
+        }
+    } catch (err) {
+        console.error('[Roster] Error al guardar formacion:', err.message);
+        _lineupFormations[jornada] = previous;
+        syncFormationSelector(previous);
+        renderTodo();
     }
 }
 
@@ -216,7 +316,7 @@ function renderSlider() {
     if (!slider) return;
     
     slider.innerHTML = '';
-    const actual = _jornada + 1;
+    const actual = getEditableJornada();
     
     for (let j = 1; j <= actual; j++) {
         const esSeleccionada = j === _jornadaSeleccionada;
@@ -224,9 +324,7 @@ function renderSlider() {
         
         let ptsTexto = '0 pts';
         if (esEdicion) {
-            const titulares = Array.isArray(_roster) ? _roster.filter(j => j?.is_starter) : [];
-            const total = titulares.reduce((acc, p) => acc + (getPuntosJornadaActual(p.player_api_id ?? p.id) || 0), 0);
-            ptsTexto = `${Math.trunc(total)} pts`;
+            ptsTexto = '-';
         } else {
             const hData = _historicoData[j];
             if (hData && Array.isArray(hData.titulares)) {
@@ -236,11 +334,25 @@ function renderSlider() {
         }
         
         const btn = document.createElement('button');
-        btn.className = `px-3 py-1.5 rounded-xl border min-w-[70px] shrink-0 flex flex-col items-center justify-center shadow-sm transition-all text-center ${esSeleccionada ? 'bg-blue-500/20 border-blue-500/50' : 'bg-white/5 border-white/10 hover:bg-white/10'}`;
+        const stateClass = esEdicion
+            ? (esSeleccionada
+                ? 'bg-emerald-500/20 border-emerald-400/60 ring-1 ring-emerald-400/20'
+                : 'bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/15')
+            : (esSeleccionada
+                ? 'bg-blue-500/20 border-blue-500/50'
+                : 'bg-white/5 border-white/10 hover:bg-white/10');
+        const labelClass = esEdicion
+            ? 'text-emerald-300'
+            : (esSeleccionada ? 'text-blue-400' : 'text-slate-500');
+        const pointsClass = esEdicion
+            ? 'text-emerald-50'
+            : (esSeleccionada ? 'text-white' : 'text-slate-400');
+
+        btn.className = `px-3 py-1.5 rounded-xl border min-w-[70px] shrink-0 flex flex-col items-center justify-center shadow-sm transition-all text-center ${stateClass}`;
         
         btn.innerHTML = `
-            <p class="text-[11px] font-black uppercase ${esSeleccionada ? 'text-blue-400' : 'text-slate-500'} tracking-wide">J${j}</p>
-            <p class="text-xs font-bold ${esSeleccionada ? 'text-white' : 'text-slate-400'} mt-0.5">${ptsTexto}</p>
+            <p class="text-[11px] font-black uppercase ${labelClass} tracking-wide">J${j}</p>
+            <p class="text-xs font-bold ${pointsClass} mt-0.5">${ptsTexto}</p>
         `;
         
         btn.onclick = () => {
@@ -274,9 +386,13 @@ function renderSlider() {
 
 
 function rellenarSlot(slot, jugador) {
-    const jornadaPts = jugador.jornada_pts !== undefined 
-        ? jugador.jornada_pts 
-        : getPuntosJornadaActual(jugador.player_api_id ?? jugador.id);
+    const jornadaPts = isEditableJornada()
+        ? null
+        : (
+            jugador.jornada_pts !== undefined
+                ? jugador.jornada_pts
+                : getPuntosJornadaActual(jugador.player_api_id ?? jugador.id)
+        );
 
     slot.className = 'player-slot';
     slot.dataset.playerId = jugador.id;
@@ -339,6 +455,7 @@ function rellenarSlot(slot, jugador) {
 function vaciarSlot(slot, posicion, suplentesDisponibles) {
     slot.className = 'player-slot player-slot-empty player-slot-interactive';
     slot.dataset.playerId = '';
+    slot.style.cursor = '';
     slot.innerHTML = `
         <div class="player-slot-card">
             <div class="player-slot-top">+</div>
@@ -395,15 +512,15 @@ function buildPitchDOM(formationKey) {
 }
 
 function renderCampo(titulares, suplentes) {
-    let formationKey = '4-4-2';
+    let formationKey = DEFAULT_FORMATION;
     
     if (_jornadaSeleccionada <= _jornada) {
-        formationKey = window.inferFormation ? window.inferFormation(titulares) : '4-4-2';
+        formationKey = getFormationForJornada(_jornadaSeleccionada, titulares);
     } else {
-        const sel = document.getElementById('liga-formation-selector');
-        formationKey = window.inferFormation ? window.inferFormation(_roster) : '4-4-2';
-        if (sel) sel.value = formationKey;
+        formationKey = getFormationForJornada(getEditableJornada(), _roster);
     }
+
+    syncFormationSelector(formationKey);
     
     buildPitchDOM(formationKey);
 
@@ -595,10 +712,15 @@ function crearTarjetaSuplente(jugador) {
     info.appendChild(meta);
 
     const addBtn = document.createElement('button');
-    addBtn.className = 'text-blue-400 hover:text-blue-300 text-xs font-bold shrink-0 px-2 py-1 bg-blue-500/10 rounded-lg border border-blue-500/20 hover:bg-blue-500/20 transition-all';
+    const canPromote = canPromoteToCurrentFormation(jugador);
+    addBtn.className = canPromote
+        ? 'text-blue-400 hover:text-blue-300 text-xs font-bold shrink-0 px-2 py-1 bg-blue-500/10 rounded-lg border border-blue-500/20 hover:bg-blue-500/20 transition-all'
+        : 'text-slate-600 text-xs font-bold shrink-0 px-2 py-1 bg-white/5 rounded-lg border border-white/10 cursor-not-allowed';
+    addBtn.disabled = !canPromote;
     addBtn.textContent = '+ Once';
     addBtn.addEventListener('click', (e) => {
         e.stopPropagation();
+        if (!canPromoteToCurrentFormation(jugador)) return;
         moverJugador(jugador, true);
     });
 
@@ -662,6 +784,8 @@ function renderCampoDashboard(titulares) {
 async function moverJugador(jugador, hacerTitular) {
     const liga = getLigaActiva();
     if (!liga) return;
+    if (!isEditableJornada()) return;
+    if (hacerTitular && !canPromoteToCurrentFormation(jugador)) return;
 
     _roster = _roster.map((j) => (j.id === jugador.id ? { ...j, is_starter: hacerTitular } : j));
     renderTodo();

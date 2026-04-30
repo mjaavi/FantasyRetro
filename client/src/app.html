@@ -69,6 +69,32 @@
                 @apply w-full bg-black/20 border border-white/10 rounded-xl px-3 py-3 text-white font-bold focus:outline-none focus:border-blue-500 transition-all appearance-none cursor-pointer;
             }
 
+            .lineup-formation-select {
+                width: auto !important;
+                min-width: 7.25rem;
+                height: 2.1rem;
+                padding: 0 2rem 0 0.75rem !important;
+                border-radius: 0.65rem;
+                background-color: rgba(15, 23, 42, 0.92);
+                color: #f8fafc;
+                font-family: inherit;
+                font-weight: 800;
+                line-height: 1;
+            }
+            .lineup-formation-select option {
+                background: #0f172a;
+                color: #f8fafc;
+                font-family: "Plus Jakarta Sans", sans-serif;
+                font-weight: 800;
+            }
+            .lineup-formation-select:disabled,
+            .lineup-formation-select-readonly {
+                cursor: not-allowed;
+                opacity: 0.72;
+                border-color: rgba(148, 163, 184, 0.24);
+                color: #94a3b8;
+            }
+
             /* ── Títulos de sección ──────────────────────── */
             .section-title {
                 @apply text-4xl font-extrabold text-white tracking-tight;
@@ -1189,7 +1215,7 @@
                         <div>
                             <h2 class="text-2xl font-extrabold text-white tracking-tight mb-1 flex items-center gap-4">
                                 Alineación
-                                <select id="liga-formation-selector" class="form-select text-sm py-1 px-3 bg-white/5 border border-white/10 text-white font-mono rounded-lg">
+                                <select id="liga-formation-selector" class="form-select lineup-formation-select text-sm py-1 px-3 bg-white/5 border border-white/10 text-white rounded-lg">
                                     <option value="4-4-2">4-4-2</option>
                                     <option value="3-5-2">3-5-2</option>
                                     <option value="3-4-3">3-4-3</option>
