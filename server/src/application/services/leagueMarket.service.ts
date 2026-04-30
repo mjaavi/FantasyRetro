@@ -119,6 +119,10 @@ export class LeagueMarketService {
             throw new AppError('Este jugador no esta disponible en el mercado de tu liga.', 404);
         }
 
+        if (amount < jugadorEnMercado.marketValue) {
+            throw new AppError('La puja no puede ser inferior al valor de mercado del jugador.', 400);
+        }
+
         const pujaPrevia = await this.repo.getBidByUserAndPlayer(leagueId, userId, playerApiId);
         const budget = await this.repo.getUserBudget(userId, leagueId);
         const costeReal = pujaPrevia ? amount - pujaPrevia.amount : amount;

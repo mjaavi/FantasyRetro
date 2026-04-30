@@ -10,6 +10,20 @@ import { getLigaActiva } from './leagues.js';
 const PICAS_LABEL    = { NEG: '👎 Negativo', SC: 'S.C.', P1: '★ 1 Pica', P2: '★★ 2 Picas', P3: '★★★ 3 Picas', P4: '★★★★ 4 Picas' };
 const CRONISTA_COLOR = { analitico: '#60a5fa', exigente: '#f59e0b', pasional: '#a855f7' };
 const POS_LABEL      = { PT: 'Portero', DF: 'Defensa', MC: 'Centrocampista', DL: 'Delantero' };
+const BID_STEP = 100_000;
+
+function formatCurrency(value) {
+    return `${new Intl.NumberFormat('es-ES').format(Number(value ?? 0))} €`;
+}
+
+function parseCurrency(value) {
+    return parseInt(String(value ?? '').replace(/\D/g, ''), 10) || 0;
+}
+
+function getAvailableBidBudget(currentBid) {
+    const budgetText = document.getElementById('user-budget')?.textContent ?? '';
+    return parseCurrency(budgetText) + Number(currentBid?.amount ?? 0);
+}
 
 /**
  * Abre el drawer con el historial de puntos de un jugador.
@@ -29,7 +43,7 @@ export async function abrirPlayerDrawer({ playerApiId, name, position, marketVal
     // Rellenar header
     document.getElementById('pd-name').textContent     = name;
     document.getElementById('pd-position').textContent = POS_LABEL[position] ?? position;
-    document.getElementById('pd-value').textContent    = `${new Intl.NumberFormat('es-ES').format(marketValue)} €`;
+    document.getElementById('pd-value').textContent    = formatCurrency(marketValue);
     document.getElementById('pd-pts').textContent      = '—';
     document.getElementById('pd-pts').style.color      = '#60a5fa';
 
@@ -189,22 +203,68 @@ function _renderBarras(container, h) {
 
 function _setupBidSection(playerApiId, name, marketValue, onBid, currentBid) {
     const amountInput = document.getElementById('pd-bid-amount');
-    const preview     = document.getElementById('pd-bid-preview');
     const errorEl     = document.getElementById('pd-bid-error');
     const submitBtn   = document.getElementById('pd-submit-btn');
     const cancelBtn   = document.getElementById('pd-cancel-btn');
+    const minEl       = document.getElementById('pd-bid-min');
+    const currentEl   = document.getElementById('pd-bid-current');
+    const availableEl = document.getElementById('pd-bid-available');
+    const bidSection  = document.getElementById('pd-bid-section');
+
+    const minimumAmount = Number(marketValue ?? 0);
+    const availableBudget = getAvailableBidBudget(currentBid);
+
+    const setAmount = (nextAmount) => {
+        if (!amountInput) return;
+
+        const normalized = Math.max(minimumAmount, Math.trunc(Number(nextAmount) || minimumAmount));
+        amountInput.dataset.amount = String(normalized);
+        amountInput.value = formatCurrency(normalized);
+    };
+
+    const getAmount = () => parseCurrency(amountInput?.dataset.amount ?? amountInput?.value);
 
     if (amountInput) {
-        amountInput.value = currentBid?.amount ?? '';
-        if (preview) preview.textContent = currentBid ? `${new Intl.NumberFormat('es-ES').format(currentBid.amount)} €` : '—';
+        setAmount(currentBid?.amount ?? minimumAmount);
+        amountInput.onfocus = () => {
+            amountInput.value = String(getAmount());
+            amountInput.select();
+        };
+        amountInput.oninput = () => {
+            amountInput.dataset.amount = String(parseCurrency(amountInput.value));
+        };
+        amountInput.onblur = () => {
+            setAmount(getAmount());
+        };
     }
+
+    if (minEl) minEl.textContent = `Min. ${formatCurrency(minimumAmount)}`;
+    if (currentEl) currentEl.textContent = currentBid ? `Actual ${formatCurrency(currentBid.amount)}` : 'Sin puja activa';
+    if (availableEl) availableEl.textContent = `Disponible ${formatCurrency(availableBudget)}`;
     if (errorEl) errorEl.classList.add('hidden');
+
+    bidSection?.querySelectorAll('[data-bid-action]').forEach((button) => {
+        button.onclick = () => {
+            const action = button.dataset.bidAction;
+            const currentAmount = getAmount();
+
+            if (action === 'decrease') setAmount(currentAmount - BID_STEP);
+            if (action === 'increase') setAmount(currentAmount + BID_STEP);
+            if (action === 'market-value') setAmount(minimumAmount);
+            if (action === 'plus-100k') setAmount(currentAmount + BID_STEP);
+            if (action === 'plus-1m') setAmount(currentAmount + 1_000_000);
+            if (action === 'max' && availableBudget >= minimumAmount) setAmount(availableBudget);
+        };
+    });
 
     if (submitBtn) {
         submitBtn.onclick = () => {
-            const amount = parseInt(amountInput?.value ?? '0', 10);
-            if (!amount || amount <= 0) {
-                if (errorEl) { errorEl.textContent = 'Introduce una cantidad válida.'; errorEl.classList.remove('hidden'); }
+            const amount = getAmount();
+            if (!amount || amount < minimumAmount) {
+                if (errorEl) {
+                    errorEl.textContent = 'La puja no puede ser inferior al valor del jugador.';
+                    errorEl.classList.remove('hidden');
+                }
                 return;
             }
             onBid({ playerApiId, name, marketValue, amount });
@@ -213,9 +273,9 @@ function _setupBidSection(playerApiId, name, marketValue, onBid, currentBid) {
 
     if (cancelBtn) {
         cancelBtn.style.display = currentBid ? '' : 'none';
-        if (currentBid) {
-            cancelBtn.onclick = () => onBid({ playerApiId, name, marketValue, amount: null, cancel: true });
-        }
+        cancelBtn.onclick = currentBid
+            ? () => onBid({ playerApiId, name, marketValue, amount: null, cancel: true })
+            : null;
     }
 }
 

@@ -80,21 +80,17 @@ export async function fetchUserBids(leagueId) {
 
 /** Registra o actualiza una puja en la liga */
 export async function submitBidRequest(leagueId, playerApiId, amount) {
-    const result = await apiFetch(`/leagues/${leagueId}/market/bids`, {
+    return apiFetch(`/leagues/${leagueId}/market/bids`, {
         method: 'POST',
         body: JSON.stringify({ playerApiId, amount }),
     });
-    invalidateCache(`league-market-${leagueId}-0`);
-    return result;
 }
 
 /** Cancela una puja en la liga */
 export async function cancelBidRequest(leagueId, playerApiId) {
-    const result = await apiFetch(`/leagues/${leagueId}/market/bids/${playerApiId}`, {
+    return apiFetch(`/leagues/${leagueId}/market/bids/${playerApiId}`, {
         method: 'DELETE',
     });
-    invalidateCache(`league-market-${leagueId}-0`);
-    return result;
 }
 
 

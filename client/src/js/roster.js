@@ -78,6 +78,25 @@ function canPromoteToCurrentFormation(jugador) {
     return startersInPosition < Number(layout[position]);
 }
 
+function getRosterPlayerById(playerId) {
+    const id = Number(playerId);
+    if (!Number.isFinite(id)) return null;
+    return _roster.find((player) => Number(player.id) === id) ?? null;
+}
+
+function setPlayerDragData(event, jugador) {
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('application/x-retro-player-id', String(jugador.id));
+    event.dataTransfer.setData('text/plain', String(jugador.id));
+}
+
+function getDraggedPlayer(event) {
+    const playerId =
+        event.dataTransfer.getData('application/x-retro-player-id')
+        || event.dataTransfer.getData('text/plain');
+    return getRosterPlayerById(playerId);
+}
+
 function syncFormationSelector(formationKey = getCurrentFormation()) {
     const sel = document.getElementById('liga-formation-selector');
     if (!sel) return;
@@ -402,6 +421,17 @@ function rellenarSlot(slot, jugador) {
     const card = document.createElement('div');
     card.className = `lineup-player-card ${POS_BG[jugador.position] ?? 'card-accent-MC'}`;
     card.style.cursor = 'pointer';
+    card.draggable = isEditableJornada();
+
+    if (card.draggable) {
+        card.addEventListener('dragstart', (event) => {
+            setPlayerDragData(event, jugador);
+            card.classList.add('lineup-player-card-dragging');
+        });
+        card.addEventListener('dragend', () => {
+            card.classList.remove('lineup-player-card-dragging');
+        });
+    }
 
     if (_jornadaSeleccionada > _jornada) {
         const removeBtn = document.createElement('button');
@@ -469,6 +499,26 @@ function vaciarSlot(slot, posicion, suplentesDisponibles) {
             e.stopPropagation();
             abrirSelectorPosicion(slot, posicion, suplentesDisponibles);
         };
+        slot.addEventListener('dragover', (event) => {
+            const jugador = getDraggedPlayer(event);
+            if (jugador?.position !== posicion || !canPromoteToCurrentFormation(jugador)) return;
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+            slot.classList.add('player-slot-drop-active');
+        });
+        slot.addEventListener('dragleave', () => {
+            slot.classList.remove('player-slot-drop-active');
+        });
+        slot.addEventListener('drop', (event) => {
+            const jugador = getDraggedPlayer(event);
+            slot.classList.remove('player-slot-drop-active');
+
+            if (jugador?.position !== posicion || !canPromoteToCurrentFormation(jugador)) return;
+
+            event.preventDefault();
+            event.stopPropagation();
+            moverJugador(jugador, true);
+        });
     } else {
         slot.onclick = null;
         slot.style.cursor = 'default';
@@ -644,6 +694,7 @@ function cerrarTodosLosSelectores() {
 function renderBanquillo(suplentes) {
     const container = document.getElementById('bench-players');
     if (!container) return;
+    setupBenchDropTarget(container);
 
     if (!suplentes.length) {
         container.innerHTML = `
@@ -678,10 +729,45 @@ function renderBanquillo(suplentes) {
     container.appendChild(fragment);
 }
 
+function setupBenchDropTarget(container) {
+    if (container._benchDropController) {
+        container._benchDropController.abort();
+    }
+
+    const controller = new AbortController();
+    container._benchDropController = controller;
+
+    container.addEventListener('dragover', (event) => {
+        const jugador = getDraggedPlayer(event);
+        if (!jugador?.is_starter || !isEditableJornada()) return;
+
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+        container.classList.add('bench-drop-active');
+    }, { signal: controller.signal });
+
+    container.addEventListener('dragleave', (event) => {
+        if (container.contains(event.relatedTarget)) return;
+        container.classList.remove('bench-drop-active');
+    }, { signal: controller.signal });
+
+    container.addEventListener('drop', (event) => {
+        const jugador = getDraggedPlayer(event);
+        container.classList.remove('bench-drop-active');
+
+        if (!jugador?.is_starter || !isEditableJornada()) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        moverJugador(jugador, false);
+    }, { signal: controller.signal });
+}
+
 function crearTarjetaSuplente(jugador) {
     const pts = getPuntosJugador(jugador.player_api_id ?? jugador.id);
     const div = document.createElement('div');
     div.className = 'flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/5 hover:border-blue-500/30 transition-colors cursor-pointer';
+    div.dataset.playerId = jugador.id;
 
     const avatar = createPlayerAvatar({
         name: jugador.name,
@@ -713,6 +799,20 @@ function crearTarjetaSuplente(jugador) {
 
     const addBtn = document.createElement('button');
     const canPromote = canPromoteToCurrentFormation(jugador);
+    div.draggable = canPromote;
+    div.classList.toggle('cursor-grab', canPromote);
+    div.classList.toggle('opacity-60', !canPromote);
+
+    if (canPromote) {
+        div.addEventListener('dragstart', (event) => {
+            setPlayerDragData(event, jugador);
+            div.classList.add('bench-player-dragging');
+        });
+        div.addEventListener('dragend', () => {
+            div.classList.remove('bench-player-dragging');
+        });
+    }
+
     addBtn.className = canPromote
         ? 'text-blue-400 hover:text-blue-300 text-xs font-bold shrink-0 px-2 py-1 bg-blue-500/10 rounded-lg border border-blue-500/20 hover:bg-blue-500/20 transition-all'
         : 'text-slate-600 text-xs font-bold shrink-0 px-2 py-1 bg-white/5 rounded-lg border border-white/10 cursor-not-allowed';

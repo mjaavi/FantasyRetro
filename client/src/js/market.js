@@ -1,4 +1,4 @@
-import { fetchMarketPlayers, fetchUserBids, submitBidRequest, cancelBidRequest, invalidateCache } from './api.js';
+import { fetchMarketPlayers, fetchUserBids, submitBidRequest, cancelBidRequest } from './api.js';
 import { abrirPlayerDrawer, cerrarPlayerDrawer } from './player-drawer.js';
 import { createPlayerCard } from './market-renderer.js';
 import { getLigaActiva } from './leagues.js';
@@ -10,6 +10,9 @@ import { getApiBaseUrl } from './env.js';
 const state = {
     currentPlayerApiId: null,
     pendingBidAmount: null,
+    currentBids: new Map(),
+    marketPlayers: new Map(),
+    playerPositions: new Map(),
 };
 
 // ── Carga del mercado ─────────────────────────────────────────────────────────
@@ -36,8 +39,8 @@ export async function loadMarket() {
 
         // Map para lookup O(1): playerApiId → puja del usuario
         const bidsByPlayerId = new Map(bids.map(bid => [bid.playerApiId, bid]));
-        state.currentBids = bidsByPlayerId;
-        state.playerPositions = new Map(players.map(player => [player.playerApiId, player.position]));
+        const marketPlayers = new Map();
+        const playerPositions = new Map();
 
         const fragment = document.createDocumentFragment();
 
@@ -58,9 +61,15 @@ export async function loadMarket() {
                     faceUrl:      player.faceUrl ?? null,
                     clubLogoUrl:  player.clubLogoUrl ?? null,
                 };
+                marketPlayers.set(player.playerApiId, playerForRenderer);
+                playerPositions.set(player.playerApiId, player.position);
                 fragment.appendChild(createPlayerCard(playerForRenderer, bidsByPlayerId.get(player.playerApiId)));
             }
         }
+
+        state.currentBids = bidsByPlayerId;
+        state.marketPlayers = marketPlayers;
+        state.playerPositions = playerPositions;
 
         grid.innerHTML = '';
         grid.appendChild(fragment);
@@ -158,7 +167,7 @@ function handleGridClick(event) {
 
 async function openBidDrawer(playerApiId, playerName, formattedValue) {
     state.currentPlayerApiId = playerApiId;
-    const marketValue = parseInt(formattedValue.replace(/\D/g, ''), 10) || 0;
+    const marketValue = Number(formattedValue) || 0;
 
     // Obtener puja actual si existe
     const currentBid = state.currentBids?.get(playerApiId) ?? null;
@@ -196,13 +205,29 @@ function getBidDrawerElements() {
 
 // ── Acciones de puja ──────────────────────────────────────────────────────────
 
+function parseBidAmount(rawValue) {
+    return parseInt(String(rawValue ?? '').replace(/\D/g, ''), 10) || 0;
+}
+
+function refreshMarketCard(playerApiId) {
+    const player = state.marketPlayers?.get(playerApiId);
+    const grid = document.getElementById('market-players-grid');
+    const currentCard = grid?.querySelector(`[data-player-id="${playerApiId}"]`);
+
+    if (!player || !currentCard) return;
+
+    currentCard.replaceWith(createPlayerCard(player, state.currentBids?.get(playerApiId)));
+}
+
 export async function submitBid(amountOverride = null) {
     const liga = getLigaActiva();
     if (!liga) return;
 
     const { amountInput, errorEl, submitBtn } = getBidDrawerElements();
-    const rawAmount   = amountOverride ?? state.pendingBidAmount ?? amountInput?.value ?? '0';
-    const amount      = parseInt(rawAmount, 10);
+    const rawAmount = amountOverride ?? state.pendingBidAmount ?? amountInput?.dataset.amount ?? amountInput?.value ?? '0';
+    const amount = parseBidAmount(rawAmount);
+    const player = state.marketPlayers?.get(state.currentPlayerApiId);
+    const minimumAmount = Number(player?.market_value ?? 0);
 
     if (errorEl) errorEl.classList.add('hidden');
 
@@ -211,13 +236,23 @@ export async function submitBid(amountOverride = null) {
         return;
     }
 
+    if (amount < minimumAmount) {
+        if (errorEl) { errorEl.textContent = 'La puja no puede ser inferior al valor del jugador.'; errorEl.classList.remove('hidden'); }
+        return;
+    }
+
     if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Enviando...'; }
 
     try {
         const result = await submitBidRequest(liga.id, state.currentPlayerApiId, amount);
         await syncNavbarBudget(result.data?.newBudget);
+        state.currentBids.set(state.currentPlayerApiId, {
+            ...(state.currentBids.get(state.currentPlayerApiId) ?? {}),
+            playerApiId: state.currentPlayerApiId,
+            amount,
+        });
+        refreshMarketCard(state.currentPlayerApiId);
         closeBidDrawer();
-        loadMarket();
     } catch (error) {
         if (errorEl) { errorEl.textContent = error.message ?? 'Error al pujar.'; errorEl.classList.remove('hidden'); }
     } finally {
@@ -233,7 +268,12 @@ async function handleCancelBid(playerApiId) {
     try {
         const result = await cancelBidRequest(liga.id, playerApiId);
         await syncNavbarBudget(result.data?.newBudget);
-        loadMarket();
+        state.currentBids.delete(playerApiId);
+        refreshMarketCard(playerApiId);
+
+        if (state.currentPlayerApiId === playerApiId) {
+            closeBidDrawer();
+        }
     } catch (error) {
         console.error('[Market] Error al cancelar puja:', error.message);
     }

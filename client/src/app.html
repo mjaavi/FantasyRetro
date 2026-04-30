@@ -379,10 +379,11 @@
                 pointer-events: none;
             }
             .market-player-card-active {
-                border-color: rgba(59,130,246,0.34);
+                border-color: #3b82f6;
                 box-shadow:
                     0 24px 55px rgba(2,6,23,0.38),
-                    0 0 0 1px rgba(59,130,246,0.08);
+                    0 0 0 1px rgba(59,130,246,0.26),
+                    0 0 15px rgba(59,130,246,0.22);
             }
             .market-player-name {
                 position: relative;
@@ -614,6 +615,22 @@
             .lineup-player-score-negative {
                 border-color: rgba(239,68,68,0.42);
             }
+            .lineup-player-card-dragging,
+            .bench-player-dragging {
+                opacity: 0.55;
+                transform: scale(0.98);
+            }
+            .player-slot-drop-active .player-slot-card {
+                border-color: rgba(59,130,246,0.75);
+                background: rgba(59,130,246,0.12);
+                box-shadow: 0 0 0 1px rgba(59,130,246,0.2), 0 18px 40px rgba(2,6,23,0.28);
+            }
+            #bench-players.bench-drop-active {
+                outline: 2px dashed rgba(59,130,246,0.58);
+                outline-offset: 0.35rem;
+                border-radius: 1rem;
+                background: rgba(59,130,246,0.05);
+            }
             .market-player-card {
                 padding: 1rem 0.95rem 0.82rem;
                 border-radius: 1.9rem;
@@ -756,7 +773,59 @@
                 @apply opacity-70 cursor-not-allowed text-slate-600 border-white/5;
             }
             .form-input-bid {
-                @apply pl-10 pr-4 py-4 text-xl font-mono;
+                @apply px-4 py-4 text-xl text-center;
+                font-family: "Plus Jakarta Sans", sans-serif;
+            }
+            .bid-stepper {
+                display: grid;
+                grid-template-columns: 2.8rem minmax(0, 1fr) 2.8rem;
+                gap: 0.55rem;
+                align-items: center;
+            }
+            .bid-stepper-btn {
+                height: 3.55rem;
+                border-radius: 0.9rem;
+                border: 1px solid rgba(255,255,255,0.12);
+                background: rgba(255,255,255,0.06);
+                color: #dbe6f3;
+                font-size: 1.35rem;
+                font-weight: 900;
+                transition: background .18s ease, border-color .18s ease, color .18s ease;
+            }
+            .bid-stepper-btn:hover {
+                border-color: rgba(59,130,246,0.45);
+                background: rgba(59,130,246,0.12);
+                color: white;
+            }
+            .bid-quick-actions {
+                display: grid;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 0.45rem;
+                margin: 0.65rem 0 0.75rem;
+            }
+            .bid-chip {
+                min-height: 2.1rem;
+                border-radius: 0.75rem;
+                border: 1px solid rgba(59,130,246,0.22);
+                background: rgba(59,130,246,0.08);
+                color: #93c5fd;
+                font-size: 0.72rem;
+                font-weight: 900;
+                transition: background .18s ease, color .18s ease, border-color .18s ease;
+            }
+            .bid-chip:hover {
+                border-color: rgba(59,130,246,0.55);
+                background: rgba(59,130,246,0.16);
+                color: white;
+            }
+            .bid-helper-row {
+                display: flex;
+                justify-content: space-between;
+                gap: 0.75rem;
+                margin-bottom: 0.65rem;
+                color: #64748b;
+                font-size: 0.72rem;
+                font-weight: 800;
             }
         }
             /* ── Dashboard chart ─────────────────────────────── */
@@ -1630,14 +1699,27 @@
 
         <!-- Footer: oferta (solo en mercado) -->
         <div id="pd-bid-section" class="p-5 border-t border-white/10 bg-white/[0.02] shrink-0">
-            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Tu oferta (€)</label>
-            <div class="relative mb-1">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-black">€</span>
-                <input type="number" id="pd-bid-amount" min="1" step="100000"
-                       class="form-input form-input-bid pl-8 w-full"
-                       oninput="document.getElementById('pd-bid-preview').textContent = this.value ? new Intl.NumberFormat('es-ES').format(this.value)+' €' : '—'">
+            <div class="flex items-center justify-between mb-2">
+                <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Tu oferta</label>
+                <span id="pd-bid-min" class="text-[10px] font-black text-slate-500 uppercase tracking-wider"></span>
             </div>
-            <p id="pd-bid-preview" class="text-right text-blue-400 font-mono font-bold text-sm mb-3">—</p>
+            <div class="bid-stepper">
+                <button type="button" class="bid-stepper-btn" data-bid-action="decrease">-</button>
+                <input type="text" id="pd-bid-amount" inputmode="numeric"
+                       class="form-input form-input-bid w-full"
+                       aria-label="Importe de la oferta">
+                <button type="button" class="bid-stepper-btn" data-bid-action="increase">+</button>
+            </div>
+            <div class="bid-quick-actions">
+                <button type="button" class="bid-chip" data-bid-action="market-value">Valor</button>
+                <button type="button" class="bid-chip" data-bid-action="plus-100k">+100k</button>
+                <button type="button" class="bid-chip" data-bid-action="plus-1m">+1M</button>
+                <button type="button" class="bid-chip" data-bid-action="max">Max</button>
+            </div>
+            <div class="bid-helper-row">
+                <span id="pd-bid-current"></span>
+                <span id="pd-bid-available"></span>
+            </div>
             <p id="pd-bid-error" class="text-sm font-bold text-red-400 mb-2 hidden"></p>
             <div class="flex gap-2">
                 <button id="pd-cancel-btn" class="btn-danger-glass flex-1 py-3 hidden">Cancelar puja</button>

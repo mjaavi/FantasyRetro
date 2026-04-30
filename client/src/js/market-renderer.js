@@ -30,7 +30,7 @@ function createBtn(className, text, action, player) {
     btn.dataset.action = action;
     btn.dataset.playerId = player.id;
     btn.dataset.playerName = player.name;
-    btn.dataset.marketValue = formatCurrency(player.market_value);
+    btn.dataset.marketValue = String(player.market_value ?? 0);
     return btn;
 }
 
@@ -38,6 +38,8 @@ export function createPlayerCard(player, userBid) {
     const hasBid = Boolean(userBid);
 
     const card = document.createElement('div');
+    card.dataset.playerId = player.id;
+    card.dataset.hasBid = hasBid ? 'true' : 'false';
     card.className = [
         'market-player-card',
         POS_ACCENT_CLASS[player.position] ?? 'card-accent-MC',
