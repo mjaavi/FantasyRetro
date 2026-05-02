@@ -582,6 +582,7 @@
                 text-align: center;
                 font-size: 0.84rem;
                 line-height: 1.03;
+                min-height: 2.6rem;
             }
             .lineup-player-logo-clip {
                 top: 2.35rem;
@@ -632,10 +633,11 @@
                 background: rgba(59,130,246,0.05);
             }
 
-            /* ── Bloque azul fijo — oculta el corte irregular de las imágenes ── */
+            /* ── Bloque azul sólido — oculta el corte irregular de las imágenes ── */
             .lineup-player-portrait-frame,
             .market-player-portrait {
                 position: relative;
+                overflow: hidden;
             }
             .lineup-player-portrait-frame::after,
             .market-player-portrait::after {
@@ -644,13 +646,8 @@
                 bottom: 0;
                 left: 0;
                 right: 0;
-                height: 2.2rem;
-                background: linear-gradient(
-                    to top,
-                    rgba(14, 50, 100, 0.95) 0%,
-                    rgba(14, 50, 100, 0.7) 40%,
-                    transparent 100%
-                );
+                height: 1.8rem;
+                background: #102e5e;
                 border-bottom-left-radius: inherit;
                 border-bottom-right-radius: inherit;
                 pointer-events: none;
@@ -690,6 +687,7 @@
                 text-align: center;
                 font-size: 1.08rem;
                 line-height: 1.03;
+                min-height: 3.35rem;
             }
             .market-player-logo-clip {
                 top: 2.75rem;
