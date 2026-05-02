@@ -243,7 +243,7 @@ export async function handleLogin(event) {
     } catch (error) {
         logAuthError('login-unexpected', error, email);
         console.error('[Auth] Error al iniciar sesion:', error);
-        showMessage('login-error-message', 'No se pudo conectar con el servicio de acceso. Intentalo de nuevo.');
+        showMessage('login-error-message', 'El servidor se esta iniciando. Espera unos segundos y vuelve a intentarlo.');
     } finally {
         endAuthAction('login');
         setLoading(button, false, 'Entrar al Vestuario');

@@ -190,6 +190,7 @@ export function createPlayerAvatar({ name, faceUrl, playerFifaApiId = null, posi
         img.src = withCacheBust(faceCandidateUrls[0]);
         img.alt = name ?? '';
         img.loading = 'lazy';
+        img.draggable = false;
         img.style.cssText = 'width:100%;height:100%;object-fit:cover;position:absolute;inset:0;';
 
         img.onerror = () => {
@@ -241,6 +242,7 @@ export function createPlayerPortrait({
         img.src = withCacheBust(faceCandidateUrls[0]);
         img.alt = name ?? '';
         img.loading = 'lazy';
+        img.draggable = false;
         img.className = imageClassName;
         img.style.cssText = `
             width:100%; height:100%;
@@ -287,6 +289,7 @@ export function createClubLogo({ clubLogoUrl, size = 24, alt = '' }) {
     img.src = clubLogoUrl;
     img.alt = alt;
     img.loading = 'lazy';
+    img.draggable = false;
     img.style.cssText = `width:${size}px;height:${size}px;object-fit:contain;flex-shrink:0;`;
 
     img.onerror = () => {

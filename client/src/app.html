@@ -631,6 +631,40 @@
                 border-radius: 1rem;
                 background: rgba(59,130,246,0.05);
             }
+
+            /* ── Bloque azul fijo — oculta el corte irregular de las imágenes ── */
+            .lineup-player-portrait-frame,
+            .market-player-portrait {
+                position: relative;
+            }
+            .lineup-player-portrait-frame::after,
+            .market-player-portrait::after {
+                content: "";
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 2.2rem;
+                background: linear-gradient(
+                    to top,
+                    rgba(14, 50, 100, 0.95) 0%,
+                    rgba(14, 50, 100, 0.7) 40%,
+                    transparent 100%
+                );
+                border-bottom-left-radius: inherit;
+                border-bottom-right-radius: inherit;
+                pointer-events: none;
+                z-index: 3;
+            }
+
+            /* ── Anti-drag en imágenes dentro de cards ───────────────────────── */
+            .lineup-player-card img,
+            .market-player-card img {
+                -webkit-user-drag: none;
+                user-select: none;
+                pointer-events: none;
+            }
+
             .market-player-card {
                 padding: 1rem 0.95rem 0.82rem;
                 border-radius: 1.9rem;
