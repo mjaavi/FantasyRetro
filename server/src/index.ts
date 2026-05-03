@@ -147,6 +147,7 @@ app.set('trust proxy', 1);
 // NODE_ENV=production en Render → esta rama nunca llega a producción.
 const IS_PROD = process.env.NODE_ENV === 'production';
 app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
     contentSecurityPolicy: IS_PROD ? undefined : {
         directives: {
             defaultSrc:  ["'self'"],
