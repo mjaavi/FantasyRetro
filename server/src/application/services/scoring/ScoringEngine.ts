@@ -38,6 +38,7 @@ export class ScoringEngine {
             puntosCronista,
             totalPuntos,
             cronistaType:   cronista.tipo,
+            rawStats:       stats,
         };
     }
 

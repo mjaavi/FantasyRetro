@@ -6,8 +6,8 @@ type SupabaseClientLike = typeof supabaseAdmin;
 
 const LEAGUE_PROCESS_FIELDS = 'id, admin_id, season, jornada_actual, kaggle_league_id';
 const LEAGUE_STATUS_FIELDS = 'id, name, admin_id, season, jornada_actual, kaggle_league_id';
-const FANTASY_SCORE_FIELDS = 'user_id, player_api_id, jornada, puntos_base, puntos_cronista, puntos_total, picas, cronista_type';
-const GLOBAL_SCORE_FIELDS = 'player_api_id, jornada, puntos_base, puntos_total, picas, cronista_type';
+const FANTASY_SCORE_FIELDS = 'user_id, player_api_id, jornada, puntos_base, puntos_cronista, puntos_total, picas, cronista_type, raw_stats';
+const GLOBAL_SCORE_FIELDS = 'player_api_id, jornada, puntos_base, puntos_total, picas, cronista_type, raw_stats';
 
 export class SupabaseAdminRepository implements IAdminRepository {
     constructor(private readonly db: SupabaseClientLike = supabaseAdmin) {}

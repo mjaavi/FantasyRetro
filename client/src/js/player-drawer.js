@@ -160,11 +160,60 @@ function _renderBarras(container, h) {
                 col.querySelector('.pd-bar').style.opacity = '1';
                 col.querySelector('.pd-bar').style.boxShadow = `0 0 16px ${glow}`;
 
-                detailEl.innerHTML = `
+                let html = `
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
                         <span style="font-size:12px;font-weight:700;color:#94a3b8">Jornada ${j.jornada}</span>
                         <span style="font-size:20px;font-weight:900;color:${pts >= 0 ? '#60a5fa' : '#f87171'}">${pts} pts</span>
-                    </div>
+                    </div>`;
+
+                if (j.raw_stats) {
+                    const rs = j.raw_stats;
+                    const statBoxes = [
+                        { label: 'Goles', val: rs.goles },
+                        { label: 'Asist.', val: rs.asistencias },
+                        { label: 'Tiros Puerta', val: rs.tirosAPuerta },
+                        { label: 'Tiros Palo', val: rs.tirosAlPalo },
+                        { label: 'Centros', val: rs.centrosAlArea },
+                        { label: 'Faltas Com.', val: rs.faltasCometidas },
+                        { label: 'Amarillas', val: rs.tarjetasAmarillas, color: '#eab308' },
+                        { label: 'Rojas', val: rs.tarjetasRojas, color: '#ef4444' },
+                        { label: 'Portería a 0', val: rs.porteriaACero ? 'Sí' : 'No' },
+                        { label: 'Paradas', val: rs.paradasDeducidas },
+                        { label: 'Bloqueos', val: rs.tirosRivalesBloqueados },
+                        { label: 'Pos. >60%', val: rs.posesionSuperior60 ? 'Sí' : 'No' }
+                    ].filter(s => s.val !== 0 && s.val !== 'No' && s.val !== false);
+
+                    html += `<div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(70px, 1fr));gap:6px;margin-top:10px">`;
+                    
+                    statBoxes.forEach(s => {
+                        const valColor = s.color || '#e2e8f0';
+                        html += `
+                            <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:6px;text-align:center">
+                                <p style="font-size:8px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${s.label}">${s.label}</p>
+                                <p style="font-size:14px;font-weight:900;color:${valColor}">${s.val}</p>
+                            </div>
+                        `;
+                    });
+                    
+                    // Fila de resumen de puntos al final
+                    html += `</div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;border-top:1px solid rgba(255,255,255,0.05);padding-top:10px">
+                        <div style="flex:1;background:rgba(255,255,255,0.02);border-radius:8px;padding:6px;text-align:center">
+                            <p style="font-size:8px;font-weight:700;color:#475569;text-transform:uppercase">Base</p>
+                            <p style="font-size:12px;font-weight:900;color:#94a3b8">${base.toFixed(1)}</p>
+                        </div>
+                        <div style="flex:1;background:rgba(255,255,255,0.02);border-radius:8px;padding:6px;text-align:center">
+                            <p style="font-size:8px;font-weight:700;color:#475569;text-transform:uppercase">Picas</p>
+                            <p style="font-size:12px;font-weight:900;color:${CRONISTA_COLOR[j.cronista_type] ?? '#94a3b8'}">${PICAS_LABEL[j.picas] ?? j.picas}</p>
+                        </div>
+                        <div style="flex:1;background:rgba(255,255,255,0.02);border-radius:8px;padding:6px;text-align:center">
+                            <p style="font-size:8px;font-weight:700;color:#475569;text-transform:uppercase">Cronista</p>
+                            <p style="font-size:12px;font-weight:900;color:${CRONISTA_COLOR[j.cronista_type] ?? '#94a3b8'};text-transform:capitalize">${j.cronista_type}</p>
+                        </div>
+                    </div>`;
+
+                } else {
+                    html += `
                     <div style="display:flex;gap:8px;flex-wrap:wrap">
                         <div style="flex:1;background:rgba(255,255,255,0.04);border-radius:10px;padding:8px 10px;text-align:center">
                             <p style="font-size:9px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">Base</p>
@@ -179,6 +228,9 @@ function _renderBarras(container, h) {
                             <p style="font-size:12px;font-weight:900;color:${CRONISTA_COLOR[j.cronista_type] ?? '#94a3b8'};text-transform:capitalize">${j.cronista_type}</p>
                         </div>
                     </div>`;
+                }
+
+                detailEl.innerHTML = html;
             });
         }
 

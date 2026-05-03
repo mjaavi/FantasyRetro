@@ -20,6 +20,7 @@ type PuntosCalc = {
     total: number;
     picas: string;
     cronista: string;
+    rawStats?: any;
 };
 
 export class AdminService {
@@ -75,6 +76,7 @@ export class AdminService {
                     total: breakdown.totalPuntos,
                     picas: breakdown.picas,
                     cronista: breakdown.cronistaType,
+                    rawStats: breakdown.rawStats,
                 });
 
                 if (rosterPlayerIds.has(breakdown.playerApiId)) {
@@ -84,6 +86,7 @@ export class AdminService {
                         total: breakdown.totalPuntos,
                         picas: breakdown.picas,
                         cronista: breakdown.cronistaType,
+                        rawStats: breakdown.rawStats,
                     });
                 }
             }
@@ -103,6 +106,7 @@ export class AdminService {
                 cronista_type: puntos?.cronista ?? 'analitico',
                 calculado_en: new Date().toISOString(),
                 is_starter: entry.is_starter,
+                raw_stats: puntos?.rawStats,
             };
         });
 
@@ -120,6 +124,7 @@ export class AdminService {
             puntos_total: puntos.total,
             picas: puntos.picas,
             cronista_type: puntos.cronista,
+            raw_stats: puntos.rawStats,
         }));
 
         try {
@@ -176,6 +181,7 @@ export class AdminService {
                     puntos_total: null,
                     picas: null,
                     cronista_type: null,
+                    raw_stats: null,
                     jugo: false,
                 };
             }
@@ -186,6 +192,7 @@ export class AdminService {
                 puntos_total: score.puntos_total,
                 picas: score.picas,
                 cronista_type: score.cronista_type,
+                raw_stats: score.raw_stats,
                 jugo: true,
             };
         });
@@ -210,6 +217,7 @@ export class AdminService {
             total: (previous?.total ?? 0) + delta.total,
             picas: delta.picas,
             cronista: delta.cronista,
+            rawStats: delta.rawStats,
         });
     }
 }

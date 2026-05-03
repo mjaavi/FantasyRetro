@@ -33,6 +33,7 @@ export interface FantasyScoreWriteModel {
     cronista_type:   string;
     calculado_en:    string;
     is_starter:      boolean;
+    raw_stats?:      any;
 }
 
 export interface GlobalScoreWriteModel {
@@ -43,6 +44,7 @@ export interface GlobalScoreWriteModel {
     puntos_total:  number;
     picas:         string;
     cronista_type: string;
+    raw_stats?:    any;
 }
 
 export interface AdminFantasyScoreRow {
@@ -54,6 +56,7 @@ export interface AdminFantasyScoreRow {
     puntos_total:    number;
     picas:           string;
     cronista_type:   string;
+    raw_stats?:      any;
 }
 
 export interface AdminGlobalScoreRow {
@@ -63,6 +66,7 @@ export interface AdminGlobalScoreRow {
     puntos_total:  number;
     picas:         string;
     cronista_type: string;
+    raw_stats?:    any;
 }
 
 export interface IAdminRepository {

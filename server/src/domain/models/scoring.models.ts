@@ -81,4 +81,5 @@ export interface ScoreBreakdown {
     readonly puntosCronista: number;
     readonly totalPuntos:    number;
     readonly cronistaType:   CronistaType;
+    readonly rawStats?:      PlayerStats;
 }
