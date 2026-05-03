@@ -203,9 +203,9 @@ function _renderBarras(container, h) {
                     let resultPts = 0;
                     if (rs.resultado === 'VICTORIA') resultPts = 1;
                     if (rs.resultado === 'DERROTA') resultPts = -1;
-                    statRows.push({ label: \`Resultado (\${rs.resultado})\`, val: 1, pts: resultPts });
+                    statRows.push({ label: `Resultado (${rs.resultado})`, val: 1, pts: resultPts });
 
-                    html += \`
+                    html += `
                     <div style="background:rgba(15, 23, 42, 0.6); border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.05)">
                         <div style="display:flex; padding:10px 16px; background:rgba(255,255,255,0.03); border-bottom:1px solid rgba(255,255,255,0.05);">
                             <div style="flex:1; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; text-align:center;">Cantidad</div>
@@ -213,7 +213,7 @@ function _renderBarras(container, h) {
                             <div style="flex:1; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; text-align:center;">Puntos</div>
                         </div>
                         <div style="max-height:280px; overflow-y:auto; scrollbar-width:thin;">
-                    \`;
+                    `;
                     
                     statRows.forEach((s, idx) => {
                         // Ocultar booleanos falsos (ej. no dejar porteria a cero en 0)
@@ -225,33 +225,33 @@ function _renderBarras(container, h) {
                         if (s.pts < 0) ptsColor = '#f87171';
                         if (s.pts === 0) ptsColor = '#eab308'; // amarillo si es 0, igual que en la imagen de la app
                         
-                        html += \`
-                            <div style="display:flex; padding:12px 16px; border-bottom:1px solid rgba(255,255,255,0.02); background:\${idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)'}">
-                                <div style="flex:1; font-size:13px; font-weight:900; color:#e2e8f0; text-align:center;">\${s.val}</div>
-                                <div style="flex:2; font-size:13px; font-weight:700; color:#cbd5e1; text-align:center;">\${s.label}</div>
-                                <div style="flex:1; font-size:13px; font-weight:900; color:\${ptsColor}; text-align:center;">\${s.pts > 0 ? '+' : ''}\${s.pts === 0 ? '0' : s.pts.toFixed(1).replace('.0', '')}</div>
+                        html += `
+                            <div style="display:flex; padding:12px 16px; border-bottom:1px solid rgba(255,255,255,0.02); background:${idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)'}">
+                                <div style="flex:1; font-size:13px; font-weight:900; color:#e2e8f0; text-align:center;">${s.val}</div>
+                                <div style="flex:2; font-size:13px; font-weight:700; color:#cbd5e1; text-align:center;">${s.label}</div>
+                                <div style="flex:1; font-size:13px; font-weight:900; color:${ptsColor}; text-align:center;">${s.pts > 0 ? '+' : ''}${s.pts === 0 ? '0' : s.pts.toFixed(1).replace('.0', '')}</div>
                             </div>
-                        \`;
+                        `;
                     });
                     
-                    html += \`</div></div>\`;
+                    html += `</div></div>`;
                     
                     // Resumen inferior
-                    html += \`
+                    html += `
                     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:15px;">
                         <div style="flex:1;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:10px;padding:8px;text-align:center">
                             <p style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Base</p>
-                            <p style="font-size:16px;font-weight:900;color:#e2e8f0">\${base.toFixed(1)}</p>
+                            <p style="font-size:16px;font-weight:900;color:#e2e8f0">${base.toFixed(1)}</p>
                         </div>
                         <div style="flex:1;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:10px;padding:8px;text-align:center">
                             <p style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Picas</p>
-                            <p style="font-size:14px;font-weight:900;color:\${CRONISTA_COLOR[j.cronista_type] ?? '#94a3b8'}">\${PICAS_LABEL[j.picas] ?? j.picas}</p>
+                            <p style="font-size:14px;font-weight:900;color:${CRONISTA_COLOR[j.cronista_type] ?? '#94a3b8'}">${PICAS_LABEL[j.picas] ?? j.picas}</p>
                         </div>
                         <div style="flex:1;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:10px;padding:8px;text-align:center">
                             <p style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Cronista</p>
-                            <p style="font-size:12px;font-weight:900;color:\${CRONISTA_COLOR[j.cronista_type] ?? '#94a3b8'};text-transform:capitalize;margin-top:2px">\${j.cronista_type}</p>
+                            <p style="font-size:12px;font-weight:900;color:${CRONISTA_COLOR[j.cronista_type] ?? '#94a3b8'};text-transform:capitalize;margin-top:2px">${j.cronista_type}</p>
                         </div>
-                    </div>\`;
+                    </div>`;
 
                 } else {
                     html += `
