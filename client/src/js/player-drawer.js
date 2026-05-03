@@ -185,6 +185,15 @@ function _renderBarras(container, h) {
                         tirosRivalesBloqueados: { 'PT': 0, 'DF': 0.5, 'MC': 0, 'DL': 0 }
                     };
 
+                    const PICAS_A_PUNTOS = {
+                        'NEG': -3,
+                        'SC': 0,
+                        'P1': 1,
+                        'P2': 4,
+                        'P3': 8,
+                        'P4': 12
+                    };
+
                     const statRows = [
                         { label: 'Goles', val: rs.goles, pts: rs.goles * MATRIX.goles[pos] },
                         { label: 'Asistencias de gol', val: rs.asistencias, pts: rs.asistencias * MATRIX.asistencias[pos] },
@@ -204,6 +213,11 @@ function _renderBarras(container, h) {
                     if (rs.resultado === 'VICTORIA') resultPts = 1;
                     if (rs.resultado === 'DERROTA') resultPts = -1;
                     statRows.push({ label: `Resultado (${rs.resultado})`, val: 1, pts: resultPts });
+                    
+                    // Add explicitly the conversion to final points so it's clear
+                    statRows.push({ label: 'Total Puntos Base', val: '-', pts: base, isTotal: true });
+                    const ptsCronista = PICAS_A_PUNTOS[j.picas] ?? 0;
+                    statRows.push({ label: `Valoración Cronista (${PICAS_LABEL[j.picas] ?? j.picas})`, val: '-', pts: ptsCronista, isTotal: true });
 
                     html += `
                     <div style="background:rgba(15, 23, 42, 0.6); border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.05)">
@@ -216,19 +230,20 @@ function _renderBarras(container, h) {
                     `;
                     
                     statRows.forEach((s, idx) => {
-                        // Ocultar booleanos falsos (ej. no dejar porteria a cero en 0)
                         if (s.hideZero && s.val === 0) return;
-                        // Mostrar todas las stats o solo las que sumen/resten? El usuario mostró incluso las de 0 en la captura, así que mostramos todo.
                         
                         let ptsColor = '#94a3b8';
-                        if (s.pts > 0) ptsColor = '#4ade80';
-                        if (s.pts < 0) ptsColor = '#f87171';
-                        if (s.pts === 0) ptsColor = '#eab308'; // amarillo si es 0, igual que en la imagen de la app
+                        if (s.pts > 0) ptsColor = '#60a5fa'; // Blue for positive
+                        if (s.pts < 0) ptsColor = '#f87171'; // Red for negative
+                        if (s.pts === 0) ptsColor = '#eab308'; // Yellow for 0
+                        
+                        // Diferenciar filas de resumen
+                        const bgStyle = s.isTotal ? 'background:rgba(255,255,255,0.03); border-top:1px solid rgba(255,255,255,0.1)' : `background:${idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)'}`;
                         
                         html += `
-                            <div style="display:flex; padding:12px 16px; border-bottom:1px solid rgba(255,255,255,0.02); background:${idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)'}">
+                            <div style="display:flex; padding:12px 16px; border-bottom:1px solid rgba(255,255,255,0.02); ${bgStyle}">
                                 <div style="flex:1; font-size:13px; font-weight:900; color:#e2e8f0; text-align:center;">${s.val}</div>
-                                <div style="flex:2; font-size:13px; font-weight:700; color:#cbd5e1; text-align:center;">${s.label}</div>
+                                <div style="flex:2; font-size:13px; font-weight:700; color:${s.isTotal ? '#e2e8f0' : '#cbd5e1'}; text-align:center;">${s.label}</div>
                                 <div style="flex:1; font-size:13px; font-weight:900; color:${ptsColor}; text-align:center;">${s.pts > 0 ? '+' : ''}${s.pts === 0 ? '0' : s.pts.toFixed(1).replace('.0', '')}</div>
                             </div>
                         `;
