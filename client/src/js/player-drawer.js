@@ -161,56 +161,97 @@ function _renderBarras(container, h) {
                 col.querySelector('.pd-bar').style.boxShadow = `0 0 16px ${glow}`;
 
                 let html = `
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-                        <span style="font-size:12px;font-weight:700;color:#94a3b8">Jornada ${j.jornada}</span>
-                        <span style="font-size:20px;font-weight:900;color:${pts >= 0 ? '#60a5fa' : '#f87171'}">${pts} pts</span>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.05)">
+                        <span style="font-size:14px;font-weight:700;color:#94a3b8">Jornada ${j.jornada}</span>
+                        <span style="font-size:24px;font-weight:900;color:${pts >= 0 ? '#60a5fa' : '#f87171'}">${pts} <span style="font-size:12px;color:#64748b">pts</span></span>
                     </div>`;
 
                 if (j.raw_stats) {
                     const rs = j.raw_stats;
-                    const statBoxes = [
-                        { label: 'Goles', val: rs.goles },
-                        { label: 'Asist.', val: rs.asistencias },
-                        { label: 'Tiros Puerta', val: rs.tirosAPuerta },
-                        { label: 'Tiros Palo', val: rs.tirosAlPalo },
-                        { label: 'Centros', val: rs.centrosAlArea },
-                        { label: 'Faltas Com.', val: rs.faltasCometidas },
-                        { label: 'Amarillas', val: rs.tarjetasAmarillas, color: '#eab308' },
-                        { label: 'Rojas', val: rs.tarjetasRojas, color: '#ef4444' },
-                        { label: 'Portería a 0', val: rs.porteriaACero ? 'Sí' : 'No' },
-                        { label: 'Paradas', val: rs.paradasDeducidas },
-                        { label: 'Bloqueos', val: rs.tirosRivalesBloqueados },
-                        { label: 'Pos. >60%', val: rs.posesionSuperior60 ? 'Sí' : 'No' }
-                    ].filter(s => s.val !== 0 && s.val !== 'No' && s.val !== false);
-
-                    html += `<div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(70px, 1fr));gap:6px;margin-top:10px">`;
+                    const pos = rs.position || 'MC';
                     
-                    statBoxes.forEach(s => {
-                        const valColor = s.color || '#e2e8f0';
-                        html += `
-                            <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:6px;text-align:center">
-                                <p style="font-size:8px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${s.label}">${s.label}</p>
-                                <p style="font-size:14px;font-weight:900;color:${valColor}">${s.val}</p>
+                    const MATRIX = {
+                        goles: { 'PT': 6, 'DF': 5, 'MC': 4, 'DL': 3 },
+                        asistencias: { 'PT': 2, 'DF': 2, 'MC': 2, 'DL': 2 },
+                        tirosAPuerta: { 'PT': 0.5, 'DF': 0.5, 'MC': 0.5, 'DL': 0.5 },
+                        tirosAlPalo: { 'PT': 1, 'DF': 1, 'MC': 1, 'DL': 1 },
+                        centrosAlArea: { 'PT': 0, 'DF': 0.5, 'MC': 0.5, 'DL': 0 },
+                        posesionSuperior60: { 'PT': 0, 'DF': 0, 'MC': 1, 'DL': 0 },
+                        faltasCometidas: { 'PT': -0.2, 'DF': -0.2, 'MC': -0.2, 'DL': -0.2 },
+                        tarjetasAmarillas: { 'PT': -1, 'DF': -1, 'MC': -1, 'DL': -1 },
+                        tarjetasRojas: { 'PT': -3, 'DF': -3, 'MC': -3, 'DL': -3 },
+                        porteriaACero: { 'PT': 4, 'DF': 3, 'MC': 0, 'DL': 0 },
+                        paradasDeducidas: { 'PT': 0.5, 'DF': 0, 'MC': 0, 'DL': 0 },
+                        tirosRivalesBloqueados: { 'PT': 0, 'DF': 0.5, 'MC': 0, 'DL': 0 }
+                    };
+
+                    const statRows = [
+                        { label: 'Goles', val: rs.goles, pts: rs.goles * MATRIX.goles[pos] },
+                        { label: 'Asistencias de gol', val: rs.asistencias, pts: rs.asistencias * MATRIX.asistencias[pos] },
+                        { label: 'Tiros a puerta', val: rs.tirosAPuerta, pts: rs.tirosAPuerta * MATRIX.tirosAPuerta[pos] },
+                        { label: 'Tiros al palo', val: rs.tirosAlPalo, pts: rs.tirosAlPalo * MATRIX.tirosAlPalo[pos] },
+                        { label: 'Centros al área', val: rs.centrosAlArea, pts: rs.centrosAlArea * MATRIX.centrosAlArea[pos] },
+                        { label: 'Faltas cometidas', val: rs.faltasCometidas, pts: rs.faltasCometidas * MATRIX.faltasCometidas[pos] },
+                        { label: 'Tarjetas amarillas', val: rs.tarjetasAmarillas, pts: rs.tarjetasAmarillas * MATRIX.tarjetasAmarillas[pos] },
+                        { label: 'Tarjetas rojas', val: rs.tarjetasRojas, pts: rs.tarjetasRojas * MATRIX.tarjetasRojas[pos] },
+                        { label: 'Portería a 0', val: rs.porteriaACero ? 1 : 0, pts: rs.porteriaACero ? MATRIX.porteriaACero[pos] : 0, hideZero: true },
+                        { label: 'Paradas', val: rs.paradasDeducidas, pts: rs.paradasDeducidas * MATRIX.paradasDeducidas[pos] },
+                        { label: 'Tiros bloqueados', val: rs.tirosRivalesBloqueados, pts: rs.tirosRivalesBloqueados * MATRIX.tirosRivalesBloqueados[pos] },
+                        { label: 'Posesión > 60%', val: rs.posesionSuperior60 ? 1 : 0, pts: rs.posesionSuperior60 ? MATRIX.posesionSuperior60[pos] : 0, hideZero: true }
+                    ];
+
+                    let resultPts = 0;
+                    if (rs.resultado === 'VICTORIA') resultPts = 1;
+                    if (rs.resultado === 'DERROTA') resultPts = -1;
+                    statRows.push({ label: \`Resultado (\${rs.resultado})\`, val: 1, pts: resultPts });
+
+                    html += \`
+                    <div style="background:rgba(15, 23, 42, 0.6); border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.05)">
+                        <div style="display:flex; padding:10px 16px; background:rgba(255,255,255,0.03); border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <div style="flex:1; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; text-align:center;">Cantidad</div>
+                            <div style="flex:2; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; text-align:center;">Estadísticas</div>
+                            <div style="flex:1; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; text-align:center;">Puntos</div>
+                        </div>
+                        <div style="max-height:280px; overflow-y:auto; scrollbar-width:thin;">
+                    \`;
+                    
+                    statRows.forEach((s, idx) => {
+                        // Ocultar booleanos falsos (ej. no dejar porteria a cero en 0)
+                        if (s.hideZero && s.val === 0) return;
+                        // Mostrar todas las stats o solo las que sumen/resten? El usuario mostró incluso las de 0 en la captura, así que mostramos todo.
+                        
+                        let ptsColor = '#94a3b8';
+                        if (s.pts > 0) ptsColor = '#4ade80';
+                        if (s.pts < 0) ptsColor = '#f87171';
+                        if (s.pts === 0) ptsColor = '#eab308'; // amarillo si es 0, igual que en la imagen de la app
+                        
+                        html += \`
+                            <div style="display:flex; padding:12px 16px; border-bottom:1px solid rgba(255,255,255,0.02); background:\${idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)'}">
+                                <div style="flex:1; font-size:13px; font-weight:900; color:#e2e8f0; text-align:center;">\${s.val}</div>
+                                <div style="flex:2; font-size:13px; font-weight:700; color:#cbd5e1; text-align:center;">\${s.label}</div>
+                                <div style="flex:1; font-size:13px; font-weight:900; color:\${ptsColor}; text-align:center;">\${s.pts > 0 ? '+' : ''}\${s.pts === 0 ? '0' : s.pts.toFixed(1).replace('.0', '')}</div>
                             </div>
-                        `;
+                        \`;
                     });
                     
-                    // Fila de resumen de puntos al final
-                    html += `</div>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;border-top:1px solid rgba(255,255,255,0.05);padding-top:10px">
-                        <div style="flex:1;background:rgba(255,255,255,0.02);border-radius:8px;padding:6px;text-align:center">
-                            <p style="font-size:8px;font-weight:700;color:#475569;text-transform:uppercase">Base</p>
-                            <p style="font-size:12px;font-weight:900;color:#94a3b8">${base.toFixed(1)}</p>
+                    html += \`</div></div>\`;
+                    
+                    // Resumen inferior
+                    html += \`
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:15px;">
+                        <div style="flex:1;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:10px;padding:8px;text-align:center">
+                            <p style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Base</p>
+                            <p style="font-size:16px;font-weight:900;color:#e2e8f0">\${base.toFixed(1)}</p>
                         </div>
-                        <div style="flex:1;background:rgba(255,255,255,0.02);border-radius:8px;padding:6px;text-align:center">
-                            <p style="font-size:8px;font-weight:700;color:#475569;text-transform:uppercase">Picas</p>
-                            <p style="font-size:12px;font-weight:900;color:${CRONISTA_COLOR[j.cronista_type] ?? '#94a3b8'}">${PICAS_LABEL[j.picas] ?? j.picas}</p>
+                        <div style="flex:1;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:10px;padding:8px;text-align:center">
+                            <p style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Picas</p>
+                            <p style="font-size:14px;font-weight:900;color:\${CRONISTA_COLOR[j.cronista_type] ?? '#94a3b8'}">\${PICAS_LABEL[j.picas] ?? j.picas}</p>
                         </div>
-                        <div style="flex:1;background:rgba(255,255,255,0.02);border-radius:8px;padding:6px;text-align:center">
-                            <p style="font-size:8px;font-weight:700;color:#475569;text-transform:uppercase">Cronista</p>
-                            <p style="font-size:12px;font-weight:900;color:${CRONISTA_COLOR[j.cronista_type] ?? '#94a3b8'};text-transform:capitalize">${j.cronista_type}</p>
+                        <div style="flex:1;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:10px;padding:8px;text-align:center">
+                            <p style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Cronista</p>
+                            <p style="font-size:12px;font-weight:900;color:\${CRONISTA_COLOR[j.cronista_type] ?? '#94a3b8'};text-transform:capitalize;margin-top:2px">\${j.cronista_type}</p>
                         </div>
-                    </div>`;
+                    </div>\`;
 
                 } else {
                     html += `
