@@ -80,7 +80,7 @@ export class KaggleLeagueStrategy implements ICsvValidationStrategy {
     async publish(repository: ICatalogRepository, normalizedRows: Record<string, unknown>[]): Promise<number> {
         const rows = normalizedRows.map(row => ({
             id: Number(row.id),
-            slug: normalizeSlug(String(row.name)) || \`league-\${row.id}\`,
+            slug: normalizeSlug(String(row.name)) || `league-${row.id}`,
             provider: 'kaggle',
             source_competition_id: Number(row.id),
             name: String(row.name),

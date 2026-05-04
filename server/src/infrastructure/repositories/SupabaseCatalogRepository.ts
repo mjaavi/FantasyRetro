@@ -9,7 +9,6 @@ import {
     CatalogImportJobRowWriteModel,
     CatalogImportJobUpdate,
     CatalogSeason,
-    CatalogSeasonWriteModel,
     CatalogMatchWriteModel,
     CatalogTeamWriteModel,
     CreateCatalogImportJobInput,

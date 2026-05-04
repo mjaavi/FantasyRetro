@@ -15,8 +15,8 @@ export class KaggleMatchStrategy implements ICsvValidationStrategy {
     description = 'Alta de partidos con estadisticas XML desde el dataset original de Kaggle.';
     
     // Dynamically build the 22 player spots
-    private playerHeaders = Array.from({ length: 11 }, (_, i) => \`home_player_\${i + 1}\`)
-        .concat(Array.from({ length: 11 }, (_, i) => \`away_player_\${i + 1}\`));
+    private playerHeaders = Array.from({ length: 11 }, (_, i) => `home_player_${i + 1}`)
+        .concat(Array.from({ length: 11 }, (_, i) => `away_player_${i + 1}`));
 
     // Exact Kaggle Match.csv headers we care about. 
     // The CSV parser will ignore betting odds and X/Y coordinates if they are in the CSV but not here.
@@ -45,7 +45,7 @@ export class KaggleMatchStrategy implements ICsvValidationStrategy {
     sampleFilename = 'Match.csv';
     sampleCsv = [
         this.expectedHeaders.join(','),
-        \`1,21518,2015/2016,1,2015-08-23 00:00:00,123456,1000,2000,1,0,\${Array(22).fill('10').join(',')},<xml></xml>,,,,,,,,\`,
+        `1,21518,2015/2016,1,2015-08-23 00:00:00,123456,1000,2000,1,0,${Array(22).fill('10').join(',')},<xml></xml>,,,,,,,,`,
     ].join('\n');
 
     validate(parsed: ParsedCsvDocument): RowValidationResult {
