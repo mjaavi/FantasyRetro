@@ -911,19 +911,18 @@
         <div class="absolute inset-0 backdrop-blur-md pointer-events-none"></div>
 
         <div class="relative z-10 flex flex-col items-center">
-            <!-- Spinner and Logo -->
-            <div class="relative flex items-center justify-center mb-6">
-                <div class="absolute inset-0 w-24 h-24 border-[3px] border-blue-500/30 rounded-full"></div>
-                <div class="absolute inset-0 w-24 h-24 border-[3px] border-t-blue-500 border-r-blue-400 border-b-transparent border-l-transparent rounded-full animate-spin"></div>
-                <svg class="w-10 h-10 text-white animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"></path>
+            <!-- Spinner Field -->
+            <div class="relative flex items-center justify-center mb-6 mt-4">
+                <svg viewBox="0 0 100 150" class="w-20 h-32 transform -rotate-12 drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]">
+                    <rect x="5" y="5" width="90" height="140" rx="8" class="pitch-loader-line" style="animation-delay: 0s" />
+                    <line x1="5" y1="75" x2="95" y2="75" class="pitch-loader-line" style="animation-delay: 0.1s" />
+                    <circle cx="50" cy="75" r="18" class="pitch-loader-line" style="animation-delay: 0.2s" />
+                    <rect x="25" y="5" width="50" height="25" class="pitch-loader-line" style="animation-delay: 0.3s" />
+                    <rect x="25" y="120" width="50" height="25" class="pitch-loader-line" style="animation-delay: 0.4s" />
                 </svg>
             </div>
             
-            <h2 class="text-3xl font-extrabold tracking-tight text-white drop-shadow-lg mb-2">
-                Calentando <span class="text-blue-500">Jugadores</span>
-            </h2>
-            <p id="global-splash-text" class="text-slate-400 font-medium tracking-wide text-sm uppercase animate-pulse">Explicando la táctica...</p>
+            <p id="global-splash-text" class="text-slate-400 font-bold tracking-widest text-xs uppercase animate-pulse mt-4">Explicando la táctica...</p>
         </div>
     </div>
 

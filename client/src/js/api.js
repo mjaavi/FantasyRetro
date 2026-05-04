@@ -200,10 +200,13 @@ export async function unirseALiga(inviteCode) {
 export async function fetchRoster(leagueId) {
     const cacheKey = `roster-${leagueId}`;
     const cached = getCached(cacheKey);
-    if (cached) return cached;
+    // Solo usamos caché si realmente hay jugadores (evita el bug de la pre-carga inicial guardando un array vacío)
+    if (cached && cached.length > 0) return cached;
     
     const data = (await apiFetch(`/roster/${leagueId}`)).data;
-    setCached(cacheKey, data);
+    if (data && data.length > 0) {
+        setCached(cacheKey, data);
+    }
     return data;
 }
 
