@@ -902,6 +902,31 @@
 </head>
 <body class="bg-[#0b1120] text-slate-100 font-sans antialiased min-h-screen relative overflow-x-hidden tracking-tight" style="visibility: hidden;">
 
+    <!-- ══════════════════════════════════════════════════════
+         GLOBAL SPLASH SCREEN (Carga Inicial y Pre-carga)
+    ═══════════════════════════════════════════════════════════ -->
+    <div id="global-splash-screen" class="fixed inset-0 z-[999] flex flex-col items-center justify-center bg-[#0b1120] transition-opacity duration-500 hidden">
+        <!-- Overlay Blur/Gradient -->
+        <div class="absolute inset-0 bg-gradient-to-b from-blue-900/10 to-[#0b1120] pointer-events-none"></div>
+        <div class="absolute inset-0 backdrop-blur-md pointer-events-none"></div>
+
+        <div class="relative z-10 flex flex-col items-center">
+            <!-- Spinner and Logo -->
+            <div class="relative flex items-center justify-center mb-6">
+                <div class="absolute inset-0 w-24 h-24 border-[3px] border-blue-500/30 rounded-full"></div>
+                <div class="absolute inset-0 w-24 h-24 border-[3px] border-t-blue-500 border-r-blue-400 border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+                <svg class="w-10 h-10 text-white animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"></path>
+                </svg>
+            </div>
+            
+            <h2 class="text-3xl font-extrabold tracking-tight text-white drop-shadow-lg mb-2">
+                Preparando <span class="text-blue-500">Equipo</span>
+            </h2>
+            <p id="global-splash-text" class="text-slate-400 font-medium tracking-wide text-sm uppercase animate-pulse">Generando plantilla inicial...</p>
+        </div>
+    </div>
+
     <!-- Fondo decorativo -->
     <div class="fixed inset-0 z-0 pointer-events-none overflow-hidden flex items-center justify-center">
         <div class="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-600/15 rounded-full blur-[120px]"></div>

@@ -169,7 +169,13 @@ export async function fetchMisLigas() {
 
 /** Detalles de una liga y sus participantes */
 export async function fetchLiga(leagueId) {
-    return (await apiFetch(`/leagues/${leagueId}`)).data;
+    const cacheKey = `liga-${leagueId}`;
+    const cached = getCached(cacheKey);
+    if (cached) return cached;
+
+    const data = (await apiFetch(`/leagues/${leagueId}`)).data;
+    setCached(cacheKey, data);
+    return data;
 }
 
 /** Crea una nueva liga */
@@ -192,21 +198,40 @@ export async function unirseALiga(inviteCode) {
 
 /** Plantilla completa del usuario en una liga */
 export async function fetchRoster(leagueId) {
-    return (await apiFetch(`/roster/${leagueId}`)).data;
+    const cacheKey = `roster-${leagueId}`;
+    const cached = getCached(cacheKey);
+    if (cached) return cached;
+    
+    const data = (await apiFetch(`/roster/${leagueId}`)).data;
+    setCached(cacheKey, data);
+    return data;
 }
 
 /** Resumen de puntos de la plantilla del usuario */
 export async function fetchRosterScores(leagueId) {
-    return (await apiFetch(`/roster/${leagueId}/scores`)).data;
+    const cacheKey = `roster-scores-${leagueId}`;
+    const cached = getCached(cacheKey);
+    if (cached) return cached;
+    
+    const data = (await apiFetch(`/roster/${leagueId}/scores`)).data;
+    setCached(cacheKey, data);
+    return data;
 }
 
 /** Preferencias de alineacion guardadas por jornada */
 export async function fetchRosterLineups(leagueId) {
-    return (await apiFetch(`/roster/${leagueId}/lineups`)).data;
+    const cacheKey = `roster-lineups-${leagueId}`;
+    const cached = getCached(cacheKey);
+    if (cached) return cached;
+    
+    const data = (await apiFetch(`/roster/${leagueId}/lineups`)).data;
+    setCached(cacheKey, data);
+    return data;
 }
 
 /** Guarda la formacion de la jornada abierta */
 export async function saveRosterFormation(leagueId, jornada, formationKey) {
+    invalidateCache(`roster-lineups-${leagueId}`);
     return (await apiFetch(`/roster/${leagueId}/lineups`, {
         method: 'PATCH',
         body: JSON.stringify({ jornada, formationKey }),
@@ -215,6 +240,7 @@ export async function saveRosterFormation(leagueId, jornada, formationKey) {
 
 /** Cambia el estado titular/suplente de un jugador */
 export async function toggleStarter(leagueId, playerApiId, isStarter) {
+    invalidateCache(`roster-${leagueId}`);
     return apiFetch(`/roster/${leagueId}/${playerApiId}`, {
         method: 'PATCH',
         body: JSON.stringify({ is_starter: isStarter }),
