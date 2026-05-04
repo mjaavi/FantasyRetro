@@ -421,19 +421,7 @@ export class SupabaseCatalogRepository implements ICatalogRepository {
         }
     }
 
-    async upsertSeasons(rows: CatalogSeasonWriteModel[]): Promise<void> {
-        if (!rows.length) {
-            return;
-        }
 
-        const { error } = await this.db
-            .from('catalog_seasons')
-            .upsert(rows, { onConflict: 'season' });
-
-        if (error) {
-            throw new AppError(`Error al publicar temporadas del catalogo: ${error.message}`, 500);
-        }
-    }
 
     async upsertRawPlayers(rows: any[]): Promise<void> {
         if (!rows.length) return;
@@ -457,7 +445,7 @@ export class SupabaseCatalogRepository implements ICatalogRepository {
         if (!rows.length) return;
         const { error } = await this.db
             .from('Match')
-            .upsert(rows); // Assumes Match has standard primary key or duplicates are okay, or no onConflict needed for raw dump
+            .upsert(rows, { onConflict: 'id' });
             
         if (error) throw new AppError(`Error al publicar Partidos / Fixtures: ${error.message}`, 500);
     }

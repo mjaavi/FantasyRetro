@@ -108,24 +108,35 @@ export interface CatalogCompetitionWriteModel {
     updated_at?: string;
 }
 
-export interface CatalogSeasonWriteModel {
-    season: string;
-    sort_order: number;
-    is_active: boolean;
-}
+
 
 export interface CatalogMatchWriteModel {
+    id: number;
+    match_api_id: number;
+    date: string;
     home_team_api_id: number;
     away_team_api_id: number;
+    home_team_goal: number;
+    away_team_goal: number;
     season: string;
     stage: number;
     league_id: number;
+    goal: string | null;
+    shoton: string | null;
+    shotoff: string | null;
+    foulcommit: string | null;
+    card: string | null;
+    cross: string | null;
+    corner: string | null;
+    possession: string | null;
     [key: string]: any; // Allow the 22 player spots
 }
 
 export interface CatalogTeamWriteModel {
+    id: number;
     team_api_id: number;
     team_long_name: string;
+    team_short_name: string;
     team_fifa_api_id: number | null;
 }
 
@@ -143,7 +154,6 @@ export interface ICatalogRepository {
     getImportJobErrors(jobId: number): Promise<CatalogImportJobError[]>;
     getImportJobRows(jobId: number): Promise<CatalogImportJobRow[]>;
     upsertCompetitions(rows: CatalogCompetitionWriteModel[]): Promise<void>;
-    upsertSeasons(rows: CatalogSeasonWriteModel[]): Promise<void>;
     upsertRawPlayers(rows: any[]): Promise<void>;
     upsertPlayerAttributes(rows: any[]): Promise<void>;
     upsertMatches(rows: CatalogMatchWriteModel[]): Promise<void>;
