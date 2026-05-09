@@ -23,8 +23,8 @@ export interface InitialPricingInput {
  * Usado por MarketFluctuationService.
  */
 export interface MarketFluctuationInput {
-    readonly currentPrice: number;
-    readonly points:       number;
+    readonly currentPrice:         number;
+    readonly movingAveragePoints:  number;
 }
 
 /**

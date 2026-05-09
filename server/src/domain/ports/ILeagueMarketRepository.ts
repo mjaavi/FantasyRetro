@@ -17,6 +17,11 @@ export interface LeagueMarketPlayerSnapshot {
 
 export interface LeagueMarketPlayer extends LeagueMarketPlayerSnapshot {
     marketValue: number;
+    previousMarketValue: number | null;
+    marketValueDelta: number;
+    marketValueChangePct: number;
+    lastAveragePoints: number | null;
+    lastJornadaProcessed: number | null;
 }
 
 export interface LeagueBid {

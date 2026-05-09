@@ -6,7 +6,7 @@ import { assertValidCurrentPrice, assertValidFantasyPoints } from './shared/Econ
 export class MarketFluctuationService {
     calculate(input: MarketFluctuationInput): FluctuationResult {
         const currentPrice = assertValidCurrentPrice(input.currentPrice);
-        const points = assertValidFantasyPoints(input.points);
+        const points = assertValidFantasyPoints(input.movingAveragePoints);
 
         const rawVariation = (points - MARKET_FLUCTUATION_CONFIG.demandLevel) * MARKET_FLUCTUATION_CONFIG.volatilityFactor;
         const variation = Math.min(

@@ -4,6 +4,7 @@ import {
     LeagueBid,
     LeagueMarketPlayer,
 } from '../../domain/ports/ILeagueMarketRepository';
+import { IPlayerMarketValueRepository } from '../../domain/ports/IPlayerMarketValueRepository';
 import { ILeagueRepository } from '../../domain/ports/ILeagueRepository';
 import { LeagueMarketValueProjector } from './economy/LeagueMarketValueProjector';
 
@@ -30,6 +31,7 @@ export class LeagueMarketService {
         private readonly repo: ILeagueMarketRepository,
         private readonly leagueRepo: ILeagueRepository,
         private readonly marketValueProjector: LeagueMarketValueProjector = new LeagueMarketValueProjector(),
+        private readonly marketValueRepo?: IPlayerMarketValueRepository,
     ) {}
 
     async openMarket(leagueId: number): Promise<{ jugadores: number; expiresAt: string }> {
@@ -292,6 +294,16 @@ export class LeagueMarketService {
 
     private async obtenerMercadoValorizado(leagueId: number): Promise<LeagueMarketPlayer[]> {
         const snapshots = await this.repo.getActiveMarket(leagueId);
-        return this.marketValueProjector.projectPlayers(snapshots);
+        const marketValues = this.marketValueRepo
+            ? await this.marketValueRepo.findMarketValues(
+                leagueId,
+                snapshots.map(snapshot => snapshot.playerApiId),
+            )
+            : [];
+
+        return this.marketValueProjector.projectPlayers(
+            snapshots,
+            new Map(marketValues.map(value => [value.playerApiId, value])),
+        );
     }
 }

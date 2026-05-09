@@ -5,12 +5,14 @@ import { PlayerPosition } from '../../domain/models/player.models';
 import { SupabaseAdminRepository } from '../../infrastructure/repositories/SupabaseAdminRepository';
 import { DatasetParser } from '../../infrastructure/parser/DatasetParser';
 import { inferirPosicionesDesdeMatch } from '../../infrastructure/repositories/posicionHelper';
+import { LeagueMarketValueRecalculationService } from './economy/LeagueMarketValueRecalculationService';
 import { ScoringEngine } from './scoring/ScoringEngine';
 
 export interface ProcesoJornadaResult {
     leagueId: number;
     jornada: number;
     jugadoresPuntuados: number;
+    valoresMercadoActualizados: number;
     errores: string[];
 }
 
@@ -28,6 +30,7 @@ export class AdminService {
         private readonly repo: IAdminRepository = new SupabaseAdminRepository(),
         private readonly parser: IDatasetParser = new DatasetParser(),
         private readonly engine: ScoringEngine = new ScoringEngine(),
+        private readonly marketValueRecalculationService?: LeagueMarketValueRecalculationService,
     ) {}
 
     async procesarJornada(leagueId: number, jornada: number): Promise<ProcesoJornadaResult> {
@@ -127,10 +130,24 @@ export class AdminService {
             raw_stats: puntos.rawStats,
         }));
 
-        try {
-            await this.repo.saveGlobalScores(globalRows);
-        } catch (error) {
-            errores.push((error as Error).message);
+        let globalScoresSaved = false;
+        if (globalRows.length) {
+            try {
+                await this.repo.saveGlobalScores(globalRows);
+                globalScoresSaved = true;
+            } catch (error) {
+                errores.push((error as Error).message);
+            }
+        }
+
+        let valoresMercadoActualizados = 0;
+        if (globalScoresSaved && this.marketValueRecalculationService) {
+            try {
+                const result = await this.marketValueRecalculationService.recalculateAfterRound(leagueId, jornada);
+                valoresMercadoActualizados = result.playersUpdated;
+            } catch (error) {
+                errores.push((error as Error).message);
+            }
         }
 
         if (jornada === (liga.jornada_actual ?? 0) + 1) {
@@ -145,6 +162,7 @@ export class AdminService {
             leagueId,
             jornada,
             jugadoresPuntuados: globalMap.size,
+            valoresMercadoActualizados,
             errores,
         };
     }

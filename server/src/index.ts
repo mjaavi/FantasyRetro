@@ -37,6 +37,7 @@ import { SupabaseDashboardRepository }     from './infrastructure/repositories/S
 import { SupabaseAdminRepository }         from './infrastructure/repositories/SupabaseAdminRepository';
 import { SupabaseFixturesRepository }      from './infrastructure/repositories/SupabaseFixturesRepository';
 import { SupabaseCatalogRepository }       from './infrastructure/repositories/SupabaseCatalogRepository';
+import { SupabasePlayerMarketValueRepository } from './infrastructure/repositories/SupabasePlayerMarketValueRepository';
 
 const leagueRepo       = new SupabaseLeagueRepository();
 const leagueMarketRepo = new SupabaseLeagueMarketRepository();
@@ -50,6 +51,7 @@ const adminRepo        = new SupabaseAdminRepository(supabaseAdmin);
 const fixturesRepo     = new SupabaseFixturesRepository(supabaseAdmin);
 const datasetParser    = new DatasetParser(supabaseAdmin);
 const catalogRepo      = new SupabaseCatalogRepository(supabaseAdmin);
+const playerMarketValueRepo = new SupabasePlayerMarketValueRepository(supabaseAdmin);
 
 // ── 2. Application: Servicios puros (sin I/O) ─────────────────────────────────
 import { ScoringEngine }             from './application/services/scoring/ScoringEngine';
@@ -69,8 +71,17 @@ import { AdminService }        from './application/services/admin.service';
 import { DashboardService }    from './application/services/dashboard.service';
 import { CatalogService }      from './application/services/catalog.service';
 import { CatalogImportService } from './application/services/catalogImport.service';
+import { LeagueMarketValueProjector } from './application/services/economy/LeagueMarketValueProjector';
+import { LeagueMarketValueRecalculationService } from './application/services/economy/LeagueMarketValueRecalculationService';
 
-const leagueMarketService = new LeagueMarketService(leagueMarketRepo, leagueRepo);
+const marketValueRecalculationService = new LeagueMarketValueRecalculationService(playerMarketValueRepo);
+const marketValueProjector = new LeagueMarketValueProjector();
+const leagueMarketService = new LeagueMarketService(
+    leagueMarketRepo,
+    leagueRepo,
+    marketValueProjector,
+    playerMarketValueRepo,
+);
 const leagueOnboardingSvc = new LeagueOnboardingService(leagueMarketRepo, leagueRepo);
 const catalogService      = new CatalogService(catalogRepo);
 const catalogImportService = new CatalogImportService(catalogRepo);
@@ -80,7 +91,7 @@ const rankingService      = new RankingService(leagueRepo, rankingRepo);
 const rosterService       = new RosterService(rosterRepo);
 const scoringService      = new ScoringService(scoringRepo, datasetParser, scoringEngine);
 const seedService         = new SeedService(seedRepo);
-const adminService        = new AdminService(adminRepo, datasetParser, scoringEngine);
+const adminService        = new AdminService(adminRepo, datasetParser, scoringEngine, marketValueRecalculationService);
 const dashboardService    = new DashboardService(dashboardRepo, rankingRepo, leagueRepo, fixturesRepo);
 
 // ── 4. Infrastructure: Controllers ───────────────────────────────────────────

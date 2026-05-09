@@ -27,8 +27,6 @@ export async function loadMarket() {
         return;
     }
 
-    // Limpiar caché para forzar datos frescos del servidor
-
     grid.innerHTML = '<p class="text-slate-500 font-bold col-span-full text-center py-10">Cargando mercado...</p>';
 
     try {
@@ -57,6 +55,11 @@ export async function loadMarket() {
                     realTeam:     player.realTeam ?? player.real_team ?? 'Sin equipo',
                     position:     player.position,
                     market_value: player.marketValue,
+                    previous_market_value: player.previousMarketValue ?? null,
+                    market_value_delta: player.marketValueDelta ?? 0,
+                    market_value_change_pct: player.marketValueChangePct ?? 0,
+                    last_average_points: player.lastAveragePoints ?? null,
+                    last_jornada_processed: player.lastJornadaProcessed ?? null,
                     playerFifaApiId: player.playerFifaApiId ?? null,
                     faceUrl:      player.faceUrl ?? null,
                     clubLogoUrl:  player.clubLogoUrl ?? null,

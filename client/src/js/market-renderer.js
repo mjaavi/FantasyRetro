@@ -23,6 +23,20 @@ function createClippedClubBadge(clubLogoUrl, className, size = 98) {
     return badge;
 }
 
+function formatMarketDelta(value) {
+    const delta = Number(value ?? 0);
+    if (!Number.isFinite(delta) || delta === 0) return '0 €';
+
+    const sign = delta > 0 ? '+' : '-';
+    return `${sign}${formatCurrency(Math.abs(delta))} €`;
+}
+
+function getMarketDeltaClass(delta) {
+    if (delta > 0) return 'market-player-price-delta-up';
+    if (delta < 0) return 'market-player-price-delta-down';
+    return 'market-player-price-delta-flat';
+}
+
 function createBtn(className, text, action, player) {
     const btn = document.createElement('button');
     btn.className = className;
@@ -97,6 +111,14 @@ export function createPlayerCard(player, userBid) {
 
     priceBlock.appendChild(label);
     priceBlock.appendChild(value);
+
+    if (player.last_jornada_processed !== null && player.last_jornada_processed !== undefined) {
+        const delta = Number(player.market_value_delta ?? 0);
+        const deltaEl = document.createElement('span');
+        deltaEl.className = `market-player-price-delta ${getMarketDeltaClass(delta)}`;
+        deltaEl.textContent = `Valor ${formatMarketDelta(delta)}`;
+        priceBlock.appendChild(deltaEl);
+    }
 
     if (hasBid) {
         const bidMeta = document.createElement('span');

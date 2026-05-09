@@ -56,7 +56,6 @@ export async function apiFetch(endpoint, options = {}) {
 
 // Endpoints del mercado
 
-/** Jugadores del mercado con cache de 5 minutos */
 /** Jugadores del mercado activo de una liga */
 export async function fetchMarketPlayers(leagueId, page = 0) {
     if (!leagueId) return [];
