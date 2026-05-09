@@ -312,16 +312,22 @@ function _renderBarras(container, h) {
                         tirosAlPalo: { 'PT': 1, 'DF': 1, 'MC': 1, 'DL': 1 },
                         centrosAlArea: { 'PT': 0, 'DF': 0.5, 'MC': 0.5, 'DL': 0 },
                         posesionSuperior60: { 'PT': 0, 'DF': 0, 'MC': 1, 'DL': 0 },
-                        faltasCometidas: { 'PT': -0.2, 'DF': -0.2, 'MC': -0.2, 'DL': -0.2 },
+                        faltasCometidas: { 'PT': -0.2, 'DF': -0.1, 'MC': -0.2, 'DL': -0.2 },
                         tarjetasAmarillas: { 'PT': -1, 'DF': -1, 'MC': -1, 'DL': -1 },
                         tarjetasRojas: { 'PT': -3, 'DF': -3, 'MC': -3, 'DL': -3 },
-                        porteriaACero: { 'PT': 4, 'DF': 3, 'MC': 0, 'DL': 0 },
                         paradasDeducidas: { 'PT': 0.5, 'DF': 0, 'MC': 0, 'DL': 0 },
                         tirosRivalesBloqueados: { 'PT': 0, 'DF': 0.5, 'MC': 0, 'DL': 0 }
                     };
 
+                    // Bonus gradual por goles encajados (sustituye porteriaACero)
+                    const GOLES_ENCAJADOS_BONUS = {
+                        0: { 'PT': 4, 'DF': 3, 'MC': 0, 'DL': 0 },
+                        1: { 'PT': 2, 'DF': 1.5, 'MC': 0, 'DL': 0 },
+                        2: { 'PT': 0.5, 'DF': 0.5, 'MC': 0, 'DL': 0 },
+                    };
+
                     const PICAS_A_PUNTOS = {
-                        'NEG': -3,
+                        'NEG': -1,
                         'SC': 0,
                         'P1': 1,
                         'P2': 4,
@@ -347,11 +353,21 @@ function _renderBarras(container, h) {
                         { label: 'Faltas cometidas', val: rs.faltasCometidas, pts: rs.faltasCometidas * MATRIX.faltasCometidas[pos] },
                         { label: 'Tarjetas amarillas', val: rs.tarjetasAmarillas, pts: rs.tarjetasAmarillas * MATRIX.tarjetasAmarillas[pos] },
                         { label: 'Tarjetas rojas', val: rs.tarjetasRojas, pts: rs.tarjetasRojas * MATRIX.tarjetasRojas[pos] },
-                        { label: 'Portería a 0', val: rs.porteriaACero ? 1 : 0, pts: rs.porteriaACero ? MATRIX.porteriaACero[pos] : 0, hideZero: true },
+                    ];
+
+                    // Goles encajados (sistema gradual)
+                    const ge = rs.golesEncajados ?? (rs.porteriaACero ? 0 : 99);
+                    const geKey = Math.min(ge, 2);
+                    const geBonus = (GOLES_ENCAJADOS_BONUS[geKey] || {})[pos] || 0;
+                    if (geBonus !== 0 || ge <= 2) {
+                        statRows.push({ label: `Goles encajados (${ge})`, val: ge, pts: geBonus });
+                    }
+
+                    statRows.push(
                         { label: 'Paradas', val: rs.paradasDeducidas, pts: rs.paradasDeducidas * MATRIX.paradasDeducidas[pos] },
                         { label: 'Tiros bloqueados', val: rs.tirosRivalesBloqueados, pts: rs.tirosRivalesBloqueados * MATRIX.tirosRivalesBloqueados[pos] },
                         { label: 'Posesión > 60%', val: rs.posesionSuperior60 ? 1 : 0, pts: rs.posesionSuperior60 ? MATRIX.posesionSuperior60[pos] : 0, hideZero: true }
-                    ];
+                    );
 
                     let resultPts = 0;
                     if (rs.resultado === 'victoria') resultPts = 1;
