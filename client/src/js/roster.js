@@ -64,18 +64,56 @@ function getCurrentFormation() {
     return getFormationForJornada(getEditableJornada(), _roster);
 }
 
+function normalizeRosterPosition(position) {
+    return POSICION_LABEL[position] ? position : 'MC';
+}
+
+function getPlayerPosition(jugador) {
+    return normalizeRosterPosition(jugador?.position);
+}
+
+function countStartersInPosition(position) {
+    const targetPosition = normalizeRosterPosition(position);
+
+    return _roster.filter((item) =>
+        item?.is_starter && getPlayerPosition(item) === targetPosition,
+    ).length;
+}
+
+function hasStarterInPosition(position) {
+    const targetPosition = normalizeRosterPosition(position);
+
+    return _roster.some((item) =>
+        item?.is_starter && getPlayerPosition(item) === targetPosition,
+    );
+}
+
 function canPromoteToCurrentFormation(jugador) {
     if (!isEditableJornada()) return false;
 
     const layout = window.AVAILABLE_FORMATIONS?.[getCurrentFormation()];
-    const position = jugador?.position ?? 'MC';
+    const position = getPlayerPosition(jugador);
     if (!layout || !Number.isFinite(Number(layout[position]))) return false;
 
-    const startersInPosition = _roster.filter((item) =>
-        item?.is_starter && item.position === position,
-    ).length;
+    return countStartersInPosition(position) < Number(layout[position]);
+}
 
-    return startersInPosition < Number(layout[position]);
+function canDragBenchPlayerToLineup(jugador) {
+    if (!jugador || jugador.is_starter || !isEditableJornada()) return false;
+
+    return canPromoteToCurrentFormation(jugador) || hasStarterInPosition(getPlayerPosition(jugador));
+}
+
+function canDropPlayerOnLineupSlot(jugador, targetPosition, currentPlayer = null) {
+    if (!jugador || !isEditableJornada()) return false;
+    if (getPlayerPosition(jugador) !== normalizeRosterPosition(targetPosition)) return false;
+
+    if (currentPlayer) {
+        if (Number(currentPlayer.id) === Number(jugador.id)) return false;
+        return !jugador.is_starter && Boolean(currentPlayer.is_starter);
+    }
+
+    return !jugador.is_starter && canPromoteToCurrentFormation(jugador);
 }
 
 function getRosterPlayerById(playerId) {
@@ -279,6 +317,14 @@ function createClippedClubBadge(clubLogoUrl, className, size = 92) {
     return badge;
 }
 
+function getLineupScoreValue(jugador) {
+    if (isEditableJornada()) return null;
+
+    return jugador.jornada_pts !== undefined
+        ? jugador.jornada_pts
+        : getPuntosJornadaActual(jugador.player_api_id ?? jugador.id);
+}
+
 function renderTodo() {
     try {
         renderSlider();
@@ -404,43 +450,38 @@ function renderSlider() {
 }
 
 
-function rellenarSlot(slot, jugador) {
-    const jornadaPts = isEditableJornada()
-        ? null
-        : (
-            jugador.jornada_pts !== undefined
-                ? jugador.jornada_pts
-                : getPuntosJornadaActual(jugador.player_api_id ?? jugador.id)
-        );
-
-    slot.className = 'player-slot';
-    slot.dataset.playerId = jugador.id;
-    slot.onclick = null;
-    slot.innerHTML = '';
-
+function createLineupPlayerElements(jugador, options = {}) {
+    const {
+        draggable = false,
+        draggingClass = 'lineup-player-card-dragging',
+        showRemove = false,
+        onRemove = null,
+        onOpen = abrirPanelJugador,
+    } = options;
+    const jornadaPts = getLineupScoreValue(jugador);
     const card = document.createElement('div');
     card.className = `lineup-player-card ${POS_BG[jugador.position] ?? 'card-accent-MC'}`;
-    card.style.cursor = 'pointer';
-    card.draggable = isEditableJornada();
+    card.style.cursor = draggable ? 'grab' : 'pointer';
+    card.draggable = Boolean(draggable);
 
     if (card.draggable) {
         card.addEventListener('dragstart', (event) => {
             setPlayerDragData(event, jugador);
-            card.classList.add('lineup-player-card-dragging');
+            card.classList.add(draggingClass);
         });
         card.addEventListener('dragend', () => {
-            card.classList.remove('lineup-player-card-dragging');
+            card.classList.remove(draggingClass);
         });
     }
 
-    if (_jornadaSeleccionada > _jornada) {
+    if (showRemove) {
         const removeBtn = document.createElement('button');
         removeBtn.className = 'slot-remove';
         removeBtn.title = 'Al banquillo';
         removeBtn.textContent = '×';
         removeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            moverJugador(jugador, false);
+            onRemove?.(jugador);
         });
         card.appendChild(removeBtn);
     }
@@ -473,13 +514,72 @@ function rellenarSlot(slot, jugador) {
     card.appendChild(logoBadge);
     card.appendChild(portraitFrame);
 
-    slot.appendChild(card);
-    slot.appendChild(scoreBadge);
-
     card.addEventListener('click', (e) => {
         e.stopPropagation();
-        abrirPanelJugador(jugador);
+        onOpen?.(jugador);
     });
+
+    return { card, scoreBadge };
+}
+
+function appendLineupPlayerToSlot(slot, jugador, options = {}) {
+    const { card, scoreBadge } = createLineupPlayerElements(jugador, options);
+    slot.appendChild(card);
+    slot.appendChild(scoreBadge);
+    return card;
+}
+
+function setupLineupSlotDropTarget(slot, posicion, currentPlayer = null) {
+    if (!isEditableJornada()) return;
+
+    slot.addEventListener('dragover', (event) => {
+        const jugador = getDraggedPlayer(event);
+        if (!canDropPlayerOnLineupSlot(jugador, posicion, currentPlayer)) return;
+
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+        slot.classList.add('player-slot-drop-active');
+    });
+
+    slot.addEventListener('dragleave', (event) => {
+        if (slot.contains(event.relatedTarget)) return;
+        slot.classList.remove('player-slot-drop-active');
+    });
+
+    slot.addEventListener('drop', (event) => {
+        const jugador = getDraggedPlayer(event);
+        slot.classList.remove('player-slot-drop-active');
+
+        if (!canDropPlayerOnLineupSlot(jugador, posicion, currentPlayer)) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        handleLineupSlotDrop(jugador, currentPlayer);
+    });
+}
+
+function handleLineupSlotDrop(jugador, currentPlayer = null) {
+    if (currentPlayer) {
+        reemplazarTitular(jugador, currentPlayer);
+        return;
+    }
+
+    moverJugador(jugador, true);
+}
+
+function rellenarSlot(slot, jugador) {
+    slot.className = 'player-slot';
+    slot.dataset.playerId = jugador.id;
+    slot.style.cursor = '';
+    slot.onclick = null;
+    slot.innerHTML = '';
+
+    appendLineupPlayerToSlot(slot, jugador, {
+        draggable: isEditableJornada(),
+        showRemove: _jornadaSeleccionada > _jornada,
+        onRemove: () => moverJugador(jugador, false),
+    });
+    setupLineupSlotDropTarget(slot, jugador.position, jugador);
 }
 
 function vaciarSlot(slot, posicion, suplentesDisponibles) {
@@ -499,31 +599,13 @@ function vaciarSlot(slot, posicion, suplentesDisponibles) {
             e.stopPropagation();
             abrirSelectorPosicion(slot, posicion, suplentesDisponibles);
         };
-        slot.addEventListener('dragover', (event) => {
-            const jugador = getDraggedPlayer(event);
-            if (jugador?.position !== posicion || !canPromoteToCurrentFormation(jugador)) return;
-            event.preventDefault();
-            event.dataTransfer.dropEffect = 'move';
-            slot.classList.add('player-slot-drop-active');
-        });
-        slot.addEventListener('dragleave', () => {
-            slot.classList.remove('player-slot-drop-active');
-        });
-        slot.addEventListener('drop', (event) => {
-            const jugador = getDraggedPlayer(event);
-            slot.classList.remove('player-slot-drop-active');
-
-            if (jugador?.position !== posicion || !canPromoteToCurrentFormation(jugador)) return;
-
-            event.preventDefault();
-            event.stopPropagation();
-            moverJugador(jugador, true);
-        });
     } else {
         slot.onclick = null;
         slot.style.cursor = 'default';
         slot.classList.remove('player-slot-interactive');
     }
+
+    setupLineupSlotDropTarget(slot, posicion, null);
 }
 
 function buildPitchDOM(formationKey) {
@@ -721,9 +803,14 @@ function renderBanquillo(suplentes) {
         label.textContent = POSICION_LABEL[pos];
         fragment.appendChild(label);
 
+        const group = document.createElement('div');
+        group.className = 'bench-position-grid';
+
         for (const jugador of jugadores) {
-            fragment.appendChild(crearTarjetaSuplente(jugador));
+            group.appendChild(crearTarjetaSuplente(jugador));
         }
+
+        fragment.appendChild(group);
     }
 
     container.appendChild(fragment);
@@ -764,73 +851,21 @@ function setupBenchDropTarget(container) {
 }
 
 function crearTarjetaSuplente(jugador) {
-    const pts = getPuntosJugador(jugador.player_api_id ?? jugador.id);
-    const div = document.createElement('div');
-    div.className = 'flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/5 hover:border-blue-500/30 transition-colors cursor-pointer';
-    div.dataset.playerId = jugador.id;
+    const slot = document.createElement('div');
+    const canDragToLineup = canDragBenchPlayerToLineup(jugador);
+    slot.className = 'player-slot bench-player-slot';
+    slot.dataset.playerId = jugador.id;
+    slot.title = canDragToLineup
+        ? 'Arrastrar al once'
+        : 'Sin huecos libres: arrastra sobre otro jugador de su posicion';
+    slot.classList.toggle('bench-player-slot-disabled', !canDragToLineup);
 
-    const avatar = createPlayerAvatar({
-        name: jugador.name,
-        faceUrl: jugador.faceUrl ?? null,
-        playerFifaApiId: jugador.playerFifaApiId ?? null,
-        position: jugador.position,
-        size: 40,
+    appendLineupPlayerToSlot(slot, jugador, {
+        draggable: canDragToLineup,
+        draggingClass: 'bench-player-dragging',
     });
 
-    const info = document.createElement('div');
-    info.className = 'flex-1 min-w-0';
-
-    const nombre = document.createElement('p');
-    nombre.className = 'font-bold text-sm text-white truncate';
-    nombre.textContent = jugador.name;
-
-    const meta = document.createElement('p');
-    meta.className = 'text-xs text-slate-500';
-    meta.textContent = `${POSICION_SHORT[jugador.position] ?? jugador.position} · `;
-
-    const ptsSpan = document.createElement('span');
-    ptsSpan.style.color = pts.total >= 0 ? '#60a5fa' : '#f87171';
-    ptsSpan.style.fontWeight = '700';
-    ptsSpan.textContent = `${pts.total} pts`;
-    meta.appendChild(ptsSpan);
-
-    info.appendChild(nombre);
-    info.appendChild(meta);
-
-    const addBtn = document.createElement('button');
-    const canPromote = canPromoteToCurrentFormation(jugador);
-    div.draggable = canPromote;
-    div.classList.toggle('cursor-grab', canPromote);
-    div.classList.toggle('opacity-60', !canPromote);
-
-    if (canPromote) {
-        div.addEventListener('dragstart', (event) => {
-            setPlayerDragData(event, jugador);
-            div.classList.add('bench-player-dragging');
-        });
-        div.addEventListener('dragend', () => {
-            div.classList.remove('bench-player-dragging');
-        });
-    }
-
-    addBtn.className = canPromote
-        ? 'text-blue-400 hover:text-blue-300 text-xs font-bold shrink-0 px-2 py-1 bg-blue-500/10 rounded-lg border border-blue-500/20 hover:bg-blue-500/20 transition-all'
-        : 'text-slate-600 text-xs font-bold shrink-0 px-2 py-1 bg-white/5 rounded-lg border border-white/10 cursor-not-allowed';
-    addBtn.disabled = !canPromote;
-    addBtn.textContent = '+ Once';
-    addBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (!canPromoteToCurrentFormation(jugador)) return;
-        moverJugador(jugador, true);
-    });
-
-    div.appendChild(avatar);
-    div.appendChild(info);
-    div.appendChild(addBtn);
-
-    div.addEventListener('click', () => abrirPanelJugador(jugador));
-
-    return div;
+    return slot;
 }
 
 function renderCampoDashboard(titulares) {
@@ -881,22 +916,78 @@ function renderCampoDashboard(titulares) {
     campo.insertBefore(fila, campo.firstChild);
 }
 
+function applyStarterChanges(changes) {
+    const nextStateById = new Map(
+        changes.map((change) => [Number(change.playerId), Boolean(change.isStarter)]),
+    );
+    const previousRoster = _roster;
+
+    _roster = _roster.map((j) =>
+        nextStateById.has(Number(j.id))
+            ? { ...j, is_starter: nextStateById.get(Number(j.id)) }
+            : j,
+    );
+    renderTodo();
+
+    return previousRoster;
+}
+
+async function persistStarterChanges(leagueId, changes) {
+    for (const change of changes) {
+        await toggleStarter(leagueId, change.playerId, change.isStarter);
+    }
+}
+
+async function rollbackStarterChanges(leagueId, previousRoster, changes) {
+    const previousStateById = new Map(
+        previousRoster.map((player) => [Number(player.id), Boolean(player.is_starter)]),
+    );
+
+    for (const change of [...changes].reverse()) {
+        const previousState = previousStateById.get(Number(change.playerId));
+        if (typeof previousState !== 'boolean') continue;
+
+        try {
+            await toggleStarter(leagueId, change.playerId, previousState);
+        } catch (err) {
+            console.warn('[Roster] No se pudo revertir el cambio de alineacion:', err.message);
+        }
+    }
+}
+
+async function commitStarterChanges(leagueId, changes, errorContext) {
+    const previousRoster = applyStarterChanges(changes);
+
+    try {
+        await persistStarterChanges(leagueId, changes);
+    } catch (err) {
+        console.error(`[Roster] Error al ${errorContext}:`, err.message);
+        _roster = previousRoster;
+        renderTodo();
+        await rollbackStarterChanges(leagueId, previousRoster, changes);
+    }
+}
+
+async function reemplazarTitular(entrante, saliente) {
+    const liga = getLigaActiva();
+    if (!liga) return;
+    if (!canDropPlayerOnLineupSlot(entrante, saliente.position, saliente)) return;
+
+    await commitStarterChanges(liga.id, [
+        { playerId: saliente.id, isStarter: false },
+        { playerId: entrante.id, isStarter: true },
+    ], 'reemplazar titular');
+}
+
 async function moverJugador(jugador, hacerTitular) {
     const liga = getLigaActiva();
     if (!liga) return;
     if (!isEditableJornada()) return;
     if (hacerTitular && !canPromoteToCurrentFormation(jugador)) return;
 
-    _roster = _roster.map((j) => (j.id === jugador.id ? { ...j, is_starter: hacerTitular } : j));
-    renderTodo();
-
-    try {
-        await toggleStarter(liga.id, jugador.id, hacerTitular);
-    } catch (err) {
-        console.error('[Roster] Error al mover jugador:', err.message);
-        _roster = _roster.map((j) => (j.id === jugador.id ? { ...j, is_starter: !hacerTitular } : j));
-        renderTodo();
-    }
+    await commitStarterChanges(liga.id, [
+        { playerId: jugador.id, isStarter: hacerTitular },
+    ], 'mover jugador');
 }
 
 window.loadRoster = loadRoster;

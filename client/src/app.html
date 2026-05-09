@@ -620,12 +620,31 @@
             .lineup-player-score-negative {
                 border-color: rgba(239,68,68,0.42);
             }
+            .bench-position-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(5.95rem, 1fr));
+                gap: 1.55rem 0.85rem;
+                align-items: start;
+                padding: 0.15rem 0 0.75rem;
+            }
+            @media (min-width: 768px) {
+                .bench-position-grid {
+                    grid-template-columns: repeat(auto-fill, minmax(6.65rem, 1fr));
+                }
+            }
+            .bench-player-slot {
+                justify-self: center;
+            }
+            .bench-player-slot-disabled {
+                opacity: 0.72;
+            }
             .lineup-player-card-dragging,
             .bench-player-dragging {
                 opacity: 0.55;
                 transform: scale(0.98);
             }
-            .player-slot-drop-active .player-slot-card {
+            .player-slot-drop-active .player-slot-card,
+            .player-slot-drop-active .lineup-player-card {
                 border-color: rgba(59,130,246,0.75);
                 background: rgba(59,130,246,0.12);
                 box-shadow: 0 0 0 1px rgba(59,130,246,0.2), 0 18px 40px rgba(2,6,23,0.28);
@@ -1337,7 +1356,7 @@
                                     <option value="5-2-3">5-2-3</option>
                                 </select>
                             </h2>
-                            <p class="text-slate-400 text-sm font-medium">Pulsa un jugador para moverlo al banquillo</p>
+                            <p class="text-slate-400 text-sm font-medium">Once de la jornada abierta</p>
                         </div>
                     </div>
 
