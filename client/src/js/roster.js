@@ -9,6 +9,7 @@ let _jornada = 0;
 let _jornadaSeleccionada = null;
 let _historicoData = {};
 let _lineupFormations = {};
+let _draggedPlayerId = null;
 
 const POSICION_LABEL = {
     PT: 'Portero',
@@ -152,15 +153,22 @@ function getRosterPlayerById(playerId) {
 }
 
 function setPlayerDragData(event, jugador) {
+    _draggedPlayerId = Number(jugador.id);
     event.dataTransfer.effectAllowed = 'move';
     event.dataTransfer.setData('application/x-retro-player-id', String(jugador.id));
     event.dataTransfer.setData('text/plain', String(jugador.id));
 }
 
+function clearPlayerDragData() {
+    _draggedPlayerId = null;
+}
+
 function getDraggedPlayer(event) {
-    const playerId =
-        event.dataTransfer.getData('application/x-retro-player-id')
-        || event.dataTransfer.getData('text/plain');
+    const playerId = _draggedPlayerId
+        ?? (
+            event.dataTransfer.getData('application/x-retro-player-id')
+            || event.dataTransfer.getData('text/plain')
+        );
     return getRosterPlayerById(playerId);
 }
 
@@ -500,6 +508,7 @@ function createLineupPlayerElements(jugador, options = {}) {
         });
         card.addEventListener('dragend', () => {
             card.classList.remove(draggingClass);
+            clearPlayerDragData();
         });
     }
 
@@ -587,6 +596,7 @@ function setupLineupSlotDropTarget(slot, posicion, currentPlayer = null, slotInd
             position: posicion,
             index: slotIndex,
         });
+        clearPlayerDragData();
     });
 }
 
@@ -879,6 +889,7 @@ function setupBenchDropTarget(container) {
         event.preventDefault();
         event.stopPropagation();
         moverJugador(jugador, false);
+        clearPlayerDragData();
     }, { signal: controller.signal });
 }
 
