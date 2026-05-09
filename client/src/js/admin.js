@@ -116,6 +116,13 @@ export async function procesarJornada() {
         }
 
         await mostrarResultados(liga.id, jornada);
+
+        // Invalidar cachés de equipo para que se refresque sin recargar
+        invalidateCache(`roster-scores-${liga.id}`);
+        invalidateCache(`roster-${liga.id}`);
+        invalidateCache(`roster-lineups-${liga.id}`);
+        invalidateCache(`liga-${liga.id}`);
+
         await loadAdmin();
     } catch (err) {
         adminLog(`Error: ${err.message}`, 'err');
