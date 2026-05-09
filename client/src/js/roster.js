@@ -116,6 +116,35 @@ function canDropPlayerOnLineupSlot(jugador, targetPosition, currentPlayer = null
     return !jugador.is_starter && canPromoteToCurrentFormation(jugador);
 }
 
+function getStarterIndexInPosition(jugador, roster = _roster) {
+    if (!jugador) return -1;
+
+    const position = getPlayerPosition(jugador);
+    return roster
+        .filter((item) => item?.is_starter && getPlayerPosition(item) === position)
+        .findIndex((item) => Number(item.id) === Number(jugador.id));
+}
+
+function placeStarterInPosition(playerId, position, targetIndex) {
+    const normalizedPosition = normalizeRosterPosition(position);
+    const startersInPosition = _roster.filter((item) =>
+        item?.is_starter && getPlayerPosition(item) === normalizedPosition,
+    );
+    const movedPlayer = startersInPosition.find((item) => Number(item.id) === Number(playerId));
+
+    if (!movedPlayer) return;
+
+    const orderedStarters = startersInPosition.filter((item) => Number(item.id) !== Number(playerId));
+    const boundedIndex = Math.max(0, Math.min(Number(targetIndex) || 0, orderedStarters.length));
+    orderedStarters.splice(boundedIndex, 0, movedPlayer);
+
+    let nextStarterIndex = 0;
+    _roster = _roster.map((item) => {
+        if (!item?.is_starter || getPlayerPosition(item) !== normalizedPosition) return item;
+        return orderedStarters[nextStarterIndex++] ?? item;
+    });
+}
+
 function getRosterPlayerById(playerId) {
     const id = Number(playerId);
     if (!Number.isFinite(id)) return null;
@@ -529,7 +558,7 @@ function appendLineupPlayerToSlot(slot, jugador, options = {}) {
     return card;
 }
 
-function setupLineupSlotDropTarget(slot, posicion, currentPlayer = null) {
+function setupLineupSlotDropTarget(slot, posicion, currentPlayer = null, slotIndex = 0) {
     if (!isEditableJornada()) return;
 
     slot.addEventListener('dragover', (event) => {
@@ -554,20 +583,23 @@ function setupLineupSlotDropTarget(slot, posicion, currentPlayer = null) {
 
         event.preventDefault();
         event.stopPropagation();
-        handleLineupSlotDrop(jugador, currentPlayer);
+        handleLineupSlotDrop(jugador, currentPlayer, {
+            position: posicion,
+            index: slotIndex,
+        });
     });
 }
 
-function handleLineupSlotDrop(jugador, currentPlayer = null) {
+function handleLineupSlotDrop(jugador, currentPlayer = null, placement = null) {
     if (currentPlayer) {
-        reemplazarTitular(jugador, currentPlayer);
+        reemplazarTitular(jugador, currentPlayer, placement);
         return;
     }
 
-    moverJugador(jugador, true);
+    moverJugador(jugador, true, placement);
 }
 
-function rellenarSlot(slot, jugador) {
+function rellenarSlot(slot, jugador, slotIndex = 0) {
     slot.className = 'player-slot';
     slot.dataset.playerId = jugador.id;
     slot.style.cursor = '';
@@ -579,10 +611,10 @@ function rellenarSlot(slot, jugador) {
         showRemove: _jornadaSeleccionada > _jornada,
         onRemove: () => moverJugador(jugador, false),
     });
-    setupLineupSlotDropTarget(slot, jugador.position, jugador);
+    setupLineupSlotDropTarget(slot, jugador.position, jugador, slotIndex);
 }
 
-function vaciarSlot(slot, posicion, suplentesDisponibles) {
+function vaciarSlot(slot, posicion, suplentesDisponibles, slotIndex = 0) {
     slot.className = 'player-slot player-slot-empty player-slot-interactive';
     slot.dataset.playerId = '';
     slot.style.cursor = '';
@@ -605,7 +637,7 @@ function vaciarSlot(slot, posicion, suplentesDisponibles) {
         slot.classList.remove('player-slot-interactive');
     }
 
-    setupLineupSlotDropTarget(slot, posicion, null);
+    setupLineupSlotDropTarget(slot, posicion, null, slotIndex);
 }
 
 function buildPitchDOM(formationKey) {
@@ -675,9 +707,9 @@ function renderCampo(titulares, suplentes) {
         slots.forEach((slot, i) => {
             try {
                 if (jugadoresPos[i]) {
-                    rellenarSlot(slot, jugadoresPos[i]);
+                    rellenarSlot(slot, jugadoresPos[i], i);
                 } else {
-                    vaciarSlot(slot, pos, suplentesPos);
+                    vaciarSlot(slot, pos, suplentesPos, i);
                 }
             } catch (err) {
                 console.error(`[Roster] Error renderizando slot de pos ${pos} en indice ${i}:`, err);
@@ -916,7 +948,7 @@ function renderCampoDashboard(titulares) {
     campo.insertBefore(fila, campo.firstChild);
 }
 
-function applyStarterChanges(changes) {
+function applyStarterChanges(changes, placement = null) {
     const nextStateById = new Map(
         changes.map((change) => [Number(change.playerId), Boolean(change.isStarter)]),
     );
@@ -927,6 +959,11 @@ function applyStarterChanges(changes) {
             ? { ...j, is_starter: nextStateById.get(Number(j.id)) }
             : j,
     );
+
+    if (placement) {
+        placeStarterInPosition(placement.playerId, placement.position, placement.index);
+    }
+
     renderTodo();
 
     return previousRoster;
@@ -955,8 +992,8 @@ async function rollbackStarterChanges(leagueId, previousRoster, changes) {
     }
 }
 
-async function commitStarterChanges(leagueId, changes, errorContext) {
-    const previousRoster = applyStarterChanges(changes);
+async function commitStarterChanges(leagueId, changes, errorContext, placement = null) {
+    const previousRoster = applyStarterChanges(changes, placement);
 
     try {
         await persistStarterChanges(leagueId, changes);
@@ -968,18 +1005,23 @@ async function commitStarterChanges(leagueId, changes, errorContext) {
     }
 }
 
-async function reemplazarTitular(entrante, saliente) {
+async function reemplazarTitular(entrante, saliente, placement = null) {
     const liga = getLigaActiva();
     if (!liga) return;
     if (!canDropPlayerOnLineupSlot(entrante, saliente.position, saliente)) return;
 
+    const targetIndex = placement?.index ?? getStarterIndexInPosition(saliente);
     await commitStarterChanges(liga.id, [
         { playerId: saliente.id, isStarter: false },
         { playerId: entrante.id, isStarter: true },
-    ], 'reemplazar titular');
+    ], 'reemplazar titular', {
+        playerId: entrante.id,
+        position: saliente.position,
+        index: targetIndex,
+    });
 }
 
-async function moverJugador(jugador, hacerTitular) {
+async function moverJugador(jugador, hacerTitular, placement = null) {
     const liga = getLigaActiva();
     if (!liga) return;
     if (!isEditableJornada()) return;
@@ -987,7 +1029,13 @@ async function moverJugador(jugador, hacerTitular) {
 
     await commitStarterChanges(liga.id, [
         { playerId: jugador.id, isStarter: hacerTitular },
-    ], 'mover jugador');
+    ], 'mover jugador', hacerTitular && placement
+        ? {
+            playerId: jugador.id,
+            position: placement.position ?? jugador.position,
+            index: placement.index ?? getStarterIndexInPosition(jugador),
+        }
+        : null);
 }
 
 window.loadRoster = loadRoster;
