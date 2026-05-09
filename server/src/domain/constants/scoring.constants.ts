@@ -46,7 +46,7 @@ export const SCORING_MATRIX: Record<string, Record<PlayerPosition, number>> = {
     },
     faltaCometida: {
         [PlayerPosition.PT]: -0.2,
-        [PlayerPosition.DF]: -0.2,
+        [PlayerPosition.DF]: -0.1,
         [PlayerPosition.MC]: -0.2,
         [PlayerPosition.DL]: -0.2,
     },
@@ -62,12 +62,7 @@ export const SCORING_MATRIX: Record<string, Record<PlayerPosition, number>> = {
         [PlayerPosition.MC]: -3,
         [PlayerPosition.DL]: -3,
     },
-    porteriaCero: {
-        [PlayerPosition.PT]: 4,
-        [PlayerPosition.DF]: 3,
-        [PlayerPosition.MC]: 0,
-        [PlayerPosition.DL]: 0,
-    },
+    // porteriaCero eliminado — sustituido por GOLES_ENCAJADOS_BONUS (sistema gradual)
     paradaDeducida: {
         [PlayerPosition.PT]: 0.5,
         [PlayerPosition.DF]: 0,
@@ -96,10 +91,36 @@ export const SCORING_MATRIX: Record<string, Record<PlayerPosition, number>> = {
 
 /** Conversión de Picas a puntos adicionales — Fase B */
 export const PICAS_A_PUNTOS: Record<Picas, number> = {
-    [Picas.NEG]: -3,
+    [Picas.NEG]: -1,
     [Picas.SC]:   0,
     [Picas.P1]:   1,
     [Picas.P2]:   4,
     [Picas.P3]:   8,
     [Picas.P4]:  12,
+};
+
+/**
+ * Bonus/penalización gradual según goles encajados por el equipo.
+ * Sustituye al antiguo booleano porteriaCero.
+ * Clave: cantidad de goles encajados (0, 1, 2). 3+ = sin bonus.
+ */
+export const GOLES_ENCAJADOS_BONUS: Record<number, Record<PlayerPosition, number>> = {
+    0: {
+        [PlayerPosition.PT]: 4,
+        [PlayerPosition.DF]: 3,
+        [PlayerPosition.MC]: 0,
+        [PlayerPosition.DL]: 0,
+    },
+    1: {
+        [PlayerPosition.PT]: 2,
+        [PlayerPosition.DF]: 1.5,
+        [PlayerPosition.MC]: 0,
+        [PlayerPosition.DL]: 0,
+    },
+    2: {
+        [PlayerPosition.PT]: 0.5,
+        [PlayerPosition.DF]: 0.5,
+        [PlayerPosition.MC]: 0,
+        [PlayerPosition.DL]: 0,
+    },
 };

@@ -51,7 +51,8 @@ export class SupabaseScoringRepository implements IScoringRepository {
             goles: 0, asistencias: 0, tirosAPuerta: 0, tirosAlPalo: 0,
             centrosAlArea: 0, posesionSuperior60: false, faltasCometidas: 0,
             tarjetasAmarillas: 0, tarjetasRojas: 0, porteriaACero: false,
-            paradasDeducidas: 0, tirosRivalesBloqueados: 0, resultado: 'empate',
+            golesEncajados: 0, paradasDeducidas: 0, tirosRivalesBloqueados: 0,
+            resultado: 'empate',
         };
     }
 }

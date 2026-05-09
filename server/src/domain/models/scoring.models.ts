@@ -62,7 +62,8 @@ export interface PlayerStats {
     tarjetasRojas:          number;
 
     // ── Inferencia (calculadas a partir del partido) ───────────────────────
-    porteriaACero:          boolean;
+    porteriaACero:          boolean;   // Derivado: golesEncajados === 0
+    golesEncajados:         number;    // Goles que encajó el equipo del jugador
     paradasDeducidas:       number;
     tirosRivalesBloqueados: number;
 

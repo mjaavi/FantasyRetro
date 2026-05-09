@@ -3,7 +3,7 @@
 // Responsabilidad Única: calcular la Fase A (puntuación base estadística).
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { SCORING_MATRIX } from '../../../domain/constants/scoring.constants';
+import { SCORING_MATRIX, GOLES_ENCAJADOS_BONUS } from '../../../domain/constants/scoring.constants';
 import { PlayerStats, ResultadoPartido } from '../../../domain/models/scoring.models';
 
 export class StatisticalCalculator {
@@ -32,8 +32,13 @@ export class StatisticalCalculator {
         puntos += stats.tarjetasRojas        * SCORING_MATRIX.tarjetaRoja[pos];
 
         // ── Inferencia ────────────────────────────────────────────────────────
-        if (stats.porteriaACero)
-            puntos += SCORING_MATRIX.porteriaCero[pos];
+        // Sistema gradual: bonus según goles encajados (0, 1, 2). 3+ = sin bonus.
+        const golesKey = Math.min(stats.golesEncajados, 2);
+        const bonusTable = GOLES_ENCAJADOS_BONUS[golesKey];
+        if (bonusTable) {
+            puntos += bonusTable[pos];
+        }
+
         puntos += stats.paradasDeducidas     * SCORING_MATRIX.paradaDeducida[pos];
         puntos += stats.tirosRivalesBloqueados * SCORING_MATRIX.tiroRivalBloqueado[pos];
 

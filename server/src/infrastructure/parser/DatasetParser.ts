@@ -220,16 +220,23 @@ export class DatasetParser implements IDatasetParser {
             }
         }
 
+        // ── Goles encajados + portería a cero (para TODO el equipo) ────────
+        for (const id of homePlayers) {
+            const s = stats.get(id);
+            if (!s) continue;
+            s.golesEncajados = awayGoals;
+            s.porteriaACero  = awayGoals === 0;
+        }
+        for (const id of awayPlayers) {
+            const s = stats.get(id);
+            if (!s) continue;
+            s.golesEncajados = homeGoals;
+            s.porteriaACero  = homeGoals === 0;
+        }
+
+        // ── Paradas deducidas (solo portero) ─────────────────────────────────
         const porteroHome = Number(match.home_player_1);
         const porteroAway = Number(match.away_player_1);
-
-        if (awayGoals === 0 && porteroHome && stats.has(porteroHome)) {
-            stats.get(porteroHome)!.porteriaACero = true;
-        }
-
-        if (homeGoals === 0 && porteroAway && stats.has(porteroAway)) {
-            stats.get(porteroAway)!.porteriaACero = true;
-        }
 
         if (porteroHome && stats.has(porteroHome)) {
             stats.get(porteroHome)!.paradasDeducidas = Math.max(0, tirosDelAway - awayGoals);
@@ -262,6 +269,7 @@ export class DatasetParser implements IDatasetParser {
             tarjetasAmarillas: 0,
             tarjetasRojas: 0,
             porteriaACero: false,
+            golesEncajados: 0,
             paradasDeducidas: 0,
             tirosRivalesBloqueados: 0,
             resultado,
