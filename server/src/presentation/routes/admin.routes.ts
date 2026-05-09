@@ -15,6 +15,7 @@ export function createAdminRouter(ctrl: AdminController): Router {
     router.get('/admin/ligas/:leagueId/scores', ...leagueParticipantGuard, ctrl.getScoresLiga);
     router.get('/admin/ligas/:leagueId/global-scores', ...leagueParticipantGuard, ctrl.getGlobalScores);
     router.get('/admin/ligas/:leagueId/jugador/:playerApiId/historial', ...leagueParticipantGuard, ctrl.getHistorialJugador);
+    router.get('/admin/ligas/:leagueId/jugador/:playerApiId/valor-mercado-historial', ...leagueParticipantGuard, ctrl.getMarketValueHistory);
 
     return router;
 }

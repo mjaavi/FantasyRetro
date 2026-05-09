@@ -73,8 +73,10 @@ import { CatalogService }      from './application/services/catalog.service';
 import { CatalogImportService } from './application/services/catalogImport.service';
 import { LeagueMarketValueProjector } from './application/services/economy/LeagueMarketValueProjector';
 import { LeagueMarketValueRecalculationService } from './application/services/economy/LeagueMarketValueRecalculationService';
+import { PlayerMarketValueHistoryService } from './application/services/economy/PlayerMarketValueHistoryService';
 
 const marketValueRecalculationService = new LeagueMarketValueRecalculationService(playerMarketValueRepo);
+const marketValueHistoryService = new PlayerMarketValueHistoryService(playerMarketValueRepo);
 const marketValueProjector = new LeagueMarketValueProjector();
 const leagueMarketService = new LeagueMarketService(
     leagueMarketRepo,
@@ -91,7 +93,7 @@ const rankingService      = new RankingService(leagueRepo, rankingRepo);
 const rosterService       = new RosterService(rosterRepo);
 const scoringService      = new ScoringService(scoringRepo, datasetParser, scoringEngine);
 const seedService         = new SeedService(seedRepo);
-const adminService        = new AdminService(adminRepo, datasetParser, scoringEngine, marketValueRecalculationService);
+const adminService        = new AdminService(adminRepo, datasetParser, scoringEngine, marketValueRecalculationService, marketValueHistoryService);
 const dashboardService    = new DashboardService(dashboardRepo, rankingRepo, leagueRepo, fixturesRepo);
 
 // ── 4. Infrastructure: Controllers ───────────────────────────────────────────

@@ -92,4 +92,15 @@ export class AdminController {
             next(err);
         }
     };
+
+    getMarketValueHistory = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const leagueId = Number(req.params.leagueId);
+            const playerApiId = Number(req.params.playerApiId);
+            const data = await this.adminService.getMarketValueHistory(leagueId, playerApiId);
+            res.json({ status: 'ok', data });
+        } catch (err) {
+            next(err);
+        }
+    };
 }

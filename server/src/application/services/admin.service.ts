@@ -6,6 +6,7 @@ import { SupabaseAdminRepository } from '../../infrastructure/repositories/Supab
 import { DatasetParser } from '../../infrastructure/parser/DatasetParser';
 import { inferirPosicionesDesdeMatch } from '../../infrastructure/repositories/posicionHelper';
 import { LeagueMarketValueRecalculationService } from './economy/LeagueMarketValueRecalculationService';
+import { PlayerMarketValueHistoryService, PlayerMarketValueHistoryResult } from './economy/PlayerMarketValueHistoryService';
 import { ScoringEngine } from './scoring/ScoringEngine';
 
 export interface ProcesoJornadaResult {
@@ -31,6 +32,7 @@ export class AdminService {
         private readonly parser: IDatasetParser = new DatasetParser(),
         private readonly engine: ScoringEngine = new ScoringEngine(),
         private readonly marketValueRecalculationService?: LeagueMarketValueRecalculationService,
+        private readonly marketValueHistoryService?: PlayerMarketValueHistoryService,
     ) {}
 
     async procesarJornada(leagueId: number, jornada: number): Promise<ProcesoJornadaResult> {
@@ -224,6 +226,15 @@ export class AdminService {
             total,
             historial,
         };
+    }
+
+    async getMarketValueHistory(leagueId: number, playerApiId: number): Promise<PlayerMarketValueHistoryResult> {
+        if (!this.marketValueHistoryService) {
+            return { playerApiId, leagueId, initialPrice: 0, currentPrice: 0, history: [] };
+        }
+
+        const jornadaActual = await this.repo.getLeagueCurrentRound(leagueId);
+        return this.marketValueHistoryService.getHistory(leagueId, playerApiId, jornadaActual);
     }
 
     private accumulate(target: Map<number, PuntosCalc>, playerApiId: number, delta: PuntosCalc): void {

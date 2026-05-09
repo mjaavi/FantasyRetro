@@ -1,26 +1,25 @@
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 // player-drawer.js
-// Drawer lateral reutilizable para ver el historial de puntos de un jugador
-// y la fluctuaciÃ³n de su valor de mercado.
+// Drawer lateral reutilizable para ver el historial de puntos de un jugador.
 // Se usa desde market.js (scouting) y roster.js (plantilla).
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 
 import { apiFetch }    from './api.js';
 import { getLigaActiva } from './leagues.js';
 
-const PICAS_LABEL    = { NEG: 'ðŸ‘Ž Negativo', SC: 'S.C.', P1: 'â˜… 1 Pica', P2: 'â˜…â˜… 2 Picas', P3: 'â˜…â˜…â˜… 3 Picas', P4: 'â˜…â˜…â˜…â˜… 4 Picas' };
+const PICAS_LABEL    = { NEG: '👎 Negativo', SC: 'S.C.', P1: '★ 1 Pica', P2: '★★ 2 Picas', P3: '★★★ 3 Picas', P4: '★★★★ 4 Picas' };
 const CRONISTA_COLOR = { analitico: '#60a5fa', exigente: '#f59e0b', pasional: '#a855f7' };
 const POS_LABEL      = { PT: 'Portero', DF: 'Defensa', MC: 'Centrocampista', DL: 'Delantero' };
 const BID_STEP = 100_000;
 
-// â”€â”€ Tab state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Tab state ────────────────────────────────────────────────────────────────
 const TAB_ACTIVE_CLS  = 'bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-[0_0_8px_rgba(59,130,246,0.15)]';
-const TAB_INACTIVE_CLS = 'text-slate-500 hover:text-slate-300 border border-transparent';
-let _currentDrawerContext = null;
+const TAB_INACTIVE_CLS = 'text-slate-500 hover:text-slate-300';
+let _currentDrawerContext = null; // { playerApiId, leagueId }
 let _marketDataLoaded = false;
 
 function formatCurrency(value) {
-    return `${new Intl.NumberFormat('es-ES').format(Number(value ?? 0))} â‚¬`;
+    return `${new Intl.NumberFormat('es-ES').format(Number(value ?? 0))} €`;
 }
 
 function parseCurrency(value) {
@@ -32,156 +31,15 @@ function getAvailableBidBudget(currentBid) {
     return parseCurrency(budgetText) + Number(currentBid?.amount ?? 0);
 }
 
-// â”€â”€ Tab switching â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-function _switchTab(tabName) {
-    const rendBtn = document.getElementById('pd-tab-rendimiento-btn');
-    const mercBtn = document.getElementById('pd-tab-mercado-btn');
-    const rendTab = document.getElementById('pd-tab-rendimiento');
-    const mercTab = document.getElementById('pd-tab-mercado');
-    if (!rendBtn || !mercBtn || !rendTab || !mercTab) return;
-
-    if (tabName === 'rendimiento') {
-        rendBtn.className = `flex-1 text-xs font-bold py-2 px-3 rounded-lg transition-all duration-200 ${TAB_ACTIVE_CLS}`;
-        mercBtn.className = `flex-1 text-xs font-bold py-2 px-3 rounded-lg transition-all duration-200 ${TAB_INACTIVE_CLS}`;
-        rendTab.style.display = '';
-        mercTab.style.display = 'none';
-    } else {
-        mercBtn.className = `flex-1 text-xs font-bold py-2 px-3 rounded-lg transition-all duration-200 ${TAB_ACTIVE_CLS}`;
-        rendBtn.className = `flex-1 text-xs font-bold py-2 px-3 rounded-lg transition-all duration-200 ${TAB_INACTIVE_CLS}`;
-        rendTab.style.display = 'none';
-        mercTab.style.display = '';
-        if (!_marketDataLoaded && _currentDrawerContext) {
-            _marketDataLoaded = true;
-            _loadMarketChart();
-        }
-    }
-}
-
-function _initTabListeners() {
-    document.getElementById('pd-tab-rendimiento-btn')?.addEventListener('click', () => _switchTab('rendimiento'));
-    document.getElementById('pd-tab-mercado-btn')?.addEventListener('click', () => _switchTab('mercado'));
-}
-_initTabListeners();
-
-// â”€â”€ Market chart (SVG) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-async function _loadMarketChart() {
-    const chartEl = document.getElementById('pd-market-chart');
-    if (!chartEl || !_currentDrawerContext) return;
-
-    chartEl.innerHTML = '<p style="color:#475569;font-size:12px;text-align:center;padding:32px 0">Cargando datos de mercado...</p>';
-
-    try {
-        const { leagueId, playerApiId } = _currentDrawerContext;
-        const res = await apiFetch(`/admin/ligas/${leagueId}/jugador/${playerApiId}/valor-mercado-historial`);
-        const data = res.data;
-
-        if (!data.history || data.history.length < 2) {
-            chartEl.innerHTML = '<p style="color:#475569;font-size:12px;text-align:center;padding:32px 0">Sin datos de mercado disponibles</p>';
-            return;
-        }
-
-        _renderMarketChart(chartEl, data);
-    } catch (e) {
-        chartEl.innerHTML = '<p style="color:#475569;font-size:12px;text-align:center;padding:32px 0">Error al cargar datos de mercado</p>';
-    }
-}
-
-function _renderMarketChart(container, data) {
-    const { history, initialPrice } = data;
-    const W = 320, H = 160, PAD_X = 10, PAD_Y = 20, PAD_B = 28;
-    const prices = history.map(h => h.price);
-    const minP = Math.min(...prices) * 0.95;
-    const maxP = Math.max(...prices) * 1.05;
-    const rangeP = maxP - minP || 1;
-    const n = history.length;
-    const stepX = (W - PAD_X * 2) / Math.max(n - 1, 1);
-
-    const toX = i => PAD_X + i * stepX;
-    const toY = p => PAD_Y + (1 - (p - minP) / rangeP) * (H - PAD_Y - PAD_B);
-
-    // Build polyline points
-    const pts = history.map((h, i) => `${toX(i).toFixed(1)},${toY(h.price).toFixed(1)}`).join(' ');
-    // Build area path
-    const areaD = `M${toX(0).toFixed(1)},${toY(history[0].price).toFixed(1)} ` +
-        history.map((h, i) => `L${toX(i).toFixed(1)},${toY(h.price).toFixed(1)}`).join(' ') +
-        ` L${toX(n - 1).toFixed(1)},${H - PAD_B} L${toX(0).toFixed(1)},${H - PAD_B} Z`;
-
-    // Dots
-    const dots = history.map((h, i) => {
-        const cx = toX(i).toFixed(1), cy = toY(h.price).toFixed(1);
-        return `<circle cx="${cx}" cy="${cy}" r="4" fill="#3b82f6" stroke="#0b1120" stroke-width="2" class="pd-market-dot" data-idx="${i}" style="cursor:pointer"/>`;
-    }).join('');
-
-    // X labels
-    const labels = history.map((h, i) => {
-        const label = h.jornada === 0 ? 'INI' : `J${h.jornada}`;
-        return `<text x="${toX(i).toFixed(1)}" y="${H - 6}" text-anchor="middle" fill="#475569" font-size="9" font-weight="700">${label}</text>`;
-    }).join('');
-
-    // Grid lines (3 horizontal)
-    const gridLines = [0.25, 0.5, 0.75].map(pct => {
-        const y = PAD_Y + (1 - pct) * (H - PAD_Y - PAD_B);
-        return `<line x1="${PAD_X}" y1="${y.toFixed(1)}" x2="${W - PAD_X}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>`;
-    }).join('');
-
-    container.innerHTML = `
-        <svg viewBox="0 0 ${W} ${H}" class="w-full" preserveAspectRatio="xMidYMid meet" style="height:${H}px">
-            <defs>
-                <linearGradient id="pdMarketGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.3"/>
-                    <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
-                </linearGradient>
-            </defs>
-            ${gridLines}
-            <path d="${areaD}" fill="url(#pdMarketGrad)"/>
-            <polyline points="${pts}" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            ${dots}
-            ${labels}
-        </svg>`;
-
-    // Tooltip / detail area
-    const detailEl = document.createElement('div');
-    detailEl.style.cssText = 'margin-top:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px 16px;min-height:50px;transition:all .2s;';
-    const lastH = history[history.length - 1];
-    const variation = initialPrice > 0 ? (((lastH.price - initialPrice) / initialPrice) * 100).toFixed(1) : '0.0';
-    const varColor = variation >= 0 ? '#60a5fa' : '#f87171';
-    const varSign = variation >= 0 ? '+' : '';
-    detailEl.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center">
-            <div><p style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Valor Actual</p>
-                <p style="font-size:18px;font-weight:900;color:#e2e8f0">${formatCurrency(lastH.price)}</p></div>
-            <div style="text-align:right"><p style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">VariaciÃ³n</p>
-                <p style="font-size:18px;font-weight:900;color:${varColor}">${varSign}${variation}%</p></div>
-        </div>`;
-    container.appendChild(detailEl);
-
-    // Click on dots â†’ show detail
-    container.querySelectorAll('.pd-market-dot').forEach(dot => {
-        dot.addEventListener('click', () => {
-            const idx = Number(dot.dataset.idx);
-            const h = history[idx];
-            const prev = idx > 0 ? history[idx - 1].price : initialPrice;
-            const chg = prev > 0 ? (((h.price - prev) / prev) * 100).toFixed(1) : '0.0';
-            const chgColor = chg >= 0 ? '#60a5fa' : '#f87171';
-            const chgSign = chg >= 0 ? '+' : '';
-            const lbl = h.jornada === 0 ? 'Precio Inicial' : `Jornada ${h.jornada}`;
-            detailEl.innerHTML = `
-                <div style="display:flex;justify-content:space-between;align-items:center">
-                    <div><p style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">${lbl}</p>
-                        <p style="font-size:18px;font-weight:900;color:#e2e8f0">${formatCurrency(h.price)}</p></div>
-                    <div style="text-align:right"><p style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Cambio</p>
-                        <p style="font-size:18px;font-weight:900;color:${chgColor}">${chgSign}${chg}%</p></div>
-                </div>`;
-        });
-    });
-}
-
-// â”€â”€ Drawer open â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
 /**
  * Abre el drawer con el historial de puntos de un jugador.
+ * @param {object} opts
+ * @param {number} opts.playerApiId
+ * @param {string} opts.name
+ * @param {string} opts.position
+ * @param {number} opts.marketValue
+ * @param {function} [opts.onBid]        - Si se pasa, muestra sección de puja
+ * @param {object}   [opts.currentBid]   - Puja actual del usuario (si existe)
  */
 export async function abrirPlayerDrawer({ playerApiId, name, position, marketValue, onBid, currentBid }) {
     const drawer  = document.getElementById('player-drawer');
@@ -192,37 +50,23 @@ export async function abrirPlayerDrawer({ playerApiId, name, position, marketVal
     document.getElementById('pd-name').textContent     = name;
     document.getElementById('pd-position').textContent = POS_LABEL[position] ?? position;
     document.getElementById('pd-value').textContent    = formatCurrency(marketValue);
-    document.getElementById('pd-pts').textContent      = 'â€”';
+    document.getElementById('pd-pts').textContent      = '—';
     document.getElementById('pd-pts').style.color      = '#60a5fa';
 
-    // Mostrar/ocultar secciÃ³n de puja
+    // Mostrar/ocultar sección de puja
+    const bidSection = document.getElementById('pd-bid-section');
+    if (bidSection) {
+        if (onBid) {
+            bidSection.style.display = '';
+    document.getElementById('pd-pts').textContent      = '—';
+    document.getElementById('pd-pts').style.color      = '#60a5fa';
+
+    // Mostrar/ocultar sección de puja
     const bidSection = document.getElementById('pd-bid-section');
     if (bidSection) {
         if (onBid) {
             bidSection.style.display = '';
             _setupBidSection(playerApiId, name, marketValue, onBid, currentBid);
-        } else {
-            bidSection.style.display = 'none';
-        }
-    }
-
-    // Reset tabs al abrir
-    _currentDrawerContext = { playerApiId, leagueId: getLigaActiva()?.id };
-    _marketDataLoaded = false;
-    _switchTab('rendimiento');
-    const marketChart = document.getElementById('pd-market-chart');
-    if (marketChart) marketChart.innerHTML = '';
-
-    // Abrir drawer
-    overlay.classList.remove('hidden');
-    requestAnimationFrame(() => {
-        overlay.classList.remove('opacity-0');
-        drawer.classList.remove('translate-x-full');
-    });
-
-    // Cargar historial
-    const barsEl = document.getElementById('pd-bars');
-    barsEl.innerHTML = '<p style="color:#475569;font-size:12px;text-align:center;padding:32px 0">Cargando rendimiento...</p>';
 
     try {
         const liga = getLigaActiva();
@@ -280,7 +124,7 @@ function _renderBarras(container, h) {
         col.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;flex-shrink:0;width:36px';
 
         if (!j.jugo) {
-            // Barra vacÃ­a
+            // Barra vacía
             col.innerHTML = `
                 <div style="width:28px;height:120px;display:flex;align-items:flex-end;justify-content:center">
                     <div style="width:28px;height:4px;background:rgba(255,255,255,0.06);border-radius:4px"></div>
@@ -307,7 +151,7 @@ function _renderBarras(container, h) {
                 </div>
                 <span style="font-size:9px;font-weight:700;color:#475569">J${j.jornada}</span>`;
 
-            // Click â†’ mostrar detalle
+            // Click → mostrar detalle
             const base    = Number(j.puntos_base);
             col.addEventListener('click', () => {
                 // Resaltar barra seleccionada
@@ -352,10 +196,10 @@ function _renderBarras(container, h) {
                     const PICAS_SYMBOL = {
                         'NEG': '-',
                         'SC': '-',
-                        'P1': 'â˜…',
-                        'P2': 'â˜…â˜…',
-                        'P3': 'â˜…â˜…â˜…',
-                        'P4': 'â˜…â˜…â˜…â˜…'
+                        'P1': '★',
+                        'P2': '★★',
+                        'P3': '★★★',
+                        'P4': '★★★★'
                     };
 
                     const statRows = [
@@ -363,14 +207,14 @@ function _renderBarras(container, h) {
                         { label: 'Asistencias de gol', val: rs.asistencias, pts: rs.asistencias * MATRIX.asistencias[pos] },
                         { label: 'Tiros a puerta', val: rs.tirosAPuerta, pts: rs.tirosAPuerta * MATRIX.tirosAPuerta[pos] },
                         { label: 'Tiros al palo', val: rs.tirosAlPalo, pts: rs.tirosAlPalo * MATRIX.tirosAlPalo[pos] },
-                        { label: 'Centros al Ã¡rea', val: rs.centrosAlArea, pts: rs.centrosAlArea * MATRIX.centrosAlArea[pos] },
+                        { label: 'Centros al área', val: rs.centrosAlArea, pts: rs.centrosAlArea * MATRIX.centrosAlArea[pos] },
                         { label: 'Faltas cometidas', val: rs.faltasCometidas, pts: rs.faltasCometidas * MATRIX.faltasCometidas[pos] },
                         { label: 'Tarjetas amarillas', val: rs.tarjetasAmarillas, pts: rs.tarjetasAmarillas * MATRIX.tarjetasAmarillas[pos] },
                         { label: 'Tarjetas rojas', val: rs.tarjetasRojas, pts: rs.tarjetasRojas * MATRIX.tarjetasRojas[pos] },
-                        { label: 'PorterÃ­a a 0', val: rs.porteriaACero ? 1 : 0, pts: rs.porteriaACero ? MATRIX.porteriaACero[pos] : 0, hideZero: true },
+                        { label: 'Portería a 0', val: rs.porteriaACero ? 1 : 0, pts: rs.porteriaACero ? MATRIX.porteriaACero[pos] : 0, hideZero: true },
                         { label: 'Paradas', val: rs.paradasDeducidas, pts: rs.paradasDeducidas * MATRIX.paradasDeducidas[pos] },
                         { label: 'Tiros bloqueados', val: rs.tirosRivalesBloqueados, pts: rs.tirosRivalesBloqueados * MATRIX.tirosRivalesBloqueados[pos] },
-                        { label: 'PosesiÃ³n > 60%', val: rs.posesionSuperior60 ? 1 : 0, pts: rs.posesionSuperior60 ? MATRIX.posesionSuperior60[pos] : 0, hideZero: true }
+                        { label: 'Posesión > 60%', val: rs.posesionSuperior60 ? 1 : 0, pts: rs.posesionSuperior60 ? MATRIX.posesionSuperior60[pos] : 0, hideZero: true }
                     ];
 
                     let resultPts = 0;
@@ -382,14 +226,14 @@ function _renderBarras(container, h) {
                     statRows.push({ label: 'Total Puntos Base', val: '-', pts: base, isTotal: true });
                     const ptsCronista = PICAS_A_PUNTOS[j.picas] ?? 0;
                     const cronistaName = j.cronista_type ? j.cronista_type.charAt(0).toUpperCase() + j.cronista_type.slice(1) : 'Desconocido';
-                    statRows.push({ label: `ValoraciÃ³n Cronista (${cronistaName})`, val: PICAS_SYMBOL[j.picas] || '-', pts: ptsCronista, isTotal: true });
+                    statRows.push({ label: `Valoración Cronista (${cronistaName})`, val: PICAS_SYMBOL[j.picas] || '-', pts: ptsCronista, isTotal: true });
                     statRows.push({ label: 'Total', val: '', pts: pts, isFinalTotal: true });
 
                     html += `
                     <div style="background:rgba(15, 23, 42, 0.6); border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.05)">
                         <div style="display:flex; padding:10px 16px; background:rgba(255,255,255,0.03); border-bottom:1px solid rgba(255,255,255,0.05);">
                             <div style="flex:1; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; text-align:center;">Cantidad</div>
-                            <div style="flex:2; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; text-align:center;">EstadÃ­sticas</div>
+                            <div style="flex:2; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; text-align:center;">Estadísticas</div>
                             <div style="flex:1; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; text-align:center;">Puntos</div>
                         </div>
                         <div style="max-height:280px; overflow-y:auto; scrollbar-width:thin;">
@@ -416,7 +260,7 @@ function _renderBarras(container, h) {
                         }
                         
                         let valColor = '#e2e8f0';
-                        if (typeof s.val === 'string' && s.val.includes('â˜…')) {
+                        if (typeof s.val === 'string' && s.val.includes('★')) {
                             valColor = '#eab308'; // Yellow stars
                         }
                         
@@ -459,7 +303,7 @@ function _renderBarras(container, h) {
     container.appendChild(wrap);
     container.appendChild(detailEl);
 
-    // Permitir deslizar las barras con el ratÃ³n
+    // Permitir deslizar las barras con el ratón
     let isDown = false;
     let startX;
     let scrollLeft;
