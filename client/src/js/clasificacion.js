@@ -132,16 +132,13 @@ function crearFilaRanking(entry) {
     const info = document.createElement('div');
     info.className = 'flex-1 min-w-0';
     const nameSpan = document.createElement('p');
-    nameSpan.className = 'font-bold text-white flex items-center gap-2';
+    nameSpan.className = esPropio
+        ? 'font-bold text-blue-400 flex items-center gap-2'
+        : 'font-bold text-white flex items-center gap-2';
     nameSpan.textContent = entry.username;
 
-    if (esPropio) {
-        const youBadge = document.createElement('span');
-        youBadge.className = 'text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-500/15 border border-blue-500/25 text-blue-400';
-        youBadge.textContent = 'Tú';
-        nameSpan.appendChild(youBadge);
-    } else {
-        // Eye icon
+    if (!esPropio) {
+        // Eye icon for rival rows
         const eye = document.createElement('svg');
         eye.setAttribute('class', 'w-3.5 h-3.5 text-slate-600 shrink-0');
         eye.setAttribute('fill', 'none');

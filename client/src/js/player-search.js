@@ -147,7 +147,7 @@ function createSearchPlayerCard(player) {
         name: player.name,
         realTeam: player.realTeam,
         position: player.position,
-        market_value: player.marketValue ?? player.overall * 100000,
+        market_value: player.marketValue ?? 0,
         previous_market_value: player.previousMarketValue ?? null,
         market_value_delta: player.marketValueDelta ?? 0,
         market_value_change_pct: player.marketValueChangePct ?? 0,
@@ -165,35 +165,15 @@ function createSearchPlayerCard(player) {
         return card;
     }
 
-    // NOT in market: render card with disabled button
+    // NOT in market: render card without action buttons (clean, read-only)
     const card = createPlayerCard(playerForRenderer, null);
     card.dataset.searchIsInMarket = 'false';
 
-    // Replace the action button with a disabled "No disponible" button
-    const actionsEl = card.querySelector('.market-player-actions');
-    if (actionsEl) {
-        actionsEl.innerHTML = '';
-        const disabledBtn = document.createElement('button');
-        disabledBtn.className = 'market-player-button market-player-button-disabled';
-        disabledBtn.textContent = 'No disponible';
-        disabledBtn.disabled = true;
-        disabledBtn.style.cssText = 'opacity:0.4; cursor:not-allowed; pointer-events:none;';
-        actionsEl.appendChild(disabledBtn);
+    // Remove the action buttons entirely — player is not biddable
+    const footerEl = card.querySelector('.market-player-footer');
+    if (footerEl) {
+        footerEl.remove();
     }
-
-    // Add a subtle badge
-    const badge = document.createElement('span');
-    badge.className = 'search-not-in-market-badge';
-    badge.textContent = 'No en mercado';
-    badge.style.cssText = `
-        position:absolute; top:10px; right:10px; z-index:5;
-        font-size:9px; font-weight:800; text-transform:uppercase;
-        letter-spacing:0.05em; padding:3px 8px; border-radius:6px;
-        background:rgba(248,113,113,0.15); border:1px solid rgba(248,113,113,0.3);
-        color:#f87171;
-    `;
-    card.style.position = 'relative';
-    card.appendChild(badge);
 
     return card;
 }

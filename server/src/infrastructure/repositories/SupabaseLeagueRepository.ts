@@ -60,12 +60,18 @@ export class SupabaseLeagueRepository implements ILeagueRepository {
     async findParticipant(leagueId: number, userId: string): Promise<LeagueParticipant | null> {
         const { data, error } = await supabaseAdmin
             .from('league_participants')
-            .select('user_id, league_id, joined_at, budget')
+            .select('user_id, league_id, joined_at, budget, profiles ( username, team_name )')
             .eq('league_id', leagueId)
             .eq('user_id', userId)
             .single();
         if (error) return null;
-        return data as LeagueParticipant;
+        return {
+            user_id:   data.user_id,
+            league_id: data.league_id,
+            joined_at: data.joined_at,
+            budget:    Number(data.budget),
+            profiles:  Array.isArray(data.profiles) ? data.profiles[0] : data.profiles,
+        } as LeagueParticipant;
     }
 
     async findLeaguesByUser(userId: string): Promise<(FantasyLeague & { joined_at: string; esAdmin: boolean })[]> {

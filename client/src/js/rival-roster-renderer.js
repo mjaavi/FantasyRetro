@@ -210,7 +210,7 @@ function createSliderBtn(label, subtext, isSelected, onClick) {
 
 function renderMiniPitch(titulares, formationKey) {
     const pitch = document.createElement('div');
-    pitch.className = 'relative w-full min-h-[380px] bg-[#0c2415] rounded-2xl border border-white/10 overflow-hidden flex flex-col justify-around py-5 gap-2 shadow-2xl';
+    pitch.className = 'relative w-full min-h-[480px] bg-[#0c2415] rounded-2xl border border-white/10 overflow-hidden flex flex-col justify-around py-6 gap-3 shadow-2xl';
     pitch.style.backgroundImage = 'repeating-linear-gradient(0deg, transparent, transparent 10%, rgba(0,0,0,0.2) 10%, rgba(0,0,0,0.2) 20%)';
 
     // Field decorations
@@ -228,7 +228,7 @@ function renderMiniPitch(titulares, formationKey) {
         if (count === 0) continue;
 
         const rowDiv = document.createElement('div');
-        rowDiv.className = `relative z-10 flex justify-center gap-3 w-full px-3`;
+        rowDiv.className = `relative z-10 flex justify-center gap-4 md:gap-6 w-full px-4`;
 
         const playersInPos = (titulares ?? []).filter(p => p.position === pos);
 
@@ -239,13 +239,11 @@ function renderMiniPitch(titulares, formationKey) {
             if (player) {
                 slot.className = `lineup-player-card ${POS_BG[pos] ?? 'card-accent-MC'}`;
                 slot.style.cursor = 'pointer';
-                slot.style.transform = 'scale(0.85)';
 
                 // Player name
                 const title = document.createElement('div');
                 title.className = 'lineup-player-name';
                 title.textContent = player.name;
-                title.style.fontSize = '9px';
 
                 // Club badge
                 const logoBadge = document.createElement('div');
@@ -267,9 +265,11 @@ function renderMiniPitch(titulares, formationKey) {
                 }));
 
                 // Score badge
+                const ptsValue = player.jornadaPts;
+                const hasPts = ptsValue !== null && ptsValue !== undefined;
                 const scoreBadge = document.createElement('div');
-                scoreBadge.className = `lineup-player-score ${player.jornadaPts !== null && player.jornadaPts < 0 ? 'lineup-player-score-negative' : ''}`;
-                scoreBadge.textContent = player.jornadaPts !== null ? `${Math.trunc(player.jornadaPts)}` : '-';
+                scoreBadge.className = `lineup-player-score ${hasPts && ptsValue < 0 ? 'lineup-player-score-negative' : ''}`;
+                scoreBadge.textContent = hasPts ? `${Math.trunc(ptsValue)}` : '-';
 
                 slot.appendChild(title);
                 slot.appendChild(logoBadge);
@@ -296,7 +296,6 @@ function renderMiniPitch(titulares, formationKey) {
                 rowDiv.appendChild(wrapper);
             } else {
                 slot.className = 'player-slot player-slot-empty';
-                slot.style.transform = 'scale(0.85)';
                 slot.innerHTML = `
                     <div class="player-slot-card">
                         <div class="player-slot-top">—</div>
@@ -389,10 +388,15 @@ function parseFormation(formationKey) {
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 function init() {
-    // Overlay click to close
+    // Overlay click to close (but NOT when clicking the drawer itself)
     const overlay = document.getElementById('rival-drawer-overlay');
+    const drawer = document.getElementById('rival-drawer');
     if (overlay) {
         overlay.addEventListener('click', cerrarRivalDrawer);
+    }
+    // Prevent clicks inside the drawer from propagating to overlay
+    if (drawer) {
+        drawer.addEventListener('click', (e) => e.stopPropagation());
     }
 
     // Close button

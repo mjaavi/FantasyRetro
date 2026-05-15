@@ -56,7 +56,14 @@ export class PlayerSearchService {
         // 4. Obtener mercado activo para marcar disponibilidad
         const marketPlayerMap = await this.buildMarketPlayerMap(leagueId);
 
-        // 5. Mapear a DTOs
+        // 5. Obtener valores de mercado reales para TODOS los jugadores buscados
+        //    (no solo los del mercado activo) desde la tabla player_market_values
+        const allMarketValues = this.marketValueRepo
+            ? await this.marketValueRepo.findMarketValues(leagueId, searchResult.playerApiIds)
+            : [];
+        const allMarketValueMap = new Map(allMarketValues.map(v => [v.playerApiId, v]));
+
+        // 6. Mapear a DTOs
         const players: PlayerSearchResultDTO[] = searchResult.playerApiIds
             .map(playerApiId => {
                 const player = playerData.get(playerApiId);
@@ -64,6 +71,13 @@ export class PlayerSearchService {
 
                 const marketPlayer = marketPlayerMap.get(playerApiId);
                 const isInMarket = Boolean(marketPlayer);
+                const storedValue = allMarketValueMap.get(playerApiId);
+
+                // Precio: si está en mercado usa el valor proyectado,
+                // si no, usa el valor almacenado en player_market_values,
+                // si tampoco existe, null (el frontend no mostrará precio)
+                const resolvedMarketValue = marketPlayer?.marketValue
+                    ?? (storedValue ? storedValue.currentPrice : null);
 
                 return {
                     playerApiId,
@@ -74,12 +88,16 @@ export class PlayerSearchService {
                     playerFifaApiId: player.playerFifaApiId,
                     faceUrl: player.faceUrl,
                     clubLogoUrl: player.clubLogoUrl,
-                    marketValue: marketPlayer?.marketValue ?? null,
-                    previousMarketValue: marketPlayer?.previousMarketValue ?? null,
-                    marketValueDelta: marketPlayer?.marketValueDelta ?? 0,
+                    marketValue: resolvedMarketValue,
+                    previousMarketValue: marketPlayer?.previousMarketValue
+                        ?? (storedValue ? storedValue.previousPrice : null),
+                    marketValueDelta: marketPlayer?.marketValueDelta
+                        ?? (storedValue ? storedValue.lastVariation : 0),
                     marketValueChangePct: marketPlayer?.marketValueChangePct ?? 0,
-                    lastAveragePoints: marketPlayer?.lastAveragePoints ?? null,
-                    lastJornadaProcessed: marketPlayer?.lastJornadaProcessed ?? null,
+                    lastAveragePoints: marketPlayer?.lastAveragePoints
+                        ?? (storedValue ? storedValue.movingAveragePoints : null),
+                    lastJornadaProcessed: marketPlayer?.lastJornadaProcessed
+                        ?? (storedValue ? storedValue.lastJornadaProcessed : null),
                     isInMarket,
                 } satisfies PlayerSearchResultDTO;
             })
