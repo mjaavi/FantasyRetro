@@ -264,33 +264,24 @@ function renderMiniPitch(titulares, formationKey) {
                     imageClassName: 'lineup-player-portrait-media',
                 }));
 
-                // Score badge — inline styled (NOT using lineup-player-score CSS
-                // which has position:absolute, designed for a different layout)
+                // Score badge (using standard roster.js class)
                 const ptsValue = player.jornadaPts;
                 const hasPts = ptsValue !== null && ptsValue !== undefined;
-                const isNegative = hasPts && ptsValue < 0;
                 const scoreBadge = document.createElement('div');
-                scoreBadge.style.cssText = `
-                    min-width:2.2rem; height:1.6rem; padding:0 0.5rem;
-                    display:inline-flex; align-items:center; justify-content:center;
-                    border-radius:0.5rem; margin-top:4px;
-                    border:1px solid rgba(255,255,255,0.12);
-                    border-bottom:2px solid ${isNegative ? '#ef4444' : '#1d9bf0'};
-                    background:${isNegative
-                        ? 'linear-gradient(180deg, #4f2431 0%, #341722 100%)'
-                        : 'linear-gradient(180deg, #27415f 0%, #18293f 100%)'};
-                    color:white; font-size:0.75rem; line-height:1; font-weight:900;
-                    box-shadow:0 4px 8px rgba(2,6,23,0.3);
-                `;
+                scoreBadge.className = [
+                    'lineup-player-score',
+                    hasPts && ptsValue < 0 ? 'lineup-player-score-negative' : '',
+                ].join(' ').trim();
                 scoreBadge.textContent = hasPts ? `${Math.trunc(ptsValue)}` : '-';
 
                 slot.appendChild(title);
                 slot.appendChild(logoBadge);
                 slot.appendChild(portraitFrame);
 
-                // Append score badge as sibling below the card
+                // Wrapper simulating roster.js player-slot structure
                 const wrapper = document.createElement('div');
-                wrapper.style.cssText = 'display:flex; flex-direction:column; align-items:center;';
+                wrapper.className = 'player-slot';
+                wrapper.style.cursor = 'pointer';
                 wrapper.appendChild(slot);
                 wrapper.appendChild(scoreBadge);
 
@@ -308,15 +299,16 @@ function renderMiniPitch(titulares, formationKey) {
 
                 rowDiv.appendChild(wrapper);
             } else {
-                slot.className = 'player-slot player-slot-empty';
-                slot.innerHTML = `
+                const emptySlot = document.createElement('div');
+                emptySlot.className = 'player-slot player-slot-empty';
+                emptySlot.innerHTML = `
                     <div class="player-slot-card">
                         <div class="player-slot-top">—</div>
                         <div class="player-slot-bottom">
                             <div class="player-slot-name">${POSICION_SHORT[pos] ?? pos}</div>
                         </div>
                     </div>`;
-                rowDiv.appendChild(slot);
+                rowDiv.appendChild(emptySlot);
             }
         }
 

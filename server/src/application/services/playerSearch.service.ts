@@ -79,11 +79,11 @@ export class PlayerSearchService {
 
                 // Precio: si está en mercado usa el valor proyectado,
                 // si no, usa el valor almacenado en player_market_values,
-                // si tampoco existe, calcula el precio base con InitialPricingService
+                // si tampoco existe (o es 0), calcula el precio base con InitialPricingService
                 // (misma fórmula que en el onboarding, DRY)
                 const resolvedMarketValue = marketPlayer?.marketValue
-                    ?? (storedValue ? storedValue.currentPrice : null)
-                    ?? this.computeBasePrice(player.overall, player.position);
+                    || (storedValue?.currentPrice)
+                    || this.computeBasePrice(player.overall, player.position);
 
                 return {
                     playerApiId,
