@@ -7,11 +7,18 @@ function formatEuros(valor) {
     return new Intl.NumberFormat('es-ES').format(valor) + ' €';
 }
 
+// ── Estado ────────────────────────────────────────────────────────────────────
+
+let _currentUserId = null;
+let _jornadaSeleccionada = '';
+
 // ── Carga del ranking ─────────────────────────────────────────────────────────
 
 export async function loadClasificacion(jornada = '') {
     const liga = getLigaActiva();
     if (!liga) return;
+
+    _jornadaSeleccionada = jornada;
 
     const tbody    = document.getElementById('clasificacion-tbody');
     const subtitle = document.getElementById('liga-season-subtitle');
@@ -25,6 +32,7 @@ export async function loadClasificacion(jornada = '') {
         const { supabase } = await import('./supabase.js');
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token ?? null;
+        _currentUserId = session?.user?.id ?? null;
         const apiUrl = await getApiBaseUrl();
 
         const url = jornada
@@ -88,8 +96,22 @@ function poblarFiltroJornadas(jornadas, jornadaActiva) {
 
 function crearFilaRanking(entry) {
     const tr = document.createElement('tr');
-    tr.className = 'table-row';
     const esPrimero = entry.posicion === 1;
+    const esPropio = entry.userId === _currentUserId;
+
+    tr.className = esPropio
+        ? 'table-row bg-blue-500/[0.04]'
+        : 'table-row cursor-pointer hover:bg-white/[0.04] transition-colors';
+
+    if (!esPropio) {
+        tr.title = 'Ver equipo de ' + (entry.username ?? 'rival');
+        tr.addEventListener('click', () => {
+            const jornada = _jornadaSeleccionada ? Number(_jornadaSeleccionada) : undefined;
+            if (window.abrirRivalDrawer) {
+                window.abrirRivalDrawer(entry.userId, jornada);
+            }
+        });
+    }
 
     // Posición
     const tdPos = document.createElement('td');
@@ -108,11 +130,29 @@ function crearFilaRanking(entry) {
     avatar.className = 'user-avatar shrink-0';
     avatar.textContent = (entry.username ?? '?').substring(0, 2).toUpperCase();
     const info = document.createElement('div');
+    info.className = 'flex-1 min-w-0';
     const nameSpan = document.createElement('p');
-    nameSpan.className = 'font-bold text-white';
+    nameSpan.className = 'font-bold text-white flex items-center gap-2';
     nameSpan.textContent = entry.username;
+
+    if (esPropio) {
+        const youBadge = document.createElement('span');
+        youBadge.className = 'text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-500/15 border border-blue-500/25 text-blue-400';
+        youBadge.textContent = 'Tú';
+        nameSpan.appendChild(youBadge);
+    } else {
+        // Eye icon
+        const eye = document.createElement('svg');
+        eye.setAttribute('class', 'w-3.5 h-3.5 text-slate-600 shrink-0');
+        eye.setAttribute('fill', 'none');
+        eye.setAttribute('stroke', 'currentColor');
+        eye.setAttribute('viewBox', '0 0 24 24');
+        eye.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>';
+        nameSpan.appendChild(eye);
+    }
+
     const teamSpan = document.createElement('p');
-    teamSpan.className = 'text-xs text-slate-400 font-medium';
+    teamSpan.className = 'text-xs text-slate-400 font-medium truncate';
     teamSpan.textContent = entry.teamName;
     info.appendChild(nameSpan);
     info.appendChild(teamSpan);
@@ -159,3 +199,4 @@ document.getElementById('ranking-jornada-select')?.addEventListener('change', (e
 
 // Expuesto para que navigation.js pueda llamarlo cuando se muestra la vista
 window.loadClasificacion = loadClasificacion;
+

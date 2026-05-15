@@ -1,0 +1,122 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// PlayerSearchService — Orquesta la búsqueda de jugadores del catálogo
+// Combina filtros, enriquecimiento de datos y marcado de disponibilidad en mercado.
+// SRP: Solo responsable de la lógica de búsqueda, no de acceso a datos.
+// ─────────────────────────────────────────────────────────────────────────────
+
+import { AppError } from '../../domain/errors/AppError';
+import { IPlayerSearchRepository, PlayerSearchFilters } from '../../domain/ports/IPlayerSearchRepository';
+import { ILeagueRepository } from '../../domain/ports/ILeagueRepository';
+import { ILeagueMarketRepository, LeagueMarketPlayer } from '../../domain/ports/ILeagueMarketRepository';
+import { IPlayerMarketValueRepository } from '../../domain/ports/IPlayerMarketValueRepository';
+import { loadLeaguePlayerData } from '../../infrastructure/repositories/leaguePlayerDataHelper';
+import { PlayerSearchResponseDTO, PlayerSearchResultDTO } from '../dtos/PlayerSearchDTO';
+import { LeagueMarketValueProjector } from './economy/LeagueMarketValueProjector';
+
+export class PlayerSearchService {
+
+    constructor(
+        private readonly searchRepo: IPlayerSearchRepository,
+        private readonly leagueRepo: ILeagueRepository,
+        private readonly marketRepo: ILeagueMarketRepository,
+        private readonly marketValueProjector: LeagueMarketValueProjector,
+        private readonly marketValueRepo?: IPlayerMarketValueRepository,
+    ) {}
+
+    async searchPlayers(
+        leagueId: number,
+        filters: PlayerSearchFilters,
+    ): Promise<PlayerSearchResponseDTO> {
+        // 1. Obtener contexto de la liga
+        const liga = await this.leagueRepo.findById(leagueId);
+        if (!liga) throw new AppError('Liga no encontrada.', 404);
+
+        const season = liga.season;
+        const kaggleLeagueId = liga.kaggle_league_id ?? 1;
+
+        // 2. Buscar IDs de jugadores que coinciden con los filtros
+        const searchResult = await this.searchRepo.searchPlayers(
+            kaggleLeagueId,
+            season,
+            filters,
+        );
+
+        if (!searchResult.playerApiIds.length) {
+            return {
+                players: [],
+                totalCount: searchResult.totalCount,
+                page: searchResult.page,
+                pageSize: searchResult.pageSize,
+            };
+        }
+
+        // 3. Enriquecer con datos completos del jugador (DRY: reutiliza helper)
+        const playerData = await loadLeaguePlayerData(leagueId, searchResult.playerApiIds);
+
+        // 4. Obtener mercado activo para marcar disponibilidad
+        const marketPlayerMap = await this.buildMarketPlayerMap(leagueId);
+
+        // 5. Mapear a DTOs
+        const players: PlayerSearchResultDTO[] = searchResult.playerApiIds
+            .map(playerApiId => {
+                const player = playerData.get(playerApiId);
+                if (!player) return null;
+
+                const marketPlayer = marketPlayerMap.get(playerApiId);
+                const isInMarket = Boolean(marketPlayer);
+
+                return {
+                    playerApiId,
+                    name: player.name,
+                    position: player.position,
+                    realTeam: player.realTeam,
+                    overall: player.overall,
+                    playerFifaApiId: player.playerFifaApiId,
+                    faceUrl: player.faceUrl,
+                    clubLogoUrl: player.clubLogoUrl,
+                    marketValue: marketPlayer?.marketValue ?? null,
+                    previousMarketValue: marketPlayer?.previousMarketValue ?? null,
+                    marketValueDelta: marketPlayer?.marketValueDelta ?? 0,
+                    marketValueChangePct: marketPlayer?.marketValueChangePct ?? 0,
+                    lastAveragePoints: marketPlayer?.lastAveragePoints ?? null,
+                    lastJornadaProcessed: marketPlayer?.lastJornadaProcessed ?? null,
+                    isInMarket,
+                } satisfies PlayerSearchResultDTO;
+            })
+            .filter((p): p is PlayerSearchResultDTO => p !== null);
+
+        return {
+            players,
+            totalCount: searchResult.totalCount,
+            page: searchResult.page,
+            pageSize: searchResult.pageSize,
+        };
+    }
+
+    /**
+     * Construye un Map playerApiId → LeagueMarketPlayer con los jugadores
+     * activos del mercado para lookup rápido O(1).
+     */
+    private async buildMarketPlayerMap(leagueId: number): Promise<Map<number, LeagueMarketPlayer>> {
+        try {
+            const snapshots = await this.marketRepo.getActiveMarket(leagueId);
+
+            const marketValues = this.marketValueRepo
+                ? await this.marketValueRepo.findMarketValues(
+                    leagueId,
+                    snapshots.map(s => s.playerApiId),
+                )
+                : [];
+
+            const projected = this.marketValueProjector.projectPlayers(
+                snapshots,
+                new Map(marketValues.map(v => [v.playerApiId, v])),
+            );
+
+            return new Map(projected.map(p => [p.playerApiId, p]));
+        } catch {
+            // Si no hay mercado activo, devolver mapa vacío
+            return new Map();
+        }
+    }
+}

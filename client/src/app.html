@@ -1334,22 +1334,79 @@
         </section>
 
         <section id="view-mercado" style="display: block;" class="transition-all duration-300 opacity-100">
-            <div class="flex justify-between items-end mb-8">
+            <div class="flex justify-between items-end mb-6">
                 <div>
                     <h2 class="section-title">Mercado de Fichajes</h2>
                     <p class="section-subtitle">Nuevos jugadores cada 24 horas</p>
                 </div>
-                <div class="text-right">
+                <div id="market-header-countdown" class="text-right">
                     <span class="stat-label">Cierra en</span>
                     <p id="market-countdown" class="text-xl font-black text-blue-400 drop-shadow-[0_0_8px_rgba(96,165,250,0.4)]">--:--:--</p>
                 </div>
             </div>
-            <div id="market-players-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 z-10 relative">
-                <!-- Skeleton inicial -->
-                <div class="skeleton-card"><div class="skeleton h-6 w-2/3"></div><div class="skeleton h-4 w-full"></div><div class="skeleton h-10 w-full mt-2"></div></div>
-                <div class="skeleton-card"><div class="skeleton h-6 w-2/3"></div><div class="skeleton h-4 w-full"></div><div class="skeleton h-10 w-full mt-2"></div></div>
-                <div class="skeleton-card"><div class="skeleton h-6 w-2/3"></div><div class="skeleton h-4 w-full"></div><div class="skeleton h-10 w-full mt-2"></div></div>
-                <div class="skeleton-card"><div class="skeleton h-6 w-2/3"></div><div class="skeleton h-4 w-full"></div><div class="skeleton h-10 w-full mt-2"></div></div>
+
+            <!-- Tab bar: Mercado / Buscar -->
+            <div class="mb-6">
+                <div class="flex bg-white/5 rounded-xl p-1 border border-white/10 gap-1 max-w-xs">
+                    <button id="market-tab-mercado"
+                        class="flex-1 text-xs font-bold py-2.5 px-3 rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-[0_0_8px_rgba(59,130,246,0.15)]">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/></svg>
+                        Mercado
+                    </button>
+                    <button id="market-tab-buscar"
+                        class="flex-1 text-xs font-bold py-2.5 px-3 rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 text-slate-500 hover:text-slate-300 border border-transparent">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        Buscar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Panel: Mercado activo -->
+            <div id="market-panel-mercado">
+                <div id="market-players-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 z-10 relative">
+                    <!-- Skeleton inicial -->
+                    <div class="skeleton-card"><div class="skeleton h-6 w-2/3"></div><div class="skeleton h-4 w-full"></div><div class="skeleton h-10 w-full mt-2"></div></div>
+                    <div class="skeleton-card"><div class="skeleton h-6 w-2/3"></div><div class="skeleton h-4 w-full"></div><div class="skeleton h-10 w-full mt-2"></div></div>
+                    <div class="skeleton-card"><div class="skeleton h-6 w-2/3"></div><div class="skeleton h-4 w-full"></div><div class="skeleton h-10 w-full mt-2"></div></div>
+                    <div class="skeleton-card"><div class="skeleton h-6 w-2/3"></div><div class="skeleton h-4 w-full"></div><div class="skeleton h-10 w-full mt-2"></div></div>
+                </div>
+            </div>
+
+            <!-- Panel: Buscador de jugadores -->
+            <div id="market-panel-buscar" style="display:none">
+                <!-- Filtros -->
+                <div class="bento-card p-5 mb-6">
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <div class="flex-1">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Nombre del jugador</label>
+                            <input id="search-players-input" type="text" placeholder="Ej: Messi, Ronaldo..." class="form-input w-full">
+                        </div>
+                        <div class="w-full sm:w-40">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Posición</label>
+                            <select id="search-players-position" class="form-select w-full">
+                                <option value="">Todas</option>
+                                <option value="PT">Portero</option>
+                                <option value="DF">Defensa</option>
+                                <option value="MC">Centrocampista</option>
+                                <option value="DL">Delantero</option>
+                            </select>
+                        </div>
+                        <div class="flex items-end">
+                            <button id="search-players-btn" class="btn-primary py-2.5 px-6 whitespace-nowrap">
+                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                Buscar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resultados -->
+                <div id="search-results-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 z-10 relative">
+                    <p class="text-slate-500 font-bold col-span-full text-center py-10">Usa los filtros para buscar jugadores del catálogo de tu liga.</p>
+                </div>
+
+                <!-- Paginación -->
+                <div id="search-pagination"></div>
             </div>
         </section>
 
@@ -1827,6 +1884,32 @@
     <div id="bid-drawer-overlay" class="hidden"></div>
     <div id="bid-drawer" class="hidden"></div>
 
+    <!-- ── Drawer del equipo rival ── -->
+    <div id="rival-drawer-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-md z-[140] hidden opacity-0 transition-opacity duration-300"></div>
+
+    <aside id="rival-drawer" class="fixed top-0 right-0 h-full w-full max-w-md bg-[#0b1120] shadow-2xl z-[145] transform translate-x-full transition-transform duration-300 flex flex-col border-l border-white/10">
+        <!-- Header -->
+        <div class="p-5 border-b border-white/10 bg-white/[0.02] shrink-0">
+            <div class="flex justify-between items-start mb-3">
+                <div class="flex-1 min-w-0 pr-3">
+                    <p id="rival-drawer-name" class="text-xl font-extrabold text-white leading-tight truncate">Rival</p>
+                    <p id="rival-drawer-team" class="text-xs font-bold text-slate-500 uppercase tracking-wider mt-0.5">Equipo</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span id="rival-drawer-pts" class="text-lg font-black text-blue-400">0 pts</span>
+                    <button id="rival-drawer-close-btn" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white bg-white/5 rounded-lg border border-white/10 shrink-0 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scrollable content -->
+        <div id="rival-drawer-content" class="flex-1 overflow-y-auto min-h-0 p-5">
+            <p class="text-slate-500 text-center py-8 font-bold">Selecciona un rival para ver su equipo.</p>
+        </div>
+    </aside>
+
     <!-- ── Overlay de carga entre pestañas ── -->
     <div id="loading-overlay" class="hidden fixed inset-0 z-[500] flex items-center justify-center bg-[#080d1a]/80 backdrop-blur-sm transition-opacity duration-250">
         <svg viewBox="0 0 100 150" class="w-16 h-24 transform -rotate-12 drop-shadow-[0_0_10px_rgba(59,130,246,0.6)]">
@@ -1930,6 +2013,8 @@
                         import('./js/catalog.js'),
                         import('./js/player-drawer.js'),
                         import('./js/dashboard.js'),
+                        import('./js/player-search.js'),
+                        import('./js/rival-roster-renderer.js'),
                     ]);
                 } catch (moduleError) {
                     console.error('[Guard] Error en módulos:', moduleError.message);

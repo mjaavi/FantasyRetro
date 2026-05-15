@@ -248,3 +248,33 @@ export async function toggleStarter(leagueId, playerApiId, isStarter) {
         body: JSON.stringify({ is_starter: isStarter }),
     });
 }
+
+// Endpoints de búsqueda de jugadores
+
+/** Busca jugadores del catálogo de la liga por nombre y posición */
+export async function fetchSearchPlayers(leagueId, { query = '', position = '', page = 0 } = {}) {
+    if (!leagueId) return { players: [], totalCount: 0, page: 0, pageSize: 20 };
+
+    const params = new URLSearchParams();
+    if (query) params.set('q', query);
+    if (position) params.set('position', position);
+    if (page > 0) params.set('page', String(page));
+
+    const qs = params.toString();
+    const endpoint = `/leagues/${leagueId}/players/search${qs ? `?${qs}` : ''}`;
+    return (await apiFetch(endpoint)).data;
+}
+
+// Endpoints de roster rival
+
+/** Obtiene el roster de un rival en la liga (con puntos por jornada) */
+export async function fetchRivalRoster(leagueId, targetUserId, jornada) {
+    if (!leagueId || !targetUserId) return null;
+
+    const params = new URLSearchParams();
+    if (jornada !== undefined && jornada !== null) params.set('jornada', String(jornada));
+
+    const qs = params.toString();
+    const endpoint = `/leagues/${leagueId}/rival-roster/${targetUserId}${qs ? `?${qs}` : ''}`;
+    return (await apiFetch(endpoint)).data;
+}
