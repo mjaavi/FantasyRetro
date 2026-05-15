@@ -12,8 +12,12 @@ import { IPlayerMarketValueRepository } from '../../domain/ports/IPlayerMarketVa
 import { loadLeaguePlayerData } from '../../infrastructure/repositories/leaguePlayerDataHelper';
 import { PlayerSearchResponseDTO, PlayerSearchResultDTO } from '../dtos/PlayerSearchDTO';
 import { LeagueMarketValueProjector } from './economy/LeagueMarketValueProjector';
+import { InitialPricingService } from './economy/InitialPricingService';
+import { PlayerPosition } from '../../domain/models/player.models';
 
 export class PlayerSearchService {
+
+    private readonly pricingService = new InitialPricingService();
 
     constructor(
         private readonly searchRepo: IPlayerSearchRepository,
@@ -75,9 +79,11 @@ export class PlayerSearchService {
 
                 // Precio: si está en mercado usa el valor proyectado,
                 // si no, usa el valor almacenado en player_market_values,
-                // si tampoco existe, null (el frontend no mostrará precio)
+                // si tampoco existe, calcula el precio base con InitialPricingService
+                // (misma fórmula que en el onboarding, DRY)
                 const resolvedMarketValue = marketPlayer?.marketValue
-                    ?? (storedValue ? storedValue.currentPrice : null);
+                    ?? (storedValue ? storedValue.currentPrice : null)
+                    ?? this.computeBasePrice(player.overall, player.position);
 
                 return {
                     playerApiId,
@@ -99,7 +105,7 @@ export class PlayerSearchService {
                     lastJornadaProcessed: marketPlayer?.lastJornadaProcessed
                         ?? (storedValue ? storedValue.lastJornadaProcessed : null),
                     isInMarket,
-                } satisfies PlayerSearchResultDTO;
+                } as PlayerSearchResultDTO;
             })
             .filter((p): p is PlayerSearchResultDTO => p !== null);
 
@@ -135,6 +141,24 @@ export class PlayerSearchService {
         } catch {
             // Si no hay mercado activo, devolver mapa vacío
             return new Map();
+        }
+    }
+
+    /**
+     * Calcula el precio base de un jugador usando la misma fórmula
+     * que el onboarding (InitialPricingService). Fallback cuando no hay
+     * registro en player_market_values.
+     */
+    private computeBasePrice(overall: number, position: string): number {
+        try {
+            const result = this.pricingService.calculate({
+                ovr: overall,
+                position: position as PlayerPosition,
+            });
+            return result.price;
+        } catch {
+            // Si el overall es inválido o la posición no es válida, devolver 500.000 (mínimo)
+            return 500_000;
         }
     }
 }

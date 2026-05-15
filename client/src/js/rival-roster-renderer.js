@@ -264,20 +264,33 @@ function renderMiniPitch(titulares, formationKey) {
                     imageClassName: 'lineup-player-portrait-media',
                 }));
 
-                // Score badge
+                // Score badge — inline styled (NOT using lineup-player-score CSS
+                // which has position:absolute, designed for a different layout)
                 const ptsValue = player.jornadaPts;
                 const hasPts = ptsValue !== null && ptsValue !== undefined;
+                const isNegative = hasPts && ptsValue < 0;
                 const scoreBadge = document.createElement('div');
-                scoreBadge.className = `lineup-player-score ${hasPts && ptsValue < 0 ? 'lineup-player-score-negative' : ''}`;
+                scoreBadge.style.cssText = `
+                    min-width:2.2rem; height:1.6rem; padding:0 0.5rem;
+                    display:inline-flex; align-items:center; justify-content:center;
+                    border-radius:0.5rem; margin-top:4px;
+                    border:1px solid rgba(255,255,255,0.12);
+                    border-bottom:2px solid ${isNegative ? '#ef4444' : '#1d9bf0'};
+                    background:${isNegative
+                        ? 'linear-gradient(180deg, #4f2431 0%, #341722 100%)'
+                        : 'linear-gradient(180deg, #27415f 0%, #18293f 100%)'};
+                    color:white; font-size:0.75rem; line-height:1; font-weight:900;
+                    box-shadow:0 4px 8px rgba(2,6,23,0.3);
+                `;
                 scoreBadge.textContent = hasPts ? `${Math.trunc(ptsValue)}` : '-';
 
                 slot.appendChild(title);
                 slot.appendChild(logoBadge);
                 slot.appendChild(portraitFrame);
 
-                // Append score badge as sibling
+                // Append score badge as sibling below the card
                 const wrapper = document.createElement('div');
-                wrapper.className = 'flex flex-col items-center';
+                wrapper.style.cssText = 'display:flex; flex-direction:column; align-items:center;';
                 wrapper.appendChild(slot);
                 wrapper.appendChild(scoreBadge);
 
