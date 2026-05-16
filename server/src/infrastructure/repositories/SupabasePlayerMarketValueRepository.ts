@@ -113,28 +113,32 @@ export class SupabasePlayerMarketValueRepository implements IPlayerMarketValueRe
     }
 
     async getTopMarketVariations(leagueId: number, limit: number = 5) {
-        // Obtenemos los risers (mayor variacion positiva)
-        const { data: risersData, error: risersError } = await this.db
+        // Obtenemos todos los jugadores con variación en la liga
+        const { data: marketData, error } = await this.db
             .from('league_player_market_values')
             .select('player_api_id, current_price, previous_price, raw_variation')
             .eq('league_id', leagueId)
-            .gt('raw_variation', 0)
-            .order('raw_variation', { ascending: false })
-            .limit(limit);
+            .neq('raw_variation', 0);
 
-        // Obtenemos los fallers (mayor variacion negativa)
-        const { data: fallersData, error: fallersError } = await this.db
-            .from('league_player_market_values')
-            .select('player_api_id, current_price, previous_price, raw_variation')
-            .eq('league_id', leagueId)
-            .lt('raw_variation', 0)
-            .order('raw_variation', { ascending: true })
-            .limit(limit);
-
-        if (risersError || fallersError) {
-            console.error('[Dashboard] Error al obtener variaciones:', risersError?.message, fallersError?.message);
+        if (error) {
+            console.error('[Dashboard] Error al obtener variaciones:', error.message);
             throw new AppError('Error al obtener variaciones de mercado.', 500);
         }
+
+        const variations = (marketData || []).map(row => ({
+            ...row,
+            abs_delta: Number(row.current_price) - Number(row.previous_price)
+        }));
+
+        const risersData = variations
+            .filter(v => v.abs_delta > 0)
+            .sort((a, b) => b.abs_delta - a.abs_delta)
+            .slice(0, limit);
+
+        const fallersData = variations
+            .filter(v => v.abs_delta < 0)
+            .sort((a, b) => a.abs_delta - b.abs_delta) // Orden ascendente para bajadas (mas negativo primero)
+            .slice(0, limit);
 
         const allIds = [
             ...(risersData || []).map(r => r.player_api_id as number),
@@ -145,12 +149,17 @@ export class SupabasePlayerMarketValueRepository implements IPlayerMarketValueRe
 
         const mapToTrend = (row: any) => {
             const player = playerData.get(row.player_api_id);
+            const current = Number(row.current_price);
+            const previous = Number(row.previous_price);
+            const absDelta = current - previous;
+            const pct = previous > 0 ? ((absDelta / previous) * 100) : 0;
             return {
                 playerApiId: row.player_api_id,
                 playerName: player?.name ?? 'Desconocido',
                 clubLogoUrl: player?.clubLogoUrl ?? null,
-                currentPrice: Number(row.current_price),
-                rawVariation: Number(row.current_price) - Number(row.previous_price),
+                currentPrice: current,
+                rawVariation: absDelta,
+                variationPct: Math.round(pct * 100) / 100,
                 position: player?.position ?? 'MC',
                 faceUrl: player?.faceUrl ?? null,
                 playerFifaApiId: player?.playerFifaApiId ?? null

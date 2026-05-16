@@ -262,85 +262,120 @@ function renderTopGlobales(top) {
     container.appendChild(fragment);
 }
 
-function renderMarketTrends(trends) {
+let _cachedMarketTrends = null;
+let _currentTrendMode = 'abs';
+
+function renderMarketTrends(trends, mode) {
+    _cachedMarketTrends = trends;
+    if (mode) _currentTrendMode = mode;
+
     const risersContainer = document.getElementById('dash-market-risers');
     const fallersContainer = document.getElementById('dash-market-fallers');
     
     if (!risersContainer || !fallersContainer) return;
 
-    function renderList(container, items, isRise) {
-        if (!items?.length) {
-            container.innerHTML = '<p class="text-slate-600 text-sm text-center py-4">Sin variaciones</p>';
-            return;
-        }
+    const sortKey = _currentTrendMode === 'pct' ? 'variationPct' : 'rawVariation';
 
-        container.innerHTML = '';
-        const fragment = document.createDocumentFragment();
+    const sortedRisers = [...(trends.risers || [])]
+        .sort((a, b) => Math.abs(b[sortKey]) - Math.abs(a[sortKey]));
+    const sortedFallers = [...(trends.fallers || [])]
+        .sort((a, b) => Math.abs(b[sortKey]) - Math.abs(a[sortKey]));
 
-        items.forEach((item, index) => {
-            const row = document.createElement('div');
-            row.className = 'flex items-center gap-3 py-2.5 border-b border-white/5 last:border-0';
+    renderTrendList(risersContainer, sortedRisers, true);
+    renderTrendList(fallersContainer, sortedFallers, false);
 
-            const rank = document.createElement('span');
-            rank.className = 'text-xs font-black text-slate-600 w-4 shrink-0';
-            rank.textContent = String(index + 1);
+    // Update toggle button styles
+    const absBtn = document.getElementById('dash-trend-mode-abs');
+    const pctBtn = document.getElementById('dash-trend-mode-pct');
+    if (absBtn && pctBtn) {
+        absBtn.className = `text-[10px] font-black uppercase px-3 py-1.5 border-r border-white/10 transition-colors ${_currentTrendMode === 'abs' ? 'bg-blue-500/15 text-blue-400' : 'bg-white/5 text-slate-500'}`;
+        pctBtn.className = `text-[10px] font-black uppercase px-3 py-1.5 transition-colors ${_currentTrendMode === 'pct' ? 'bg-blue-500/15 text-blue-400' : 'bg-white/5 text-slate-500'}`;
+    }
+}
 
-            const avatar = createPlayerAvatar({
-                name: item.playerName,
-                faceUrl: item.faceUrl ?? null,
-                playerFifaApiId: item.playerFifaApiId ?? null,
-                position: item.position ?? 'MC',
-                size: 28,
-            });
-
-            const info = document.createElement('div');
-            info.className = 'flex-1 min-w-0';
-
-            const name = document.createElement('p');
-            name.className = 'font-bold text-sm text-white truncate';
-            name.textContent = getShortName(item.playerName);
-            
-            const positionBadge = createPositionBadge(item.position ?? 'MC');
-            
-            const metaDiv = document.createElement('div');
-            metaDiv.className = 'flex items-center gap-1.5 mt-0.5';
-            metaDiv.appendChild(positionBadge);
-            
-            if (item.clubLogoUrl) {
-                const clubLogo = createClubLogo({ clubLogoUrl: item.clubLogoUrl, size: 12, alt: 'Club' });
-                metaDiv.appendChild(clubLogo);
-            }
-            
-            info.appendChild(name);
-            info.appendChild(metaDiv);
-
-            const valueContainer = document.createElement('div');
-            valueContainer.className = 'text-right shrink-0';
-            
-            const diffEl = document.createElement('div');
-            diffEl.className = `font-black text-xs ${isRise ? 'text-green-400' : 'text-red-400'}`;
-            diffEl.textContent = `${isRise ? '+' : ''}${new Intl.NumberFormat('es-ES').format(item.rawVariation)} €`;
-            
-            const priceEl = document.createElement('div');
-            priceEl.className = 'text-[9px] font-bold text-slate-500';
-            priceEl.textContent = `${new Intl.NumberFormat('es-ES').format(item.currentPrice)} €`;
-
-            valueContainer.appendChild(diffEl);
-            valueContainer.appendChild(priceEl);
-
-            row.appendChild(rank);
-            row.appendChild(avatar);
-            row.appendChild(info);
-            row.appendChild(valueContainer);
-            
-            fragment.appendChild(row);
-        });
-
-        container.appendChild(fragment);
+function renderTrendList(container, items, isRise) {
+    if (!items?.length) {
+        container.innerHTML = '<p class="text-slate-600 text-sm text-center py-4">Sin variaciones</p>';
+        return;
     }
 
-    renderList(risersContainer, trends.risers, true);
-    renderList(fallersContainer, trends.fallers, false);
+    container.innerHTML = '';
+    const fragment = document.createDocumentFragment();
+    const fmt = new Intl.NumberFormat('es-ES');
+
+    items.forEach((item, index) => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-3 py-2.5 border-b border-white/5 last:border-0';
+
+        const rank = document.createElement('span');
+        rank.className = 'text-xs font-black text-slate-600 w-4 shrink-0';
+        rank.textContent = String(index + 1);
+
+        const avatar = createPlayerAvatar({
+            name: item.playerName,
+            faceUrl: item.faceUrl ?? null,
+            playerFifaApiId: item.playerFifaApiId ?? null,
+            position: item.position ?? 'MC',
+            size: 28,
+        });
+
+        const info = document.createElement('div');
+        info.className = 'flex-1 min-w-0';
+
+        const name = document.createElement('p');
+        name.className = 'font-bold text-sm text-white truncate';
+        name.textContent = getShortName(item.playerName);
+        
+        const positionBadge = createPositionBadge(item.position ?? 'MC');
+        
+        const metaDiv = document.createElement('div');
+        metaDiv.className = 'flex items-center gap-1.5 mt-0.5';
+        metaDiv.appendChild(positionBadge);
+        
+        if (item.clubLogoUrl) {
+            const clubLogo = createClubLogo({ clubLogoUrl: item.clubLogoUrl, size: 12, alt: 'Club' });
+            metaDiv.appendChild(clubLogo);
+        }
+        
+        info.appendChild(name);
+        info.appendChild(metaDiv);
+
+        const valueContainer = document.createElement('div');
+        valueContainer.className = 'text-right shrink-0';
+        
+        const diffEl = document.createElement('div');
+        diffEl.className = `font-black text-xs ${isRise ? 'text-green-400' : 'text-red-400'}`;
+
+        if (_currentTrendMode === 'pct') {
+            const sign = isRise ? '+' : '';
+            diffEl.textContent = `${sign}${item.variationPct.toFixed(1)}%`;
+        } else {
+            diffEl.textContent = `${isRise ? '+' : ''}${fmt.format(item.rawVariation)} €`;
+        }
+        
+        const priceEl = document.createElement('div');
+        priceEl.className = 'text-[9px] font-bold text-slate-500';
+        priceEl.textContent = `${fmt.format(item.currentPrice)} €`;
+
+        valueContainer.appendChild(diffEl);
+        valueContainer.appendChild(priceEl);
+
+        row.appendChild(rank);
+        row.appendChild(avatar);
+        row.appendChild(info);
+        row.appendChild(valueContainer);
+        
+        fragment.appendChild(row);
+    });
+
+    container.appendChild(fragment);
+}
+
+function setTrendMode(mode) {
+    if (!_cachedMarketTrends) return;
+    _currentTrendMode = mode;
+    renderMarketTrends(_cachedMarketTrends, mode);
 }
 
 window.loadDashboard = loadDashboard;
+window.setTrendMode = setTrendMode;

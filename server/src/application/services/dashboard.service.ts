@@ -30,7 +30,7 @@ export class DashboardService {
             this.repo.getTopJugadoresGlobales(leagueId, 5),
             jornada > 0 ? this.fixturesRepo.getFixtures(leagueId, jornada + 1, userId) : Promise.resolve([]),
             this.rankingRepo.findRosterByLeague(leagueId),
-            this.marketValueRepo.getTopMarketVariations(leagueId, 3),
+            this.marketValueRepo.getTopMarketVariations(leagueId, 5),
         ]);
 
         const misScores = scores.filter(score => score.user_id === userId);
