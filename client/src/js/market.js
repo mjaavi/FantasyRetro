@@ -63,6 +63,7 @@ export async function loadMarket() {
                     playerFifaApiId: player.playerFifaApiId ?? null,
                     faceUrl:      player.faceUrl ?? null,
                     clubLogoUrl:  player.clubLogoUrl ?? null,
+                    totalBids:    player.totalBids ?? 0,
                 };
                 marketPlayers.set(player.playerApiId, playerForRenderer);
                 playerPositions.set(player.playerApiId, player.position);
