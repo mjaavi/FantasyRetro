@@ -88,6 +88,20 @@ export class LeagueMarketService {
         };
     }
 
+    async forceResolveAndRegenerateMarket(leagueId: number): Promise<{ resueltos: number; sin_pujas: number; expiresAt: string; jugadoresNuevos: number }> {
+        console.log(`[LeagueMarket] Resolviendo y regenerando mercado para liga ${leagueId}...`);
+
+        const resolucion = await this.closeMarket(leagueId);
+        const openResult = await this.openMarket(leagueId);
+
+        return {
+            resueltos: resolucion.resueltos,
+            sin_pujas: resolucion.sin_pujas,
+            expiresAt: openResult.expiresAt,
+            jugadoresNuevos: openResult.jugadores,
+        };
+    }
+
     async getMarket(leagueId: number): Promise<LeagueMarketPlayer[]> {
         const jugadores = await this.obtenerMercadoValorizado(leagueId);
 
@@ -294,16 +308,24 @@ export class LeagueMarketService {
 
     private async obtenerMercadoValorizado(leagueId: number): Promise<LeagueMarketPlayer[]> {
         const snapshots = await this.repo.getActiveMarket(leagueId);
-        const marketValues = this.marketValueRepo
-            ? await this.marketValueRepo.findMarketValues(
-                leagueId,
-                snapshots.map(snapshot => snapshot.playerApiId),
-            )
-            : [];
+        const [marketValues, bidsCount] = await Promise.all([
+            this.marketValueRepo
+                ? this.marketValueRepo.findMarketValues(
+                    leagueId,
+                    snapshots.map(snapshot => snapshot.playerApiId),
+                )
+                : Promise.resolve([]),
+            this.repo.getBidsCountByMarket(leagueId)
+        ]);
 
-        return this.marketValueProjector.projectPlayers(
+        const projected = this.marketValueProjector.projectPlayers(
             snapshots,
             new Map(marketValues.map(value => [value.playerApiId, value])),
         );
+
+        return projected.map(player => ({
+            ...player,
+            totalBids: bidsCount[player.playerApiId] || 0
+        }));
     }
 }

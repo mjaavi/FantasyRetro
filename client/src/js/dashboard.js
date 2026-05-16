@@ -19,6 +19,9 @@ export async function loadDashboard() {
         renderChart(data.chart);
         renderFixtures(data.fixtures, data.jornada);
         renderTopGlobales(data.topGlobales);
+        if (data.marketTrends) {
+            renderMarketTrends(data.marketTrends);
+        }
     } catch (error) {
         console.error('[Dashboard]', error.message ?? error);
     }
@@ -257,6 +260,87 @@ function renderTopGlobales(top) {
     });
 
     container.appendChild(fragment);
+}
+
+function renderMarketTrends(trends) {
+    const risersContainer = document.getElementById('dash-market-risers');
+    const fallersContainer = document.getElementById('dash-market-fallers');
+    
+    if (!risersContainer || !fallersContainer) return;
+
+    function renderList(container, items, isRise) {
+        if (!items?.length) {
+            container.innerHTML = '<p class="text-slate-600 text-sm text-center py-4">Sin variaciones</p>';
+            return;
+        }
+
+        container.innerHTML = '';
+        const fragment = document.createDocumentFragment();
+
+        items.forEach((item, index) => {
+            const row = document.createElement('div');
+            row.className = 'flex items-center gap-3 py-2.5 border-b border-white/5 last:border-0';
+
+            const rank = document.createElement('span');
+            rank.className = 'text-xs font-black text-slate-600 w-4 shrink-0';
+            rank.textContent = String(index + 1);
+
+            const avatar = createPlayerAvatar({
+                name: item.playerName,
+                faceUrl: item.faceUrl ?? null,
+                playerFifaApiId: item.playerFifaApiId ?? null,
+                position: item.position ?? 'MC',
+                size: 28,
+            });
+
+            const info = document.createElement('div');
+            info.className = 'flex-1 min-w-0';
+
+            const name = document.createElement('p');
+            name.className = 'font-bold text-sm text-white truncate';
+            name.textContent = getShortName(item.playerName);
+            
+            const positionBadge = createPositionBadge(item.position ?? 'MC');
+            
+            const metaDiv = document.createElement('div');
+            metaDiv.className = 'flex items-center gap-1.5 mt-0.5';
+            metaDiv.appendChild(positionBadge);
+            
+            if (item.clubLogoUrl) {
+                const clubLogo = createClubLogo({ clubLogoUrl: item.clubLogoUrl, size: 12, alt: 'Club' });
+                metaDiv.appendChild(clubLogo);
+            }
+            
+            info.appendChild(name);
+            info.appendChild(metaDiv);
+
+            const valueContainer = document.createElement('div');
+            valueContainer.className = 'text-right shrink-0';
+            
+            const diffEl = document.createElement('div');
+            diffEl.className = `font-black text-xs ${isRise ? 'text-green-400' : 'text-red-400'}`;
+            diffEl.textContent = `${isRise ? '+' : ''}${new Intl.NumberFormat('es-ES').format(item.rawVariation)} €`;
+            
+            const priceEl = document.createElement('div');
+            priceEl.className = 'text-[9px] font-bold text-slate-500';
+            priceEl.textContent = `${new Intl.NumberFormat('es-ES').format(item.currentPrice)} €`;
+
+            valueContainer.appendChild(diffEl);
+            valueContainer.appendChild(priceEl);
+
+            row.appendChild(rank);
+            row.appendChild(avatar);
+            row.appendChild(info);
+            row.appendChild(valueContainer);
+            
+            fragment.appendChild(row);
+        });
+
+        container.appendChild(fragment);
+    }
+
+    renderList(risersContainer, trends.risers, true);
+    renderList(fallersContainer, trends.fallers, false);
 }
 
 window.loadDashboard = loadDashboard;

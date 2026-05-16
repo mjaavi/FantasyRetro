@@ -14,6 +14,7 @@ export class DashboardService {
         private readonly rankingRepo: IRankingRepository = new SupabaseRankingRepository(),
         private readonly leagueRepo: ILeagueRepository = new SupabaseLeagueRepository(),
         private readonly fixturesRepo: IFixturesRepository = new SupabaseFixturesRepository(),
+        private readonly marketValueRepo = new (require('../../infrastructure/repositories/SupabasePlayerMarketValueRepository').SupabasePlayerMarketValueRepository)(),
     ) {}
 
     async getDashboardData(leagueId: number, userId: string) {
@@ -24,11 +25,12 @@ export class DashboardService {
 
         const jornada = liga.jornada_actual ?? 0;
 
-        const [scores, topGlobales, fixtures, rosterEntries] = await Promise.all([
+        const [scores, topGlobales, fixtures, rosterEntries, marketTrends] = await Promise.all([
             this.repo.getScoresLiga(leagueId),
             this.repo.getTopJugadoresGlobales(leagueId, 5),
             jornada > 0 ? this.fixturesRepo.getFixtures(leagueId, jornada + 1, userId) : Promise.resolve([]),
             this.rankingRepo.findRosterByLeague(leagueId),
+            this.marketValueRepo.getTopMarketVariations(leagueId, 3),
         ]);
 
         const misScores = scores.filter(score => score.user_id === userId);
@@ -107,6 +109,7 @@ export class DashboardService {
             rival,
             topGlobales,
             fixtures,
+            marketTrends,
         };
     }
 }

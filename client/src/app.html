@@ -24,6 +24,10 @@
     <link rel="stylesheet" href="./css/styles.css">
 
     <style type="text/tailwindcss">
+        html {
+            scrollbar-gutter: stable;
+        }
+
         @layer components {
             /* ── Layout ─────────────────────────────────── */
             .bento-card {
@@ -1264,25 +1268,40 @@
                         </div>
                     </div>
 
-                    <!-- 6. Variaciones de precio — 2 cols (placeholder) -->
+                    <!-- 6. Variaciones de precio — 2 cols -->
                     <div class="md:col-span-2 bg-white/[0.03] backdrop-blur-md border border-white/10 rounded-[2rem] p-6 shadow-2xl shadow-black/40 relative overflow-hidden">
-                        <!-- Fondo decorativo -->
-                        <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03]">
-                            <svg viewBox="0 0 200 80" class="w-3/4"><polyline points="0,60 40,40 80,55 120,20 160,35 200,10" fill="none" stroke="white" stroke-width="4" stroke-linejoin="round"/></svg>
-                        </div>
                         <div class="relative z-10">
-                            <div class="flex justify-between items-start mb-4">
+                            <div class="flex justify-between items-start mb-6">
                                 <div>
                                     <p class="text-[10px] tracking-widest uppercase text-slate-400 mb-1">Mercado</p>
-                                    <p class="text-xl font-black text-white tracking-tight">Variaciones de Precio</p>
+                                    <p class="text-xl font-black text-white tracking-tight">Subidas y Bajadas</p>
                                 </div>
-                                <span class="text-[10px] font-black uppercase px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-slate-500 tracking-wider">Próximamente</span>
                             </div>
-                            <div class="flex flex-col items-center justify-center py-8 gap-3">
-                                <div class="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
-                                    <svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div>
+                                    <div class="flex items-center gap-2 mb-4">
+                                        <div class="w-6 h-6 rounded bg-green-500/10 border border-green-500/30 flex items-center justify-center text-green-400">
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                                        </div>
+                                        <h4 class="font-bold text-white">Mayores Subidas</h4>
+                                    </div>
+                                    <div id="dash-market-risers" class="space-y-0">
+                                        <p class="text-slate-600 text-sm text-center py-4">Sin datos</p>
+                                    </div>
                                 </div>
-                                <p class="text-slate-600 text-sm font-bold text-center">Las variaciones de precio se activarán<br>cuando implementemos precios dinámicos</p>
+                                
+                                <div>
+                                    <div class="flex items-center gap-2 mb-4">
+                                        <div class="w-6 h-6 rounded bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400">
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" /></svg>
+                                        </div>
+                                        <h4 class="font-bold text-white">Mayores Bajadas</h4>
+                                    </div>
+                                    <div id="dash-market-fallers" class="space-y-0">
+                                        <p class="text-slate-600 text-sm text-center py-4">Sin datos</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1777,6 +1796,18 @@
                         </div>
                         <p id="admin-regenerar-mercado-msg" class="text-sm font-bold text-green-400 mt-3 hidden"></p>
                         <p id="admin-regenerar-mercado-err" class="text-sm font-bold text-red-400 mt-3 hidden"></p>
+                    </div>
+
+                    <div class="bento-card">
+                        <h3 class="font-extrabold text-white text-lg mb-4">Cerrar y Resolver Mercado</h3>
+                        <p class="text-sm text-slate-400 mb-5">Ejecuta las pujas activas, adjudica los jugadores a los ganadores, reembolsa a los perdedores y genera un nuevo mercado.</p>
+                        <div class="flex gap-4 items-end">
+                            <button id="admin-resolver-mercado-btn" onclick="resolverMercado()" class="btn-primary py-3 px-8 whitespace-nowrap">
+                                Cerrar mercado
+                            </button>
+                        </div>
+                        <p id="admin-resolver-mercado-msg" class="text-sm font-bold text-green-400 mt-3 hidden"></p>
+                        <p id="admin-resolver-mercado-err" class="text-sm font-bold text-red-400 mt-3 hidden"></p>
                     </div>
 
                     <!-- Resultados -->

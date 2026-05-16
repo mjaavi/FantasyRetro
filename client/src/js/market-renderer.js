@@ -93,7 +93,22 @@ export function createPlayerCard(player, userBid) {
     posTag.textContent = POS_LABEL[player.position] ?? player.position ?? 'JUG';
 
     header.appendChild(club);
-    header.appendChild(posTag);
+    
+    const tagsContainer = document.createElement('div');
+    tagsContainer.className = 'flex gap-2';
+    tagsContainer.appendChild(posTag);
+
+    if (player.totalBids > 0) {
+        const bidsTag = document.createElement('span');
+        bidsTag.className = 'market-player-pos';
+        bidsTag.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+        bidsTag.style.background = 'rgba(239, 68, 68, 0.12)';
+        bidsTag.style.color = '#ef4444';
+        bidsTag.textContent = `🔥 ${player.totalBids} PUJA${player.totalBids > 1 ? 'S' : ''}`;
+        tagsContainer.appendChild(bidsTag);
+    }
+
+    header.appendChild(tagsContainer);
 
     const footer = document.createElement('div');
     footer.className = 'market-player-footer';

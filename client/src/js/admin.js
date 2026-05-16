@@ -199,6 +199,63 @@ export async function regenerarMercado() {
     }
 }
 
+export async function resolverMercado() {
+    const liga = getLigaActiva();
+    const btn = document.getElementById('admin-resolver-mercado-btn');
+    const msgEl = document.getElementById('admin-resolver-mercado-msg');
+    const errEl = document.getElementById('admin-resolver-mercado-err');
+
+    toggleFeedback(msgEl, false);
+    toggleFeedback(errEl, false);
+
+    if (!liga) {
+        adminLog('No hay liga activa.', 'err');
+        return;
+    }
+
+    const confirmed = window.confirm(
+        'Se ejecutaran las pujas, se adjudicaran los jugadores y se generara un nuevo mercado. Quieres continuar?',
+    );
+
+    if (!confirmed) {
+        adminLog('Resolucion de mercado cancelada por el admin.', 'info');
+        return;
+    }
+
+    setButtonState(btn, true, 'Resolviendo...');
+    adminLog(`Resolviendo y cerrando mercado para liga #${liga.id}...`, 'info');
+
+    try {
+        const result = await apiFetch(`/admin/ligas/${liga.id}/resolver-mercado`, {
+            method: 'POST',
+        });
+
+        const data = result.data;
+        invalidateCache(`league-market-${liga.id}-0`);
+
+        adminLog(
+            `Mercado resuelto. Jugadores adjudicados: ${data.resueltos}. Sin pujas: ${data.sin_pujas}. Nuevos en mercado: ${data.jugadoresNuevos}.`,
+            'ok',
+        );
+
+        if (msgEl) {
+            msgEl.textContent =
+                `Mercado cerrado y resuelto - ${data.jugadoresNuevos} nuevos jugadores disponibles hasta ${formatExpiry(data.expiresAt)}`;
+            toggleFeedback(msgEl, true);
+        }
+
+        await loadAdmin();
+    } catch (err) {
+        adminLog(`Error resolviendo mercado: ${err.message}`, 'err');
+        if (errEl) {
+            errEl.textContent = err.message;
+            toggleFeedback(errEl, true);
+        }
+    } finally {
+        setButtonState(btn, false, 'Cerrar mercado');
+    }
+}
+
 async function mostrarResultados(leagueId, jornada) {
     try {
         const result = await apiFetch(`/admin/ligas/${leagueId}/jornada/${jornada}`);
@@ -319,5 +376,6 @@ function adminLog(message, type = 'info') {
 
 window.procesarJornada = procesarJornada;
 window.regenerarMercado = regenerarMercado;
+window.resolverMercado = resolverMercado;
 window.loadAdmin = loadAdmin;
 window.actualizarBotonAdmin = actualizarBotonAdmin;

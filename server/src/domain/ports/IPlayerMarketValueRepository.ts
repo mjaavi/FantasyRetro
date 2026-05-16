@@ -23,6 +23,14 @@ export interface PlayerMarketValueWriteModel {
     lastJornadaProcessed: number;
 }
 
+export interface MarketTrend {
+    playerApiId: number;
+    playerName: string;
+    clubLogoUrl: string | null;
+    currentPrice: number;
+    rawVariation: number;
+}
+
 export interface PlayerGlobalScoreSnapshot {
     playerApiId: number;
     jornada: number;
@@ -40,4 +48,5 @@ export interface IPlayerMarketValueRepository {
     findGlobalScoresUntilRound(leagueId: number, jornada: number): Promise<PlayerGlobalScoreSnapshot[]>;
     findPricingSnapshots(leagueId: number, playerApiIds: number[]): Promise<PlayerPricingSnapshot[]>;
     upsertMarketValues(rows: PlayerMarketValueWriteModel[]): Promise<void>;
+    getTopMarketVariations(leagueId: number, limit: number): Promise<{ risers: MarketTrend[]; fallers: MarketTrend[] }>;
 }

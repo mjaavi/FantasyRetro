@@ -167,6 +167,24 @@ export class SupabaseLeagueMarketRepository implements ILeagueMarketRepository {
         }));
     }
 
+    async getBidsCountByMarket(leagueId: number): Promise<Record<number, number>> {
+        const { data, error } = await supabaseAdmin
+            .from('league_bids')
+            .select('player_api_id')
+            .eq('league_id', leagueId);
+
+        if (error) {
+            throw new AppError('Error al obtener conteo de pujas.', 500);
+        }
+
+        const counts: Record<number, number> = {};
+        for (const row of (data ?? [])) {
+            const id = row.player_api_id as number;
+            counts[id] = (counts[id] || 0) + 1;
+        }
+        return counts;
+    }
+
     async getBidByUserAndPlayer(leagueId: number, userId: string, playerApiId: number): Promise<LeagueBid | null> {
         const { data, error } = await supabaseAdmin
             .from('league_bids')

@@ -111,4 +111,55 @@ export class SupabasePlayerMarketValueRepository implements IPlayerMarketValueRe
             throw new AppError(`Error al guardar valores dinamicos de mercado: ${error.message}`, 500);
         }
     }
+
+    async getTopMarketVariations(leagueId: number, limit: number = 5) {
+        // Obtenemos los risers (mayor variacion positiva)
+        const { data: risersData, error: risersError } = await this.db
+            .from('league_player_market_values')
+            .select('player_api_id, current_price, raw_variation')
+            .eq('league_id', leagueId)
+            .gt('raw_variation', 0)
+            .order('raw_variation', { ascending: false })
+            .limit(limit);
+
+        // Obtenemos los fallers (mayor variacion negativa)
+        const { data: fallersData, error: fallersError } = await this.db
+            .from('league_player_market_values')
+            .select('player_api_id, current_price, raw_variation')
+            .eq('league_id', leagueId)
+            .lt('raw_variation', 0)
+            .order('raw_variation', { ascending: true })
+            .limit(limit);
+
+        if (risersError || fallersError) {
+            console.error('[Dashboard] Error al obtener variaciones:', risersError?.message, fallersError?.message);
+            throw new AppError('Error al obtener variaciones de mercado.', 500);
+        }
+
+        const allIds = [
+            ...(risersData || []).map(r => r.player_api_id as number),
+            ...(fallersData || []).map(r => r.player_api_id as number)
+        ];
+
+        const playerData = await loadLeaguePlayerData(leagueId, allIds);
+
+        const mapToTrend = (row: any) => {
+            const player = playerData.get(row.player_api_id);
+            return {
+                playerApiId: row.player_api_id,
+                playerName: player?.name ?? 'Desconocido',
+                clubLogoUrl: player?.clubLogoUrl ?? null,
+                currentPrice: Number(row.current_price),
+                rawVariation: Number(row.raw_variation),
+                position: player?.position ?? 'MC',
+                faceUrl: player?.faceUrl ?? null,
+                playerFifaApiId: player?.playerFifaApiId ?? null
+            };
+        };
+
+        return {
+            risers: (risersData || []).map(mapToTrend),
+            fallers: (fallersData || []).map(mapToTrend)
+        };
+    }
 }

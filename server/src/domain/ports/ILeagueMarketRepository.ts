@@ -22,6 +22,7 @@ export interface LeagueMarketPlayer extends LeagueMarketPlayerSnapshot {
     marketValueChangePct: number;
     lastAveragePoints: number | null;
     lastJornadaProcessed: number | null;
+    totalBids?: number;
 }
 
 export interface LeagueBid {
@@ -48,6 +49,7 @@ export interface ILeagueMarketRepository {
     getExpiredMarkets(): Promise<number[]>;
     getPlayerIdsInLeague(leagueId: number): Promise<number[]>;
     getBidsForMarket(leagueId: number): Promise<LeagueBid[]>;
+    getBidsCountByMarket(leagueId: number): Promise<Record<number, number>>;
     getBidByUserAndPlayer(leagueId: number, userId: string, playerApiId: number): Promise<LeagueBid | null>;
     upsertBid(leagueId: number, userId: string, playerApiId: number, amount: number): Promise<void>;
     deleteBid(leagueId: number, userId: string, playerApiId: number): Promise<void>;

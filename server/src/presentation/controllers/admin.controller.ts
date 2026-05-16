@@ -53,6 +53,21 @@ export class AdminController {
         }
     };
 
+    resolverMercado = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const leagueId = Number(req.params.leagueId);
+
+            if (!Number.isInteger(leagueId) || leagueId <= 0) {
+                throw new ValidationError('ID de liga invalido.');
+            }
+
+            const resultado = await this.leagueMarketService.forceResolveAndRegenerateMarket(leagueId);
+            res.json({ status: 'ok', data: resultado });
+        } catch (err) {
+            next(err);
+        }
+    };
+
     getPuntosJornada = async (req: Request, res: Response, next: NextFunction) => {
         try {
             const leagueId = Number(req.params.leagueId);
