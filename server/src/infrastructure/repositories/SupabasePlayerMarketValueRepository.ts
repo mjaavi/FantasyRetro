@@ -116,7 +116,7 @@ export class SupabasePlayerMarketValueRepository implements IPlayerMarketValueRe
         // Obtenemos los risers (mayor variacion positiva)
         const { data: risersData, error: risersError } = await this.db
             .from('league_player_market_values')
-            .select('player_api_id, current_price, raw_variation')
+            .select('player_api_id, current_price, previous_price, raw_variation')
             .eq('league_id', leagueId)
             .gt('raw_variation', 0)
             .order('raw_variation', { ascending: false })
@@ -125,7 +125,7 @@ export class SupabasePlayerMarketValueRepository implements IPlayerMarketValueRe
         // Obtenemos los fallers (mayor variacion negativa)
         const { data: fallersData, error: fallersError } = await this.db
             .from('league_player_market_values')
-            .select('player_api_id, current_price, raw_variation')
+            .select('player_api_id, current_price, previous_price, raw_variation')
             .eq('league_id', leagueId)
             .lt('raw_variation', 0)
             .order('raw_variation', { ascending: true })
@@ -150,7 +150,7 @@ export class SupabasePlayerMarketValueRepository implements IPlayerMarketValueRe
                 playerName: player?.name ?? 'Desconocido',
                 clubLogoUrl: player?.clubLogoUrl ?? null,
                 currentPrice: Number(row.current_price),
-                rawVariation: Number(row.raw_variation),
+                rawVariation: Number(row.current_price) - Number(row.previous_price),
                 position: player?.position ?? 'MC',
                 faceUrl: player?.faceUrl ?? null,
                 playerFifaApiId: player?.playerFifaApiId ?? null
