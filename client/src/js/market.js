@@ -358,7 +358,7 @@ function createReceivedOfferCard(offer) {
         <div class="flex-1 min-w-0">
             <p class="text-white font-extrabold truncate">${escapeHtml(offer.playerName)}</p>
             <p class="text-xs text-slate-400 truncate">${escapeHtml(offer.buyerTeamName)} ofrece</p>
-            <p class="text-lg text-green-400 font-black font-mono">${formatCurrency(offer.amount)} €</p>
+            <p class="text-lg text-green-400 font-black">${formatCurrency(offer.amount)} €</p>
         </div>
         <div class="flex gap-2 shrink-0">
             <button data-action="accept-direct-offer" data-offer-id="${offer.id}" class="px-3 py-2 rounded-lg bg-green-500/15 border border-green-500/25 text-green-300 text-xs font-black hover:bg-green-500/25">Aceptar</button>
@@ -437,7 +437,7 @@ function createTransferHistoryRow(item) {
         </div>
         <div class="flex items-center justify-between md:justify-end gap-4">
             <span class="text-xs font-bold text-slate-500">${new Date(item.createdAt).toLocaleDateString('es-ES')}</span>
-            <span class="text-green-400 font-black font-mono">${formatCurrency(item.amount)} €</span>
+            <span class="text-green-400 font-black">${formatCurrency(item.amount)} €</span>
         </div>
     `;
     return row;

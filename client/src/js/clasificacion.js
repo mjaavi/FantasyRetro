@@ -164,12 +164,12 @@ function crearFilaRanking(entry) {
 
     // Valor plantilla
     const tdValor = document.createElement('td');
-    tdValor.className = 'p-5 text-right font-mono text-slate-300 hidden md:table-cell';
+    tdValor.className = 'p-5 text-right text-slate-300 hidden md:table-cell';
     tdValor.textContent = formatEuros(entry.valorPlantilla);
 
     // Presupuesto restante
     const tdPresupuesto = document.createElement('td');
-    tdPresupuesto.className = 'p-5 text-right font-mono text-green-400 hidden lg:table-cell';
+    tdPresupuesto.className = 'p-5 text-right text-green-400 hidden lg:table-cell';
     tdPresupuesto.textContent = formatEuros(entry.presupuestoRestante);
 
     // Puntos
@@ -196,4 +196,3 @@ document.getElementById('ranking-jornada-select')?.addEventListener('change', (e
 
 // Expuesto para que navigation.js pueda llamarlo cuando se muestra la vista
 window.loadClasificacion = loadClasificacion;
-

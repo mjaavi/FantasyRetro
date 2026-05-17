@@ -10,6 +10,7 @@ import { createPlayerPortrait, createClubLogo } from './player-image.js';
 import { abrirPlayerDrawer } from './player-drawer.js';
 import { getLigaActiva } from './leagues.js';
 import { submitDirectOffer } from './market.js';
+import { createPlayerCard } from './market-renderer.js';
 
 // ── Estado ────────────────────────────────────────────────────────────────────
 
@@ -177,51 +178,67 @@ function renderClubOfferList(data) {
     }
 
     const list = document.createElement('div');
-    list.className = 'grid grid-cols-1 sm:grid-cols-2 gap-3';
+    list.className = 'grid grid-cols-1 md:grid-cols-2 gap-6 z-10 relative';
 
     for (const player of players) {
-        list.appendChild(createRivalOfferRow(player, data.userId));
+        list.appendChild(createRivalPlayerCard(player, data.userId));
     }
+
+    list.addEventListener('click', handleRivalClubCardClick);
 
     wrap.appendChild(list);
     return wrap;
 }
 
-function createRivalOfferRow(player, sellerUserId) {
-    const row = document.createElement('button');
-    row.type = 'button';
-    row.className = 'w-full text-left flex items-center gap-3 p-3 bg-white/[0.03] border border-white/5 rounded-xl hover:bg-white/[0.06] transition-colors';
+function createRivalPlayerCard(player, sellerUserId) {
+    const card = createPlayerCard({
+        id: player.id,
+        name: player.name,
+        realTeam: player.real_team ?? 'Sin equipo',
+        position: player.position,
+        market_value: player.purchase_price ?? 0,
+        previous_market_value: null,
+        market_value_delta: 0,
+        market_value_change_pct: 0,
+        last_average_points: null,
+        last_jornada_processed: null,
+        playerFifaApiId: player.playerFifaApiId ?? null,
+        faceUrl: player.faceUrl ?? null,
+        clubLogoUrl: player.clubLogoUrl ?? null,
+    }, null);
 
-    const posTag = document.createElement('span');
-    posTag.className = `inline-flex items-center justify-center w-9 h-9 rounded-lg text-[10px] font-black uppercase tracking-wider ${POS_BG[player.position] ?? 'card-accent-MC'}`;
-    posTag.style.cssText = 'background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);';
-    posTag.textContent = POSICION_SHORT[player.position] ?? player.position;
+    card.dataset.sellerUserId = sellerUserId;
+    const actionBtn = card.querySelector('[data-action="open-bid-drawer"]');
+    if (actionBtn) {
+        actionBtn.dataset.action = 'open-direct-offer';
+        actionBtn.dataset.sellerUserId = sellerUserId;
+        actionBtn.textContent = 'Pujar';
+    }
 
-    const info = document.createElement('div');
-    info.className = 'flex-1 min-w-0';
-    const name = document.createElement('p');
-    name.className = 'text-xs font-extrabold text-white truncate';
-    name.textContent = player.name;
-    const meta = document.createElement('p');
-    meta.className = 'text-[10px] text-slate-500 truncate';
-    meta.textContent = `${player.real_team ?? 'Sin equipo'} · ${formatCurrency(player.purchase_price ?? 0)}`;
-    info.appendChild(name);
-    info.appendChild(meta);
-
-    const action = document.createElement('span');
-    action.className = 'px-2 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-300 text-[10px] font-black uppercase shrink-0';
-    action.textContent = 'Pujar';
-
-    row.appendChild(posTag);
-    row.appendChild(info);
-    row.appendChild(action);
-    row.addEventListener('click', () => openDirectOfferDrawer(player, sellerUserId));
-
-    return row;
+    return card;
 }
 
-function formatCurrency(value) {
-    return `${new Intl.NumberFormat('es-ES').format(Number(value ?? 0))} €`;
+function handleRivalClubCardClick(event) {
+    const btn = event.target.closest('[data-action="open-direct-offer"]');
+    if (!btn) return;
+
+    const card = btn.closest('.market-player-card');
+    if (!card) return;
+
+    openDirectOfferDrawer({
+        id: Number(btn.dataset.playerId),
+        name: btn.dataset.playerName ?? card.querySelector('.market-player-name')?.textContent ?? 'Jugador',
+        position: resolvePositionFromCard(card),
+        purchase_price: Number(btn.dataset.marketValue ?? 0),
+        faceUrl: null,
+        clubLogoUrl: null,
+    }, btn.dataset.sellerUserId ?? card.dataset.sellerUserId);
+}
+
+function resolvePositionFromCard(card) {
+    const label = card.querySelector('.market-player-pos')?.textContent ?? 'MC';
+    const byLabel = { POR: 'PT', DEF: 'DF', MED: 'MC', DEL: 'DL' };
+    return byLabel[label] ?? label;
 }
 
 function openDirectOfferDrawer(player, sellerUserId) {
@@ -267,7 +284,7 @@ function renderJornadasSlider(data) {
     const currentJornada = rivalState.currentJornada;
 
     // Opción "General"
-    const generalBtn = createSliderBtn('GEN', '—', currentJornada === null, () => {
+    const generalBtn = createSliderBtn('CLUB', '—', currentJornada === null, () => {
         rivalState.currentJornada = null;
         loadRivalData(undefined);
     });
