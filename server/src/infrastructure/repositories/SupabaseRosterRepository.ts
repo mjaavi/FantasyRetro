@@ -8,7 +8,7 @@ export class SupabaseRosterRepository implements IRosterRepository {
     async findByUserAndLeague(userId: string, leagueId: number): Promise<RosterPlayer[]> {
         const { data: rosterData, error: rosterError } = await supabaseAdmin
             .from('user_roster')
-            .select('player_api_id, is_starter, purchase_price')
+            .select('player_api_id, is_starter, purchase_price, release_clause')
             .eq('user_id', userId)
             .eq('league_id', leagueId);
 
@@ -35,6 +35,7 @@ export class SupabaseRosterRepository implements IRosterRepository {
                 overall:        player?.overall ?? 50,
                 is_starter:     Boolean(row.is_starter),
                 purchase_price: Number(row.purchase_price ?? 0),
+                release_clause: Number(row.release_clause ?? 0),
                 playerFifaApiId: player?.playerFifaApiId ?? null,
                 faceUrl:        player?.faceUrl ?? null,
                 clubLogoUrl:    player?.clubLogoUrl ?? null,
@@ -173,6 +174,7 @@ export class SupabaseRosterRepository implements IRosterRepository {
                 league_id: leagueId,
                 player_api_id: playerApiId,
                 purchase_price: purchasePrice,
+                release_clause: Math.ceil(purchasePrice * 1.25),
                 is_starter: false,
             });
 

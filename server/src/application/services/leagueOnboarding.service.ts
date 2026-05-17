@@ -2,6 +2,7 @@ import { AppError } from '../../domain/errors/AppError';
 import { ILeagueMarketRepository } from '../../domain/ports/ILeagueMarketRepository';
 import { ILeagueRepository } from '../../domain/ports/ILeagueRepository';
 import { InitialPricingService } from './economy/InitialPricingService';
+import { ReleaseClausePolicy } from './economy/ReleaseClausePolicy';
 import { loadLeaguePlayerData, LeaguePlayerData } from '../../infrastructure/repositories/leaguePlayerDataHelper';
 import { PlayerPosition } from '../../domain/models/player.models';
 
@@ -12,7 +13,8 @@ export class LeagueOnboardingService {
     constructor(
         private readonly marketRepo: ILeagueMarketRepository,
         private readonly leagueRepo: ILeagueRepository,
-        private readonly pricingService: InitialPricingService = new InitialPricingService()
+        private readonly pricingService: InitialPricingService = new InitialPricingService(),
+        private readonly releaseClausePolicy: ReleaseClausePolicy = new ReleaseClausePolicy(),
     ) {}
 
     /**
@@ -68,6 +70,7 @@ export class LeagueOnboardingService {
         const playersPayload = selectedTeam.map(p => ({
             playerApiId: p.id,
             purchasePrice: p.price,
+            releaseClause: this.releaseClausePolicy.getInitialClause(p.price),
         }));
 
         try {

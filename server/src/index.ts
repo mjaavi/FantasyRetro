@@ -103,8 +103,8 @@ const seedService         = new SeedService(seedRepo);
 const adminService        = new AdminService(adminRepo, datasetParser, scoringEngine, marketValueRecalculationService, marketValueHistoryService);
 const dashboardService    = new DashboardService(dashboardRepo, rankingRepo, leagueRepo, fixturesRepo);
 const playerSearchService = new PlayerSearchService(playerSearchRepo, leagueRepo, leagueMarketRepo, marketValueProjector, playerMarketValueRepo);
-const rivalRosterService  = new RivalRosterService(rosterRepo, leagueRepo);
-const leagueTransferService = new LeagueTransferService(leagueTransferRepo, leagueRepo);
+const rivalRosterService  = new RivalRosterService(rosterRepo, leagueRepo, playerMarketValueRepo);
+const leagueTransferService = new LeagueTransferService(leagueTransferRepo, leagueRepo, playerMarketValueRepo);
 
 // ── 4. Infrastructure: Controllers ───────────────────────────────────────────
 import { LeagueController }       from './presentation/controllers/league.controller';

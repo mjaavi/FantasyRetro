@@ -27,7 +27,7 @@ create table if not exists public.league_transfer_history (
     from_user_id uuid null references auth.users(id) on delete set null,
     to_user_id uuid not null references auth.users(id) on delete cascade,
     amount integer not null check (amount >= 0),
-    transfer_type text not null check (transfer_type in ('market', 'direct_offer')),
+    transfer_type text not null check (transfer_type in ('market', 'direct_offer', 'release_clause')),
     offer_id uuid null references public.league_direct_offers(id) on delete set null,
     created_at timestamptz not null default now()
 );

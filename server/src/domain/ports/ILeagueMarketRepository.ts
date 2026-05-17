@@ -72,7 +72,7 @@ export interface ILeagueMarketRepository {
     addPlayersToRosterBatch(
         leagueId: number,
         userId: string,
-        players: { playerApiId: number; purchasePrice: number }[],
+        players: { playerApiId: number; purchasePrice: number; releaseClause?: number }[],
     ): Promise<void>;
 
     // ── Selección de jugadores para el mercado ─────────────────────────────

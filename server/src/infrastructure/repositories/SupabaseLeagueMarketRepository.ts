@@ -306,6 +306,7 @@ export class SupabaseLeagueMarketRepository implements ILeagueMarketRepository {
                 user_id: userId,
                 player_api_id: playerApiId,
                 purchase_price: purchasePrice,
+                release_clause: Math.ceil(purchasePrice * 1.25),
                 is_starter: isStarter,
             });
 
@@ -340,7 +341,7 @@ export class SupabaseLeagueMarketRepository implements ILeagueMarketRepository {
     async addPlayersToRosterBatch(
         leagueId: number,
         userId: string,
-        players: { playerApiId: number; purchasePrice: number }[],
+        players: { playerApiId: number; purchasePrice: number; releaseClause?: number }[],
     ): Promise<void> {
         if (players.length !== 11) {
             throw new AppError(
@@ -351,12 +352,14 @@ export class SupabaseLeagueMarketRepository implements ILeagueMarketRepository {
 
         const playerIds = players.map(p => p.playerApiId);
         const prices    = players.map(p => p.purchasePrice);
+        const clauses   = players.map(p => p.releaseClause ?? Math.ceil(p.purchasePrice * 1.25));
 
         const { error } = await supabaseAdmin.rpc('assign_initial_roster', {
             p_league_id:  leagueId,
             p_user_id:    userId,
             p_player_ids: playerIds,
             p_prices:     prices,
+            p_release_clauses: clauses,
         });
 
         if (error) {

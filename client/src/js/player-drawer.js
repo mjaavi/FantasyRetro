@@ -163,7 +163,17 @@ function _renderMarketChart(container, data) {
  * @param {function} [opts.onBid]        - Si se pasa, muestra sección de puja
  * @param {object}   [opts.currentBid]   - Puja actual del usuario (si existe)
  */
-export async function abrirPlayerDrawer({ playerApiId, name, position, marketValue, onBid, currentBid }) {
+export async function abrirPlayerDrawer({
+    playerApiId,
+    name,
+    position,
+    marketValue,
+    onBid,
+    currentBid,
+    releaseClause,
+    onReleaseClause,
+    onRaiseReleaseClause,
+}) {
     const drawer  = document.getElementById('player-drawer');
     const overlay = document.getElementById('player-drawer-overlay');
     if (!drawer || !overlay) return;
@@ -178,9 +188,13 @@ export async function abrirPlayerDrawer({ playerApiId, name, position, marketVal
     // Mostrar/ocultar sección de puja
     const bidSection = document.getElementById('pd-bid-section');
     if (bidSection) {
-        if (onBid) {
+        if (onBid || onReleaseClause || onRaiseReleaseClause) {
             bidSection.style.display = '';
-            _setupBidSection(playerApiId, name, marketValue, onBid, currentBid);
+            _setupBidSection(playerApiId, name, marketValue, onBid, currentBid, {
+                releaseClause,
+                onReleaseClause,
+                onRaiseReleaseClause,
+            });
         } else {
             bidSection.style.display = 'none';
         }
@@ -494,7 +508,7 @@ function _renderBarras(container, h) {
     });
 }
 
-function _setupBidSection(playerApiId, name, marketValue, onBid, currentBid) {
+function _setupBidSection(playerApiId, name, marketValue, onBid, currentBid, clauseOptions = {}) {
     const amountInput = document.getElementById('pd-bid-amount');
     const errorEl     = document.getElementById('pd-bid-error');
     const submitBtn   = document.getElementById('pd-submit-btn');
@@ -503,14 +517,25 @@ function _setupBidSection(playerApiId, name, marketValue, onBid, currentBid) {
     const currentEl   = document.getElementById('pd-bid-current');
     const availableEl = document.getElementById('pd-bid-available');
     const bidSection  = document.getElementById('pd-bid-section');
+    const titleLabel  = bidSection?.querySelector('label');
 
     const minimumAmount = Number(marketValue ?? 0);
+    const releaseClause = Number(clauseOptions.releaseClause ?? minimumAmount);
+    const canOffer = Boolean(onBid);
+    const canPayClause = Boolean(clauseOptions.onReleaseClause);
+    const canRaiseClause = Boolean(clauseOptions.onRaiseReleaseClause);
+    let mode = canOffer ? 'offer' : 'clause';
     const availableBudget = getAvailableBidBudget(currentBid);
 
     const setAmount = (nextAmount) => {
         if (!amountInput) return;
 
-        const normalized = Math.max(minimumAmount, Math.trunc(Number(nextAmount) || minimumAmount));
+        const minAmount = mode === 'offer'
+            ? minimumAmount
+            : canRaiseClause
+                ? 1
+                : releaseClause;
+        const normalized = Math.max(minAmount, Math.trunc(Number(nextAmount) || minAmount));
         amountInput.dataset.amount = String(normalized);
         amountInput.value = formatCurrency(normalized);
     };
@@ -518,8 +543,9 @@ function _setupBidSection(playerApiId, name, marketValue, onBid, currentBid) {
     const getAmount = () => parseCurrency(amountInput?.dataset.amount ?? amountInput?.value);
 
     if (amountInput) {
-        setAmount(currentBid?.amount ?? minimumAmount);
+        setAmount(currentBid?.amount ?? (mode === 'clause' ? releaseClause : minimumAmount));
         amountInput.onfocus = () => {
+            if (mode === 'clause' && canPayClause && !canRaiseClause) return;
             amountInput.value = String(getAmount());
             amountInput.select();
         };
@@ -531,19 +557,22 @@ function _setupBidSection(playerApiId, name, marketValue, onBid, currentBid) {
         };
     }
 
-    if (minEl) minEl.textContent = `Min. ${formatCurrency(minimumAmount)}`;
-    if (currentEl) currentEl.textContent = currentBid ? `Actual ${formatCurrency(currentBid.amount)}` : 'Sin puja activa';
-    if (availableEl) availableEl.textContent = `Disponible ${formatCurrency(availableBudget)}`;
+    setupBidModeTabs();
+    applyBidMode();
     if (errorEl) errorEl.classList.add('hidden');
 
     bidSection?.querySelectorAll('[data-bid-action]').forEach((button) => {
         button.onclick = () => {
             const action = button.dataset.bidAction;
             const currentAmount = getAmount();
+            if (mode === 'clause' && canPayClause && !canRaiseClause && action !== 'max') {
+                setAmount(releaseClause);
+                return;
+            }
 
             if (action === 'decrease') setAmount(currentAmount - BID_STEP);
             if (action === 'increase') setAmount(currentAmount + BID_STEP);
-            if (action === 'market-value') setAmount(minimumAmount);
+            if (action === 'market-value') setAmount(mode === 'clause' ? releaseClause : minimumAmount);
             if (action === 'plus-100k') setAmount(currentAmount + BID_STEP);
             if (action === 'plus-1m') setAmount(currentAmount + 1_000_000);
             if (action === 'max' && availableBudget >= minimumAmount) setAmount(availableBudget);
@@ -553,6 +582,24 @@ function _setupBidSection(playerApiId, name, marketValue, onBid, currentBid) {
     if (submitBtn) {
         submitBtn.onclick = () => {
             const amount = getAmount();
+            if (mode === 'clause') {
+                if (canPayClause) {
+                    clauseOptions.onReleaseClause({ playerApiId, name, marketValue, amount: releaseClause });
+                    return;
+                }
+                if (canRaiseClause) {
+                    if (!amount || amount <= 0) {
+                        if (errorEl) {
+                            errorEl.textContent = 'Introduce una cantidad valida.';
+                            errorEl.classList.remove('hidden');
+                        }
+                        return;
+                    }
+                    clauseOptions.onRaiseReleaseClause({ playerApiId, name, marketValue, contribution: amount });
+                    return;
+                }
+            }
+
             if (!amount || amount < minimumAmount) {
                 if (errorEl) {
                     errorEl.textContent = 'La puja no puede ser inferior al valor del jugador.';
@@ -569,6 +616,68 @@ function _setupBidSection(playerApiId, name, marketValue, onBid, currentBid) {
         cancelBtn.onclick = currentBid
             ? () => onBid({ playerApiId, name, marketValue, amount: null, cancel: true })
             : null;
+    }
+
+    function setupBidModeTabs() {
+        bidSection?.querySelector('[data-pd-bid-tabs]')?.remove();
+        if (!bidSection || (!canOffer && !canPayClause && !canRaiseClause)) return;
+        if (canOffer && !canPayClause && !canRaiseClause) return;
+
+        const tabs = document.createElement('div');
+        tabs.dataset.pdBidTabs = 'true';
+        tabs.className = 'flex bg-white/5 rounded-xl p-1 border border-white/10 gap-1 mb-3';
+
+        if (canOffer) tabs.appendChild(createModeBtn('offer', 'Oferta'));
+        tabs.appendChild(createModeBtn('clause', 'Clausula'));
+        bidSection.prepend(tabs);
+    }
+
+    function createModeBtn(nextMode, text) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'flex-1 text-xs font-bold py-2 px-3 rounded-lg transition-all duration-200';
+        btn.textContent = text;
+        btn.addEventListener('click', () => {
+            mode = nextMode;
+            applyBidMode();
+        });
+        return btn;
+    }
+
+    function applyBidMode() {
+        bidSection?.querySelectorAll('[data-pd-bid-tabs] button').forEach((btn) => {
+            const active = (btn.textContent === 'Oferta' && mode === 'offer') || (btn.textContent === 'Clausula' && mode === 'clause');
+            btn.className = `flex-1 text-xs font-bold py-2 px-3 rounded-lg transition-all duration-200 ${active ? TAB_ACTIVE_CLS : TAB_INACTIVE_CLS}`;
+        });
+
+        if (titleLabel) titleLabel.textContent = mode === 'offer' ? 'Tu oferta' : (canRaiseClause ? 'Subir clausula' : 'Clausula');
+        if (minEl) {
+            minEl.textContent = mode === 'offer'
+                ? `Min. ${formatCurrency(minimumAmount)}`
+                : canRaiseClause
+                    ? 'Cada euro suma x2'
+                    : 'Fichaje inmediato';
+        }
+        if (currentEl) {
+            currentEl.textContent = mode === 'offer'
+                ? (currentBid ? `Actual ${formatCurrency(currentBid.amount)}` : 'Sin puja activa')
+                : `Clausula ${formatCurrency(releaseClause)}`;
+        }
+        if (availableEl) availableEl.textContent = `Disponible ${formatCurrency(availableBudget)}`;
+        if (submitBtn) {
+            submitBtn.textContent = mode === 'offer'
+                ? 'Confirmar Oferta'
+                : canRaiseClause
+                    ? 'Subir Clausula'
+                    : 'Pagar Clausula';
+        }
+        if (amountInput) {
+            amountInput.readOnly = mode === 'clause' && canPayClause && !canRaiseClause;
+            setAmount(mode === 'offer' ? (currentBid?.amount ?? minimumAmount) : (canRaiseClause ? 1_000_000 : releaseClause));
+        }
+        if (cancelBtn) {
+            cancelBtn.style.display = mode === 'offer' && currentBid ? '' : 'none';
+        }
     }
 }
 

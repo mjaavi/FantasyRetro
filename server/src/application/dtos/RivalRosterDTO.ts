@@ -10,6 +10,8 @@ export interface RivalPlayerDTO {
     overall: number;
     is_starter: boolean;
     purchase_price: number;
+    marketValue: number;
+    releaseClause: number;
     playerFifaApiId: number | null;
     faceUrl: string | null;
     clubLogoUrl: string | null;

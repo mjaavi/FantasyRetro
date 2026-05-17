@@ -125,6 +125,20 @@ export async function fetchTransferHistory(leagueId) {
     return (await apiFetch(`/leagues/${leagueId}/transfers/history`)).data ?? [];
 }
 
+export async function payReleaseClauseRequest(leagueId, sellerUserId, playerApiId) {
+    return apiFetch(`/leagues/${leagueId}/transfers/release-clauses/${sellerUserId}/${playerApiId}/pay`, {
+        method: 'POST',
+        body: JSON.stringify({}),
+    });
+}
+
+export async function raiseReleaseClauseRequest(leagueId, playerApiId, contribution) {
+    return apiFetch(`/leagues/${leagueId}/transfers/release-clauses/${playerApiId}/raise`, {
+        method: 'POST',
+        body: JSON.stringify({ contribution }),
+    });
+}
+
 
 // Endpoints de ligas
 

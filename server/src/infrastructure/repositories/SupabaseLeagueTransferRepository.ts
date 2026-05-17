@@ -16,7 +16,7 @@ export class SupabaseLeagueTransferRepository implements ILeagueTransferReposito
     async getRosterPlayer(leagueId: number, ownerUserId: string, playerApiId: number): Promise<RosterPlayer | null> {
         const { data, error } = await supabaseAdmin
             .from('user_roster')
-            .select('player_api_id, is_starter, purchase_price')
+            .select('player_api_id, is_starter, purchase_price, release_clause')
             .eq('league_id', leagueId)
             .eq('user_id', ownerUserId)
             .eq('player_api_id', playerApiId)
@@ -36,6 +36,7 @@ export class SupabaseLeagueTransferRepository implements ILeagueTransferReposito
             overall: player?.overall ?? 50,
             is_starter: Boolean(data.is_starter),
             purchase_price: Number(data.purchase_price),
+            release_clause: Number(data.release_clause ?? 0),
             playerFifaApiId: player?.playerFifaApiId ?? null,
             faceUrl: player?.faceUrl ?? null,
             clubLogoUrl: player?.clubLogoUrl ?? null,
@@ -178,6 +179,44 @@ export class SupabaseLeagueTransferRepository implements ILeagueTransferReposito
         });
 
         if (error) throw new AppError(`Error al aceptar la oferta: ${error.message}`, 500);
+    }
+
+    async payReleaseClause(input: {
+        leagueId: number;
+        buyerUserId: string;
+        sellerUserId: string;
+        playerApiId: number;
+        clauseAmount: number;
+        nextReleaseClause: number;
+    }): Promise<void> {
+        const { error } = await supabaseAdmin.rpc('pay_league_release_clause', {
+            p_league_id: input.leagueId,
+            p_buyer_user_id: input.buyerUserId,
+            p_seller_user_id: input.sellerUserId,
+            p_player_api_id: input.playerApiId,
+            p_clause_amount: input.clauseAmount,
+            p_next_release_clause: input.nextReleaseClause,
+        });
+
+        if (error) throw new AppError(`Error al ejecutar el clausulazo: ${error.message}`, 500);
+    }
+
+    async raiseReleaseClause(input: {
+        leagueId: number;
+        userId: string;
+        playerApiId: number;
+        contribution: number;
+        nextReleaseClause: number;
+    }): Promise<void> {
+        const { error } = await supabaseAdmin.rpc('raise_player_release_clause', {
+            p_league_id: input.leagueId,
+            p_user_id: input.userId,
+            p_player_api_id: input.playerApiId,
+            p_contribution: input.contribution,
+            p_next_release_clause: input.nextReleaseClause,
+        });
+
+        if (error) throw new AppError(`Error al subir la clausula: ${error.message}`, 500);
     }
 
     async getUserBudget(userId: string, leagueId: number): Promise<number> {

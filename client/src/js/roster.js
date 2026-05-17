@@ -1,5 +1,6 @@
 import { fetchRoster, fetchRosterLineups, fetchRosterScores, saveRosterFormation, toggleStarter } from './api.js';
 import { abrirPlayerDrawer } from './player-drawer.js';
+import { raiseReleaseClause } from './market.js';
 import { getLigaActiva } from './leagues.js';
 import { createPlayerAvatar, createPlayerPortrait, createClubLogo } from './player-image.js';
 
@@ -734,8 +735,36 @@ function abrirPanelJugador(jugador) {
         name: jugador.name,
         position: jugador.position,
         marketValue: jugador.purchase_price ?? 0,
+        releaseClause: jugador.release_clause ?? jugador.purchase_price ?? 0,
         faceUrl: jugador.faceUrl ?? null,
         clubLogoUrl: jugador.clubLogoUrl ?? null,
+        onRaiseReleaseClause: async ({ playerApiId, contribution }) => {
+            const errorEl = document.getElementById('pd-bid-error');
+            const submitBtn = document.getElementById('pd-submit-btn');
+            if (errorEl) errorEl.classList.add('hidden');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Subiendo...';
+            }
+
+            try {
+                const result = await raiseReleaseClause({ playerApiId, contribution });
+                if (result?.data?.releaseClause) {
+                    jugador.release_clause = result.data.releaseClause;
+                }
+                window.cerrarPlayerDrawer?.();
+            } catch (error) {
+                if (errorEl) {
+                    errorEl.textContent = error.message ?? 'Error al subir la clausula.';
+                    errorEl.classList.remove('hidden');
+                }
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Subir Clausula';
+                }
+            }
+        },
     });
 }
 

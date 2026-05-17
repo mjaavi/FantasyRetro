@@ -20,6 +20,16 @@ export const PlaceDirectOfferSchema = z.object({
 
 export type PlaceDirectOfferDto = z.infer<typeof PlaceDirectOfferSchema>;
 
+export const RaiseReleaseClauseSchema = z.object({
+    contribution: z
+        .number({ message: 'contribution debe ser un numero' })
+        .int({ message: 'contribution debe ser un numero entero' })
+        .positive({ message: 'contribution debe ser mayor que 0' })
+        .max(500_000_000, { message: 'La aportacion supera el limite permitido' }),
+});
+
+export type RaiseReleaseClauseDto = z.infer<typeof RaiseReleaseClauseSchema>;
+
 export function createLeagueTransferRouter(ctrl: LeagueTransferController): Router {
     const r = Router();
     const participantGuard = [requireAuth, requireLeagueParticipant] as const;
@@ -29,6 +39,8 @@ export function createLeagueTransferRouter(ctrl: LeagueTransferController): Rout
     r.get('/leagues/:leagueId/transfers/history', ...participantGuard, ctrl.getTransferHistory);
     r.post('/leagues/:leagueId/transfers/offers/:offerId/accept', ...participantGuard, ctrl.acceptOffer);
     r.post('/leagues/:leagueId/transfers/offers/:offerId/reject', ...participantGuard, ctrl.rejectOffer);
+    r.post('/leagues/:leagueId/transfers/release-clauses/:sellerUserId/:playerApiId/pay', ...participantGuard, ctrl.payReleaseClause);
+    r.post('/leagues/:leagueId/transfers/release-clauses/:playerApiId/raise', ...participantGuard, validateBody(RaiseReleaseClauseSchema), ctrl.raiseReleaseClause);
 
     return r;
 }

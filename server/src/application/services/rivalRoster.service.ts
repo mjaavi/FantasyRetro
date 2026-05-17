@@ -7,8 +7,12 @@
 import { AppError } from '../../domain/errors/AppError';
 import { ILeagueRepository } from '../../domain/ports/ILeagueRepository';
 import { IRosterRepository } from '../../domain/ports/IRosterRepository';
+import { IPlayerMarketValueRepository } from '../../domain/ports/IPlayerMarketValueRepository';
 import { RivalRosterResponseDTO, RivalPlayerDTO } from '../dtos/RivalRosterDTO';
 import { inferFormationKey, isFormationKey } from '../../domain/models/formation.models';
+import { InitialPricingService } from './economy/InitialPricingService';
+import { ReleaseClausePolicy } from './economy/ReleaseClausePolicy';
+import { PlayerPosition } from '../../domain/models/player.models';
 
 const TOTAL_JORNADAS = 38;
 
@@ -17,6 +21,9 @@ export class RivalRosterService {
     constructor(
         private readonly rosterRepo: IRosterRepository,
         private readonly leagueRepo: ILeagueRepository,
+        private readonly marketValueRepo?: IPlayerMarketValueRepository,
+        private readonly pricingService: InitialPricingService = new InitialPricingService(),
+        private readonly releaseClausePolicy: ReleaseClausePolicy = new ReleaseClausePolicy(),
     ) {}
 
     async getRivalRoster(
@@ -44,6 +51,7 @@ export class RivalRosterService {
             this.rosterRepo.findScoresByUserAndLeague(targetUserId, leagueId),
             this.rosterRepo.findLeagueCurrentRound(leagueId),
         ]);
+        const marketValuesByPlayer = await this.resolveMarketValues(leagueId, roster);
 
         // 3. Obtener formación del rival para la jornada
         const targetJornada = jornada ?? jornadaActual;
@@ -85,19 +93,24 @@ export class RivalRosterService {
         }
 
         // 5. Mapear a DTOs separando titulares y suplentes
-        const mapPlayer = (player: typeof roster[number]): RivalPlayerDTO => ({
-            id: player.id,
-            name: player.name,
-            position: player.position,
-            real_team: player.real_team,
-            overall: player.overall,
-            is_starter: player.is_starter,
-            purchase_price: player.purchase_price,
-            playerFifaApiId: player.playerFifaApiId,
-            faceUrl: player.faceUrl,
-            clubLogoUrl: player.clubLogoUrl,
-            jornadaPts: scoresByPlayer.get(player.id) ?? null,
-        });
+        const mapPlayer = (player: typeof roster[number]): RivalPlayerDTO => {
+            const marketValue = marketValuesByPlayer.get(player.id) ?? player.purchase_price;
+            return {
+                id: player.id,
+                name: player.name,
+                position: player.position,
+                real_team: player.real_team,
+                overall: player.overall,
+                is_starter: player.is_starter,
+                purchase_price: player.purchase_price,
+                marketValue,
+                releaseClause: this.releaseClausePolicy.getEffectiveClause(player.release_clause, marketValue),
+                playerFifaApiId: player.playerFifaApiId,
+                faceUrl: player.faceUrl,
+                clubLogoUrl: player.clubLogoUrl,
+                jornadaPts: scoresByPlayer.get(player.id) ?? null,
+            };
+        };
 
         // Para jornada histórica, usar los datos de fantasy_scores para saber quién era titular
         let titulares: RivalPlayerDTO[];
@@ -144,5 +157,27 @@ export class RivalRosterService {
             suplentes,
             totalPoints,
         };
+    }
+
+    private async resolveMarketValues(
+        leagueId: number,
+        roster: Awaited<ReturnType<IRosterRepository['findByUserAndLeague']>>,
+    ): Promise<Map<number, number>> {
+        const storedValues = this.marketValueRepo
+            ? await this.marketValueRepo.findMarketValues(leagueId, roster.map(player => player.id))
+            : [];
+        const values = new Map(storedValues.map(value => [value.playerApiId, value.currentPrice]));
+
+        for (const player of roster) {
+            if (!values.has(player.id)) {
+                const initialPrice = this.pricingService.calculate({
+                    ovr: player.overall,
+                    position: player.position as PlayerPosition,
+                }).price;
+                values.set(player.id, initialPrice);
+            }
+        }
+
+        return values;
     }
 }

@@ -6,6 +6,7 @@ export interface RosterPlayer {
     overall:        number;
     is_starter:     boolean;
     purchase_price: number;
+    release_clause: number;
     playerFifaApiId: number | null;
     faceUrl:        string | null;  // URL publica de la cara del jugador
     clubLogoUrl:    string | null;  // URL publica del escudo del club

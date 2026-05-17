@@ -60,6 +60,21 @@ export interface ILeagueTransferRepository {
     getReceivedDirectOffers(leagueId: number, sellerUserId: string): Promise<LeagueDirectOfferView[]>;
     getTransferHistory(leagueId: number): Promise<LeagueTransferHistoryItem[]>;
     acceptDirectOffer(offerId: string, sellerUserId: string): Promise<void>;
+    payReleaseClause(input: {
+        leagueId: number;
+        buyerUserId: string;
+        sellerUserId: string;
+        playerApiId: number;
+        clauseAmount: number;
+        nextReleaseClause: number;
+    }): Promise<void>;
+    raiseReleaseClause(input: {
+        leagueId: number;
+        userId: string;
+        playerApiId: number;
+        contribution: number;
+        nextReleaseClause: number;
+    }): Promise<void>;
     getUserBudget(userId: string, leagueId: number): Promise<number>;
     updateUserBudget(userId: string, leagueId: number, newBudget: number): Promise<void>;
 }

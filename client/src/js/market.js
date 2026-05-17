@@ -8,6 +8,8 @@ import {
     acceptTransferOfferRequest,
     rejectTransferOfferRequest,
     fetchTransferHistory,
+    payReleaseClauseRequest,
+    raiseReleaseClauseRequest,
 } from './api.js';
 import { abrirPlayerDrawer, cerrarPlayerDrawer } from './player-drawer.js';
 import { createPlayerCard } from './market-renderer.js';
@@ -316,6 +318,24 @@ export async function submitDirectOffer({ sellerUserId, playerApiId, amount }) {
     return result;
 }
 
+export async function payReleaseClause({ sellerUserId, playerApiId }) {
+    const liga = getLigaActiva();
+    if (!liga) return;
+
+    const result = await payReleaseClauseRequest(liga.id, sellerUserId, playerApiId);
+    await syncNavbarBudget(result.data?.newBudget);
+    return result;
+}
+
+export async function raiseReleaseClause({ playerApiId, contribution }) {
+    const liga = getLigaActiva();
+    if (!liga) return;
+
+    const result = await raiseReleaseClauseRequest(liga.id, playerApiId, parseBidAmount(contribution));
+    await syncNavbarBudget(result.data?.newBudget);
+    return result;
+}
+
 export async function loadReceivedTransferOffers() {
     const list = document.getElementById('market-received-offers-list');
     const liga = getLigaActiva();
@@ -452,6 +472,8 @@ window.closeBidDrawer = closeBidDrawer;
 window.submitBid      = submitBid;
 window.loadMarket     = loadMarket;
 window.submitDirectOffer = submitDirectOffer;
+window.payReleaseClause = payReleaseClause;
+window.raiseReleaseClause = raiseReleaseClause;
 window.loadReceivedTransferOffers = loadReceivedTransferOffers;
 window.loadTransferHistory = loadTransferHistory;
 

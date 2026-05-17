@@ -9,7 +9,7 @@ import { fetchRivalRoster } from './api.js';
 import { createPlayerPortrait, createClubLogo } from './player-image.js';
 import { abrirPlayerDrawer } from './player-drawer.js';
 import { getLigaActiva } from './leagues.js';
-import { submitDirectOffer } from './market.js';
+import { payReleaseClause, submitDirectOffer } from './market.js';
 import { createPlayerCard } from './market-renderer.js';
 
 // ── Estado ────────────────────────────────────────────────────────────────────
@@ -196,7 +196,7 @@ function createRivalPlayerCard(player, sellerUserId) {
         name: player.name,
         realTeam: player.real_team ?? 'Sin equipo',
         position: player.position,
-        market_value: player.purchase_price ?? 0,
+        market_value: player.marketValue ?? player.purchase_price ?? 0,
         previous_market_value: null,
         market_value_delta: 0,
         market_value_change_pct: 0,
@@ -208,6 +208,8 @@ function createRivalPlayerCard(player, sellerUserId) {
     }, null);
 
     card.dataset.sellerUserId = sellerUserId;
+    card.dataset.releaseClause = String(player.releaseClause ?? player.marketValue ?? player.purchase_price ?? 0);
+    card.dataset.marketValue = String(player.marketValue ?? player.purchase_price ?? 0);
     const actionBtn = card.querySelector('[data-action="open-bid-drawer"]');
     if (actionBtn) {
         actionBtn.dataset.action = 'open-direct-offer';
@@ -230,6 +232,8 @@ function handleRivalClubCardClick(event) {
         name: btn.dataset.playerName ?? card.querySelector('.market-player-name')?.textContent ?? 'Jugador',
         position: resolvePositionFromCard(card),
         purchase_price: Number(btn.dataset.marketValue ?? 0),
+        marketValue: Number(card.dataset.marketValue ?? btn.dataset.marketValue ?? 0),
+        releaseClause: Number(card.dataset.releaseClause ?? 0),
         faceUrl: null,
         clubLogoUrl: null,
     }, btn.dataset.sellerUserId ?? card.dataset.sellerUserId);
@@ -246,7 +250,8 @@ function openDirectOfferDrawer(player, sellerUserId) {
         playerApiId: player.id,
         name: player.name,
         position: player.position,
-        marketValue: player.purchase_price ?? 0,
+        marketValue: player.marketValue ?? player.purchase_price ?? 0,
+        releaseClause: player.releaseClause ?? player.marketValue ?? player.purchase_price ?? 0,
         faceUrl: player.faceUrl ?? null,
         clubLogoUrl: player.clubLogoUrl ?? null,
         onBid: async ({ playerApiId, amount }) => {
@@ -270,6 +275,30 @@ function openDirectOfferDrawer(player, sellerUserId) {
                 if (submitBtn) {
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'Confirmar Oferta';
+                }
+            }
+        },
+        onReleaseClause: async ({ playerApiId }) => {
+            const errorEl = document.getElementById('pd-bid-error');
+            const submitBtn = document.getElementById('pd-submit-btn');
+            if (errorEl) errorEl.classList.add('hidden');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Ejecutando...';
+            }
+
+            try {
+                await payReleaseClause({ sellerUserId, playerApiId });
+                window.cerrarPlayerDrawer?.();
+            } catch (error) {
+                if (errorEl) {
+                    errorEl.textContent = error.message ?? 'Error al pagar la clausula.';
+                    errorEl.classList.remove('hidden');
+                }
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Pagar Clausula';
                 }
             }
         },
