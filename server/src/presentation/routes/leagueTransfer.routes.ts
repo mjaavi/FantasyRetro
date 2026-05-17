@@ -1,0 +1,34 @@
+import { Router } from 'express';
+import { z } from 'zod';
+import { requireAuth } from '../middleware/auth.middleware';
+import { requireLeagueParticipant } from '../middleware/adminGuard.middleware';
+import { validateBody } from '../middleware/validation.middleware';
+import { LeagueTransferController } from '../controllers/leagueTransfer.controller';
+
+export const PlaceDirectOfferSchema = z.object({
+    sellerUserId: z.string().uuid({ message: 'sellerUserId debe ser un UUID valido' }),
+    playerApiId: z
+        .number({ message: 'playerApiId debe ser un numero' })
+        .int({ message: 'playerApiId debe ser un numero entero' })
+        .positive({ message: 'playerApiId debe ser positivo' }),
+    amount: z
+        .number({ message: 'amount debe ser un numero' })
+        .int({ message: 'amount debe ser un numero entero' })
+        .positive({ message: 'amount debe ser mayor que 0' })
+        .max(500_000_000, { message: 'La oferta supera el limite permitido' }),
+});
+
+export type PlaceDirectOfferDto = z.infer<typeof PlaceDirectOfferSchema>;
+
+export function createLeagueTransferRouter(ctrl: LeagueTransferController): Router {
+    const r = Router();
+    const participantGuard = [requireAuth, requireLeagueParticipant] as const;
+
+    r.post('/leagues/:leagueId/transfers/offers', ...participantGuard, validateBody(PlaceDirectOfferSchema), ctrl.placeDirectOffer);
+    r.get('/leagues/:leagueId/transfers/offers/received', ...participantGuard, ctrl.getReceivedOffers);
+    r.get('/leagues/:leagueId/transfers/history', ...participantGuard, ctrl.getTransferHistory);
+    r.post('/leagues/:leagueId/transfers/offers/:offerId/accept', ...participantGuard, ctrl.acceptOffer);
+    r.post('/leagues/:leagueId/transfers/offers/:offerId/reject', ...participantGuard, ctrl.rejectOffer);
+
+    return r;
+}

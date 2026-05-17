@@ -1,4 +1,14 @@
-import { fetchMarketPlayers, fetchUserBids, submitBidRequest, cancelBidRequest } from './api.js';
+import {
+    fetchMarketPlayers,
+    fetchUserBids,
+    submitBidRequest,
+    cancelBidRequest,
+    submitDirectOfferRequest,
+    fetchReceivedTransferOffers,
+    acceptTransferOfferRequest,
+    rejectTransferOfferRequest,
+    fetchTransferHistory,
+} from './api.js';
 import { abrirPlayerDrawer, cerrarPlayerDrawer } from './player-drawer.js';
 import { createPlayerCard } from './market-renderer.js';
 import { getLigaActiva } from './leagues.js';
@@ -213,6 +223,20 @@ function parseBidAmount(rawValue) {
     return parseInt(String(rawValue ?? '').replace(/\D/g, ''), 10) || 0;
 }
 
+function formatCurrency(value) {
+    return new Intl.NumberFormat('es-ES').format(Number(value ?? 0));
+}
+
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+    }[char]));
+}
+
 function refreshMarketCard(playerApiId) {
     const player = state.marketPlayers?.get(playerApiId);
     const grid = document.getElementById('market-players-grid');
@@ -283,6 +307,142 @@ async function handleCancelBid(playerApiId) {
     }
 }
 
+export async function submitDirectOffer({ sellerUserId, playerApiId, amount }) {
+    const liga = getLigaActiva();
+    if (!liga) return;
+
+    const result = await submitDirectOfferRequest(liga.id, sellerUserId, playerApiId, parseBidAmount(amount));
+    await syncNavbarBudget(result.data?.newBudget);
+    return result;
+}
+
+export async function loadReceivedTransferOffers() {
+    const list = document.getElementById('market-received-offers-list');
+    const liga = getLigaActiva();
+    if (!list || !liga) return;
+
+    list.innerHTML = '<p class="text-slate-500 font-bold col-span-full text-center py-10">Cargando ofertas...</p>';
+
+    try {
+        const offers = await fetchReceivedTransferOffers(liga.id);
+        list.innerHTML = '';
+
+        if (!offers.length) {
+            list.innerHTML = '<p class="text-slate-500 font-bold col-span-full text-center py-10">No tienes ofertas pendientes por jugadores de tu equipo.</p>';
+            return;
+        }
+
+        const fragment = document.createDocumentFragment();
+        for (const offer of offers) {
+            fragment.appendChild(createReceivedOfferCard(offer));
+        }
+        list.appendChild(fragment);
+
+        if (list._offersAbort) list._offersAbort.abort();
+        list._offersAbort = new AbortController();
+        list.addEventListener('click', handleOfferAction, { signal: list._offersAbort.signal });
+    } catch (error) {
+        console.error('[Market] Error al cargar ofertas recibidas:', error);
+        list.innerHTML = '<p class="text-red-400 font-bold col-span-full text-center py-10">Error al cargar tus ofertas.</p>';
+    }
+}
+
+function createReceivedOfferCard(offer) {
+    const card = document.createElement('div');
+    card.className = 'bg-white/[0.04] border border-white/10 rounded-xl p-4 flex items-center gap-4';
+
+    card.innerHTML = `
+        <div class="w-12 h-12 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 font-black shrink-0">
+            ${escapeHtml(offer.position ?? 'JUG')}
+        </div>
+        <div class="flex-1 min-w-0">
+            <p class="text-white font-extrabold truncate">${escapeHtml(offer.playerName)}</p>
+            <p class="text-xs text-slate-400 truncate">${escapeHtml(offer.buyerTeamName)} ofrece</p>
+            <p class="text-lg text-green-400 font-black font-mono">${formatCurrency(offer.amount)} €</p>
+        </div>
+        <div class="flex gap-2 shrink-0">
+            <button data-action="accept-direct-offer" data-offer-id="${offer.id}" class="px-3 py-2 rounded-lg bg-green-500/15 border border-green-500/25 text-green-300 text-xs font-black hover:bg-green-500/25">Aceptar</button>
+            <button data-action="reject-direct-offer" data-offer-id="${offer.id}" class="px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/25 text-red-300 text-xs font-black hover:bg-red-500/20">Rechazar</button>
+        </div>
+    `;
+
+    return card;
+}
+
+async function handleOfferAction(event) {
+    const btn = event.target.closest('[data-action]');
+    if (!btn) return;
+
+    const liga = getLigaActiva();
+    if (!liga) return;
+
+    const { action, offerId } = btn.dataset;
+    btn.disabled = true;
+    const originalText = btn.textContent;
+    btn.textContent = '...';
+
+    try {
+        const result = action === 'accept-direct-offer'
+            ? await acceptTransferOfferRequest(liga.id, offerId)
+            : await rejectTransferOfferRequest(liga.id, offerId);
+
+        if (result.data?.newBudget !== undefined) {
+            await syncNavbarBudget(result.data.newBudget);
+        }
+        await loadReceivedTransferOffers();
+        await loadTransferHistory();
+    } catch (error) {
+        console.error('[Market] Error resolviendo oferta:', error);
+        btn.disabled = false;
+        btn.textContent = originalText;
+    }
+}
+
+export async function loadTransferHistory() {
+    const list = document.getElementById('market-transfer-history-list');
+    const liga = getLigaActiva();
+    if (!list || !liga) return;
+
+    list.innerHTML = '<p class="text-slate-500 font-bold text-center py-10">Cargando historico...</p>';
+
+    try {
+        const history = await fetchTransferHistory(liga.id);
+        list.innerHTML = '';
+
+        if (!history.length) {
+            list.innerHTML = '<p class="text-slate-500 font-bold text-center py-10">Todavia no hay fichajes registrados en esta liga.</p>';
+            return;
+        }
+
+        const fragment = document.createDocumentFragment();
+        for (const item of history) {
+            fragment.appendChild(createTransferHistoryRow(item));
+        }
+        list.appendChild(fragment);
+    } catch (error) {
+        console.error('[Market] Error al cargar historico:', error);
+        list.innerHTML = '<p class="text-red-400 font-bold text-center py-10">Error al cargar el historico.</p>';
+    }
+}
+
+function createTransferHistoryRow(item) {
+    const row = document.createElement('div');
+    row.className = 'bg-white/[0.04] border border-white/10 rounded-xl p-4 flex flex-col md:flex-row md:items-center gap-3';
+    const source = item.transferType === 'market' ? 'Mercado' : item.fromTeamName;
+
+    row.innerHTML = `
+        <div class="flex-1 min-w-0">
+            <p class="text-white font-extrabold truncate">${escapeHtml(item.playerName)}</p>
+            <p class="text-xs text-slate-400 truncate">${escapeHtml(source)} -> ${escapeHtml(item.toTeamName)}</p>
+        </div>
+        <div class="flex items-center justify-between md:justify-end gap-4">
+            <span class="text-xs font-bold text-slate-500">${new Date(item.createdAt).toLocaleDateString('es-ES')}</span>
+            <span class="text-green-400 font-black font-mono">${formatCurrency(item.amount)} €</span>
+        </div>
+    `;
+    return row;
+}
+
 // ── UI ────────────────────────────────────────────────────────────────────────
 
 
@@ -291,6 +451,9 @@ async function handleCancelBid(playerApiId) {
 window.closeBidDrawer = closeBidDrawer;
 window.submitBid      = submitBid;
 window.loadMarket     = loadMarket;
+window.submitDirectOffer = submitDirectOffer;
+window.loadReceivedTransferOffers = loadReceivedTransferOffers;
+window.loadTransferHistory = loadTransferHistory;
 
 // ── Arranque ──────────────────────────────────────────────────────────────────
 loadMarket();

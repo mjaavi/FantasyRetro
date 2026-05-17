@@ -314,6 +314,23 @@ export class SupabaseLeagueMarketRepository implements ILeagueMarketRepository {
         }
     }
 
+    async addTransferHistory(leagueId: number, playerApiId: number, toUserId: string, amount: number): Promise<void> {
+        const { error } = await supabaseAdmin
+            .from('league_transfer_history')
+            .insert({
+                league_id: leagueId,
+                player_api_id: playerApiId,
+                from_user_id: null,
+                to_user_id: toUserId,
+                amount,
+                transfer_type: 'market',
+            });
+
+        if (error) {
+            throw new AppError(`Error al registrar el fichaje en el historico: ${error.message}`, 500);
+        }
+    }
+
     /**
      * Inserta los 11 jugadores iniciales en UNA SOLA TRANSACCIÓN atómica
      * via la función RPC `assign_initial_roster` de Supabase/PostgreSQL.

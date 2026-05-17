@@ -202,6 +202,7 @@ export class LeagueMarketService {
 
             try {
                 await this.repo.addPlayerToRoster(leagueId, ganador.userId, jugador.playerApiId, ganador.amount);
+                await this.repo.addTransferHistory(leagueId, jugador.playerApiId, ganador.userId, ganador.amount);
             } catch (err: any) {
                 console.error(`[CloseMarket] Error anadiendo jugador ${jugador.playerApiId} al roster:`, err.message);
             }

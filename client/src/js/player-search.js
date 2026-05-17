@@ -24,36 +24,47 @@ const TAB_ACTIVE_CLS = 'bg-blue-500/20 text-blue-400 border border-blue-500/30 s
 const TAB_INACTIVE_CLS = 'text-slate-500 hover:text-slate-300 border border-transparent';
 
 export function initMarketTabs() {
-    const tabMarket = document.getElementById('market-tab-mercado');
-    const tabSearch = document.getElementById('market-tab-buscar');
-    const panelMarket = document.getElementById('market-panel-mercado');
-    const panelSearch = document.getElementById('market-panel-buscar');
+    const tabs = {
+        mercado: document.getElementById('market-tab-mercado'),
+        pujas: document.getElementById('market-tab-pujas'),
+        historico: document.getElementById('market-tab-historico'),
+        buscar: document.getElementById('market-tab-buscar'),
+    };
+    const panels = {
+        mercado: document.getElementById('market-panel-mercado'),
+        pujas: document.getElementById('market-panel-pujas'),
+        historico: document.getElementById('market-panel-historico'),
+        buscar: document.getElementById('market-panel-buscar'),
+    };
     const headerCountdown = document.getElementById('market-header-countdown');
 
-    if (!tabMarket || !tabSearch || !panelMarket || !panelSearch) return;
+    if (!tabs.mercado || !tabs.buscar || !panels.mercado || !panels.buscar) return;
 
-    tabMarket.addEventListener('click', () => {
-        switchTab('mercado');
-    });
-
-    tabSearch.addEventListener('click', () => {
-        switchTab('buscar');
+    Object.entries(tabs).forEach(([tabName, tabEl]) => {
+        tabEl?.addEventListener('click', () => switchTab(tabName));
     });
 
     function switchTab(tab) {
-        const isMarket = tab === 'mercado';
+        Object.entries(tabs).forEach(([name, tabEl]) => {
+            if (!tabEl) return;
+            const isActive = name === tab;
+            tabEl.className = `flex-1 min-w-[110px] text-xs font-bold py-2.5 px-3 rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 ${isActive ? TAB_ACTIVE_CLS : TAB_INACTIVE_CLS}`;
+        });
 
-        // Tabs
-        tabMarket.className = `flex-1 text-xs font-bold py-2.5 px-3 rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 ${isMarket ? TAB_ACTIVE_CLS : TAB_INACTIVE_CLS}`;
-        tabSearch.className = `flex-1 text-xs font-bold py-2.5 px-3 rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 ${!isMarket ? TAB_ACTIVE_CLS : TAB_INACTIVE_CLS}`;
-
-        // Panels
-        panelMarket.style.display = isMarket ? '' : 'none';
-        panelSearch.style.display = isMarket ? 'none' : '';
+        Object.entries(panels).forEach(([name, panelEl]) => {
+            if (panelEl) panelEl.style.display = name === tab ? '' : 'none';
+        });
 
         // Hide countdown on search tab
         if (headerCountdown) {
-            headerCountdown.style.display = isMarket ? '' : 'none';
+            headerCountdown.style.display = tab === 'mercado' ? '' : 'none';
+        }
+
+        if (tab === 'pujas' && window.loadReceivedTransferOffers) {
+            window.loadReceivedTransferOffers();
+        }
+        if (tab === 'historico' && window.loadTransferHistory) {
+            window.loadTransferHistory();
         }
     }
 

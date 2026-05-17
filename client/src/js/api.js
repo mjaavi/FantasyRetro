@@ -92,6 +92,39 @@ export async function cancelBidRequest(leagueId, playerApiId) {
     });
 }
 
+// Endpoints de ofertas directas y traspasos
+
+export async function submitDirectOfferRequest(leagueId, sellerUserId, playerApiId, amount) {
+    return apiFetch(`/leagues/${leagueId}/transfers/offers`, {
+        method: 'POST',
+        body: JSON.stringify({ sellerUserId, playerApiId, amount }),
+    });
+}
+
+export async function fetchReceivedTransferOffers(leagueId) {
+    if (!leagueId) return [];
+    return (await apiFetch(`/leagues/${leagueId}/transfers/offers/received`)).data ?? [];
+}
+
+export async function acceptTransferOfferRequest(leagueId, offerId) {
+    return apiFetch(`/leagues/${leagueId}/transfers/offers/${offerId}/accept`, {
+        method: 'POST',
+        body: JSON.stringify({}),
+    });
+}
+
+export async function rejectTransferOfferRequest(leagueId, offerId) {
+    return apiFetch(`/leagues/${leagueId}/transfers/offers/${offerId}/reject`, {
+        method: 'POST',
+        body: JSON.stringify({}),
+    });
+}
+
+export async function fetchTransferHistory(leagueId) {
+    if (!leagueId) return [];
+    return (await apiFetch(`/leagues/${leagueId}/transfers/history`)).data ?? [];
+}
+
 
 // Endpoints de ligas
 

@@ -39,6 +39,7 @@ import { SupabaseFixturesRepository }      from './infrastructure/repositories/S
 import { SupabaseCatalogRepository }       from './infrastructure/repositories/SupabaseCatalogRepository';
 import { SupabasePlayerMarketValueRepository } from './infrastructure/repositories/SupabasePlayerMarketValueRepository';
 import { SupabasePlayerSearchRepository }  from './infrastructure/repositories/SupabasePlayerSearchRepository';
+import { SupabaseLeagueTransferRepository } from './infrastructure/repositories/SupabaseLeagueTransferRepository';
 
 const leagueRepo       = new SupabaseLeagueRepository();
 const leagueMarketRepo = new SupabaseLeagueMarketRepository();
@@ -54,6 +55,7 @@ const datasetParser    = new DatasetParser(supabaseAdmin);
 const catalogRepo      = new SupabaseCatalogRepository(supabaseAdmin);
 const playerMarketValueRepo = new SupabasePlayerMarketValueRepository(supabaseAdmin);
 const playerSearchRepo      = new SupabasePlayerSearchRepository();
+const leagueTransferRepo    = new SupabaseLeagueTransferRepository();
 
 // ── 2. Application: Servicios puros (sin I/O) ─────────────────────────────────
 import { ScoringEngine }             from './application/services/scoring/ScoringEngine';
@@ -78,6 +80,7 @@ import { LeagueMarketValueRecalculationService } from './application/services/ec
 import { PlayerMarketValueHistoryService } from './application/services/economy/PlayerMarketValueHistoryService';
 import { PlayerSearchService }  from './application/services/playerSearch.service';
 import { RivalRosterService }   from './application/services/rivalRoster.service';
+import { LeagueTransferService } from './application/services/leagueTransfer.service';
 
 const marketValueRecalculationService = new LeagueMarketValueRecalculationService(playerMarketValueRepo);
 const marketValueHistoryService = new PlayerMarketValueHistoryService(playerMarketValueRepo);
@@ -101,6 +104,7 @@ const adminService        = new AdminService(adminRepo, datasetParser, scoringEn
 const dashboardService    = new DashboardService(dashboardRepo, rankingRepo, leagueRepo, fixturesRepo);
 const playerSearchService = new PlayerSearchService(playerSearchRepo, leagueRepo, leagueMarketRepo, marketValueProjector, playerMarketValueRepo);
 const rivalRosterService  = new RivalRosterService(rosterRepo, leagueRepo);
+const leagueTransferService = new LeagueTransferService(leagueTransferRepo, leagueRepo);
 
 // ── 4. Infrastructure: Controllers ───────────────────────────────────────────
 import { LeagueController }       from './presentation/controllers/league.controller';
@@ -117,6 +121,7 @@ import { AssetsController }       from './presentation/controllers/assets.contro
 import { CatalogController }          from './presentation/controllers/catalog.controller';
 import { PlayerSearchController }     from './presentation/controllers/playerSearch.controller';
 import { RivalRosterController }      from './presentation/controllers/rivalRoster.controller';
+import { LeagueTransferController }   from './presentation/controllers/leagueTransfer.controller';
 
 const leagueCtrl       = new LeagueController(leagueService, catalogService);
 const leagueMarketCtrl = new LeagueMarketController(leagueMarketService);
@@ -132,6 +137,7 @@ const assetsCtrl       = new AssetsController();
 const catalogCtrl      = new CatalogController(catalogService, catalogImportService);
 const playerSearchCtrl = new PlayerSearchController(playerSearchService);
 const rivalRosterCtrl  = new RivalRosterController(rivalRosterService);
+const leagueTransferCtrl = new LeagueTransferController(leagueTransferService);
 
 // ── 5. Infrastructure: Routers ────────────────────────────────────────────────
 import { createLeagueRouter }       from './presentation/routes/league.routes';
@@ -149,6 +155,7 @@ import { createAssetsRouter }       from './presentation/routes/assets.routes';
 import { createCatalogRouter }         from './presentation/routes/catalog.routes';
 import { createPlayerSearchRouter }    from './presentation/routes/playerSearch.routes';
 import { createRivalRosterRouter }     from './presentation/routes/rivalRoster.routes';
+import { createLeagueTransferRouter }  from './presentation/routes/leagueTransfer.routes';
 import { errorHandler }             from './presentation/middleware/errorHandler.middleware';
 
 // ── 6. Infrastructure: Cron ───────────────────────────────────────────────────
@@ -236,6 +243,7 @@ app.use('/api', createConfigRouter());
 app.use('/api', createCatalogRouter(catalogCtrl));
 app.use('/api', createPlayerSearchRouter(playerSearchCtrl));
 app.use('/api', createRivalRosterRouter(rivalRosterCtrl));
+app.use('/api', createLeagueTransferRouter(leagueTransferCtrl));
 
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 

@@ -9,6 +9,7 @@ import { fetchRivalRoster } from './api.js';
 import { createPlayerPortrait, createClubLogo } from './player-image.js';
 import { abrirPlayerDrawer } from './player-drawer.js';
 import { getLigaActiva } from './leagues.js';
+import { submitDirectOffer } from './market.js';
 
 // ── Estado ────────────────────────────────────────────────────────────────────
 
@@ -115,6 +116,11 @@ function renderRivalContent(data) {
     const slider = renderJornadasSlider(data);
     content.appendChild(slider);
 
+    if (rivalState.currentJornada === null) {
+        content.appendChild(renderClubOfferList(data));
+        return;
+    }
+
     // Formación label
     const formLabel = document.createElement('div');
     formLabel.className = 'flex items-center justify-between mb-3 mt-4';
@@ -146,6 +152,112 @@ function renderRivalContent(data) {
 }
 
 // ── Slider de jornadas ────────────────────────────────────────────────────────
+
+function renderClubOfferList(data) {
+    const wrap = document.createElement('div');
+    wrap.className = 'mt-4 space-y-3';
+
+    const title = document.createElement('div');
+    title.className = 'flex items-center justify-between mb-3';
+    title.innerHTML = `
+        <span class="text-[10px] font-black uppercase tracking-wider text-slate-500">Club completo</span>
+        <span class="text-[10px] font-black uppercase tracking-wider text-blue-400">${(data.titulares?.length ?? 0) + (data.suplentes?.length ?? 0)} jugadores</span>
+    `;
+    wrap.appendChild(title);
+
+    const players = [...(data.titulares ?? []), ...(data.suplentes ?? [])]
+        .sort((a, b) => String(a.position).localeCompare(String(b.position)) || String(a.name).localeCompare(String(b.name)));
+
+    if (!players.length) {
+        const empty = document.createElement('p');
+        empty.className = 'text-slate-500 text-center py-8 font-bold';
+        empty.textContent = 'Este club no tiene jugadores disponibles.';
+        wrap.appendChild(empty);
+        return wrap;
+    }
+
+    const list = document.createElement('div');
+    list.className = 'grid grid-cols-1 sm:grid-cols-2 gap-3';
+
+    for (const player of players) {
+        list.appendChild(createRivalOfferRow(player, data.userId));
+    }
+
+    wrap.appendChild(list);
+    return wrap;
+}
+
+function createRivalOfferRow(player, sellerUserId) {
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'w-full text-left flex items-center gap-3 p-3 bg-white/[0.03] border border-white/5 rounded-xl hover:bg-white/[0.06] transition-colors';
+
+    const posTag = document.createElement('span');
+    posTag.className = `inline-flex items-center justify-center w-9 h-9 rounded-lg text-[10px] font-black uppercase tracking-wider ${POS_BG[player.position] ?? 'card-accent-MC'}`;
+    posTag.style.cssText = 'background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);';
+    posTag.textContent = POSICION_SHORT[player.position] ?? player.position;
+
+    const info = document.createElement('div');
+    info.className = 'flex-1 min-w-0';
+    const name = document.createElement('p');
+    name.className = 'text-xs font-extrabold text-white truncate';
+    name.textContent = player.name;
+    const meta = document.createElement('p');
+    meta.className = 'text-[10px] text-slate-500 truncate';
+    meta.textContent = `${player.real_team ?? 'Sin equipo'} · ${formatCurrency(player.purchase_price ?? 0)}`;
+    info.appendChild(name);
+    info.appendChild(meta);
+
+    const action = document.createElement('span');
+    action.className = 'px-2 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-300 text-[10px] font-black uppercase shrink-0';
+    action.textContent = 'Pujar';
+
+    row.appendChild(posTag);
+    row.appendChild(info);
+    row.appendChild(action);
+    row.addEventListener('click', () => openDirectOfferDrawer(player, sellerUserId));
+
+    return row;
+}
+
+function formatCurrency(value) {
+    return `${new Intl.NumberFormat('es-ES').format(Number(value ?? 0))} €`;
+}
+
+function openDirectOfferDrawer(player, sellerUserId) {
+    abrirPlayerDrawer({
+        playerApiId: player.id,
+        name: player.name,
+        position: player.position,
+        marketValue: player.purchase_price ?? 0,
+        faceUrl: player.faceUrl ?? null,
+        clubLogoUrl: player.clubLogoUrl ?? null,
+        onBid: async ({ playerApiId, amount }) => {
+            const errorEl = document.getElementById('pd-bid-error');
+            const submitBtn = document.getElementById('pd-submit-btn');
+            if (errorEl) errorEl.classList.add('hidden');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Enviando...';
+            }
+
+            try {
+                await submitDirectOffer({ sellerUserId, playerApiId, amount });
+                window.cerrarPlayerDrawer?.();
+            } catch (error) {
+                if (errorEl) {
+                    errorEl.textContent = error.message ?? 'Error al enviar la oferta.';
+                    errorEl.classList.remove('hidden');
+                }
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Confirmar Oferta';
+                }
+            }
+        },
+    });
+}
 
 function renderJornadasSlider(data) {
     const slider = document.createElement('div');

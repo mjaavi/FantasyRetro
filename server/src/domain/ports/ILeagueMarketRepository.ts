@@ -58,6 +58,7 @@ export interface ILeagueMarketRepository {
     getUserBudget(userId: string, leagueId: number): Promise<number>;
     updateUserBudget(userId: string, leagueId: number, newBudget: number): Promise<void>;
     addPlayerToRoster(leagueId: number, userId: string, playerApiId: number, purchasePrice: number, isStarter?: boolean): Promise<void>;
+    addTransferHistory(leagueId: number, playerApiId: number, toUserId: string, amount: number): Promise<void>;
 
     /**
      * Inserta los 11 jugadores iniciales de un usuario en UNA SOLA TRANSACCIÓN
