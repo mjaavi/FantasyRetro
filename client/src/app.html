@@ -72,6 +72,12 @@
             .form-select {
                 @apply w-full bg-black/20 border border-white/10 rounded-xl px-3 py-3 text-white font-bold focus:outline-none focus:border-blue-500 transition-all appearance-none cursor-pointer;
             }
+            .form-select option {
+                background-color: #0f172a;
+                color: #f8fafc;
+                font-family: "Plus Jakarta Sans", sans-serif;
+                font-weight: 800;
+            }
 
             .lineup-formation-select {
                 width: auto !important;
@@ -1631,6 +1637,7 @@
                                     <option value="bug">Reportar un error</option>
                                     <option value="account">Problema con mi cuenta</option>
                                     <option value="market">Problema con el mercado</option>
+                                    <option value="catalog">Solicitar acceso a catálogos</option>
                                     <option value="other">Otro</option>
                                 </select>
                             </div>
@@ -1647,10 +1654,12 @@
 
                         <div class="bento-card space-y-3">
                             <h4 class="font-extrabold text-white text-lg">FAQ</h4>
-                            <div class="space-y-3 text-sm text-slate-400">
-                                <p><span class="text-white font-bold">¿Cuándo se renueva el mercado?</span><br>Cada 24 horas automáticamente. Las pujas se resuelven al cierre.</p>
-                                <p><span class="text-white font-bold">¿Cómo se calculan los puntos?</span><br>Basados en estadísticas reales: goles, asistencias, tarjetas y rendimiento general.</p>
-                                <p><span class="text-white font-bold">¿Puedo unirme a varias ligas?</span><br>Sí, puedes participar en tantas ligas como quieras con distintos equipos.</p>
+                            <div class="space-y-4 text-sm text-slate-400">
+                                <p><span class="text-white font-bold">¿Cuándo se renueva el mercado?</span><br>El mercado se renueva cada 24 horas automáticamente. Las pujas se resuelven en ese momento.</p>
+                                <p><span class="text-white font-bold">¿Cómo se calculan los puntos?</span><br>Los puntos están basados en estadísticas reales del partido: goles, asistencias, tarjetas y rendimiento general (picas).</p>
+                                <p><span class="text-white font-bold">¿Puedo participar en varias ligas?</span><br>Sí, puedes participar en tantas ligas como quieras, gestionando un equipo distinto en cada una.</p>
+                                <p><span class="text-white font-bold">¿Por qué mi jugador no sumó puntos?</span><br>Si un jugador no fue titular en el partido real o no jugó, no sumará puntos en esa jornada.</p>
+                                <p><span class="text-white font-bold">¿Cómo funciona el catálogo histórico?</span><br>Las ligas se basan en temporadas históricas predefinidas. Si deseas acceder a herramientas de administración de catálogo, envía una solicitud.</p>
                             </div>
                         </div>
                     </div>
@@ -2072,7 +2081,11 @@
                         import('./js/dashboard.js'),
                         import('./js/player-search.js'),
                         import('./js/rival-roster-renderer.js'),
-                    ]);
+                    ]).then(() => {
+                        if (typeof window.initProfileNav === 'function') {
+                            window.initProfileNav();
+                        }
+                    });
                 } catch (moduleError) {
                     console.error('[Guard] Error en módulos:', moduleError.message);
                 }

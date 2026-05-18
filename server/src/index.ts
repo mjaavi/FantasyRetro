@@ -157,6 +157,7 @@ import { createPlayerSearchRouter }    from './presentation/routes/playerSearch.
 import { createRivalRosterRouter }     from './presentation/routes/rivalRoster.routes';
 import { createLeagueTransferRouter }  from './presentation/routes/leagueTransfer.routes';
 import { errorHandler }             from './presentation/middleware/errorHandler.middleware';
+import supportRoutes                from './presentation/routes/support.routes';
 
 // ── 6. Infrastructure: Cron ───────────────────────────────────────────────────
 import { MarketCron } from './presentation/cron/marketCron';
@@ -244,6 +245,7 @@ app.use('/api', createCatalogRouter(catalogCtrl));
 app.use('/api', createPlayerSearchRouter(playerSearchCtrl));
 app.use('/api', createRivalRosterRouter(rivalRosterCtrl));
 app.use('/api', createLeagueTransferRouter(leagueTransferCtrl));
+app.use('/api/support', supportRoutes);
 
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 

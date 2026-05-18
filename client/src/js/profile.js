@@ -48,7 +48,7 @@ export async function loadProfile() {
 
         const { data: profile } = await supabase
             .from('profiles')
-            .select('username, team_name, budget')
+            .select('username, team_name, budget, avatar_url')
             .eq('id', session.user.id)
             .single();
 
@@ -62,7 +62,18 @@ export async function loadProfile() {
         const usernameInput = document.getElementById('profile-username-input');
         const budgetEl   = document.getElementById('profile-budget');
 
-        if (avatarEl)      avatarEl.textContent      = getInitials(username);
+        if (avatarEl) {
+            if (profile.avatar_url) {
+                avatarEl.textContent = '';
+                avatarEl.style.backgroundImage = `url(${profile.avatar_url})`;
+                avatarEl.style.backgroundSize = 'cover';
+                avatarEl.style.backgroundPosition = 'center';
+            } else {
+                avatarEl.textContent = getInitials(username);
+                avatarEl.style.backgroundImage = 'none';
+            }
+        }
+
         if (usernameEl)    usernameEl.textContent     = username;
         if (usernameInput) usernameInput.value        = username;
         if (teamEl)        teamEl.value               = profile.team_name ?? '';
@@ -70,6 +81,37 @@ export async function loadProfile() {
 
     } catch (err) {
         console.error('[Profile]', err.message);
+    }
+}
+
+export async function initProfileNav() {
+    try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('username, avatar_url')
+            .eq('id', session.user.id)
+            .single();
+
+        if (!profile) return;
+
+        const navBtn = document.getElementById('btn-perfil');
+        if (navBtn) {
+            if (profile.avatar_url) {
+                navBtn.textContent = '';
+                navBtn.style.backgroundImage = `url(${profile.avatar_url})`;
+                navBtn.style.backgroundSize = 'cover';
+                navBtn.style.backgroundPosition = 'center';
+            } else {
+                const username = profile.username ?? session.user.email?.split('@')[0] ?? '?';
+                navBtn.textContent = getInitials(username);
+                navBtn.style.backgroundImage = 'none';
+            }
+        }
+    } catch (err) {
+        console.error('[Profile Nav]', err.message);
     }
 }
 
@@ -166,11 +208,21 @@ export async function uploadAvatar(input) {
     const reader = new FileReader();
     reader.onload = (e) => {
         const avatarEl = document.getElementById('profile-avatar');
-        if (!avatarEl) return;
-        avatarEl.innerHTML = '';
-        avatarEl.style.backgroundImage = `url(${e.target.result})`;
-        avatarEl.style.backgroundSize = 'cover';
-        avatarEl.style.backgroundPosition = 'center';
+        if (avatarEl) {
+            avatarEl.innerHTML = '';
+            avatarEl.style.backgroundImage = `url(${e.target.result})`;
+            avatarEl.style.backgroundSize = 'cover';
+            avatarEl.style.backgroundPosition = 'center';
+        }
+        
+        // Actualizar navbar inmediatamente localmente
+        const navBtn = document.getElementById('btn-perfil');
+        if (navBtn) {
+            navBtn.textContent = '';
+            navBtn.style.backgroundImage = `url(${e.target.result})`;
+            navBtn.style.backgroundSize = 'cover';
+            navBtn.style.backgroundPosition = 'center';
+        }
     };
     reader.readAsDataURL(file);
 
@@ -212,19 +264,29 @@ export async function sendSupport() {
 
     try {
         const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error('No autenticado');
+        
+        // Obtener la URL de la API del entorno o usar la base URL genérica
+        const apiUrl = window.__ENV__?.apiUrl ?? 'http://localhost:3000/api';
 
-        // Guardar en Supabase para que el admin lo vea
-        const { error } = await supabase
-            .from('support_tickets')
-            .insert({
-                user_id: session?.user?.id ?? null,
+        const res = await fetch(`${apiUrl}/support/ticket`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`
+            },
+            body: JSON.stringify({
                 subject,
                 message,
-                email: session?.user?.email ?? 'anónimo',
-            });
+                email: session?.user?.email,
+                user_id: session?.user?.id
+            })
+        });
 
-        // Si la tabla no existe, igualmente mostramos éxito (es un TFG)
-        if (error) console.warn('[Soporte] Tabla support_tickets no existe:', error.message);
+        if (!res.ok) {
+            const errData = await res.json();
+            throw new Error(errData.error || 'Error al enviar el ticket.');
+        }
 
         showMsg('support-msg', '✓ Mensaje enviado. Te responderemos pronto.');
         document.getElementById('support-message').value = '';
@@ -274,6 +336,7 @@ window.changePassword       = changePassword;
 window.uploadAvatar         = uploadAvatar;
 window.sendSupport          = sendSupport;
 window.confirmarBorrarCuenta = confirmarBorrarCuenta;
+window.initProfileNav       = initProfileNav;
 
 // Sobrescribir confirmarBorrarCuenta para usar el modal
 window.confirmarBorrarCuenta = function() {
