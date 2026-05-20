@@ -65,7 +65,9 @@ export async function loadProfile() {
         if (avatarEl) {
             if (profile.avatar_url) {
                 avatarEl.textContent = '';
-                avatarEl.style.backgroundImage = `url(${profile.avatar_url})`;
+                const urlObj = new URL(profile.avatar_url);
+                urlObj.searchParams.set('t', Date.now().toString());
+                avatarEl.style.backgroundImage = `url("${urlObj.toString()}")`;
                 avatarEl.style.backgroundSize = 'cover';
                 avatarEl.style.backgroundPosition = 'center';
             } else {
@@ -100,11 +102,16 @@ export async function initProfileNav() {
         const navBtn = document.getElementById('btn-perfil');
         if (navBtn) {
             if (profile.avatar_url) {
+                console.log('[Profile Nav] Estableciendo avatar desde BD:', profile.avatar_url);
                 navBtn.textContent = '';
-                navBtn.style.backgroundImage = `url(${profile.avatar_url})`;
+                // Añadimos cache buster para forzar recarga de la imagen
+                const urlObj = new URL(profile.avatar_url);
+                urlObj.searchParams.set('t', Date.now().toString());
+                navBtn.style.backgroundImage = `url("${urlObj.toString()}")`;
                 navBtn.style.backgroundSize = 'cover';
                 navBtn.style.backgroundPosition = 'center';
             } else {
+                console.log('[Profile Nav] No hay avatar_url, usando iniciales');
                 const username = profile.username ?? session.user.email?.split('@')[0] ?? '?';
                 navBtn.textContent = getInitials(username);
                 navBtn.style.backgroundImage = 'none';
@@ -243,13 +250,22 @@ export async function uploadAvatar(input) {
             .from('avatars')
             .getPublicUrl(fileName);
 
-        await supabase
+        const { error: updateError, data: updateData } = await supabase
             .from('profiles')
             .update({ avatar_url: publicUrl })
-            .eq('id', session.user.id);
+            .eq('id', session.user.id)
+            .select();
+
+        if (updateError) {
+            console.error('[Profile] Error actualizando BD:', updateError);
+            throw new Error(updateError.message);
+        }
+        
+        console.log('[Profile] Avatar actualizado en BD correctamente:', publicUrl);
 
     } catch (err) {
         console.error('[Profile] Error subiendo avatar:', err.message);
+        alert('Hubo un error guardando el avatar. Inténtalo de nuevo.');
     }
 }
 

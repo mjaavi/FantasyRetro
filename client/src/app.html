@@ -2081,9 +2081,14 @@
                         import('./js/dashboard.js'),
                         import('./js/player-search.js'),
                         import('./js/rival-roster-renderer.js'),
-                    ]).then(() => {
-                        if (typeof window.initProfileNav === 'function') {
+                    ]).then((modules) => {
+                        const profileModule = modules[4]; // profile.js es el índice 4
+                        if (profileModule && typeof profileModule.initProfileNav === 'function') {
+                            profileModule.initProfileNav();
+                        } else if (typeof window.initProfileNav === 'function') {
                             window.initProfileNav();
+                        } else {
+                            console.warn('[Guard] initProfileNav no encontrado');
                         }
                     });
                 } catch (moduleError) {
