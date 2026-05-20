@@ -272,11 +272,17 @@ export async function uploadAvatar(input) {
 // ── Soporte ───────────────────────────────────────────────────────────────────
 
 export async function sendSupport() {
+    const btn = document.querySelector('#tab-soporte button.btn-primary');
     const subject = document.getElementById('support-subject')?.value;
     const message = document.getElementById('support-message')?.value?.trim();
     hideMsg('support-msg'); hideMsg('support-err');
 
     if (!message) { showMsg('support-err', 'Escribe un mensaje antes de enviar.', true); return; }
+
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Enviando...';
+    }
 
     try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -284,6 +290,7 @@ export async function sendSupport() {
         
         // Obtener la URL de la API del entorno o usar la base URL genérica
         const apiUrl = window.__ENV__?.apiUrl ?? 'http://localhost:3000/api';
+        console.log('[Soporte] Enviando ticket a:', apiUrl);
 
         const res = await fetch(`${apiUrl}/support/ticket`, {
             method: 'POST',
@@ -299,15 +306,25 @@ export async function sendSupport() {
             })
         });
 
-        if (!res.ok) {
-            const errData = await res.json();
-            throw new Error(errData.error || 'Error al enviar el ticket.');
+        // Revisar si la respuesta es JSON válida antes de parsear
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al enviar el ticket.');
+        } else {
+            if (!res.ok) throw new Error('El servidor no pudo procesar la solicitud (Endpoint no encontrado o en mantenimiento).');
         }
 
         showMsg('support-msg', '✓ Mensaje enviado. Te responderemos pronto.');
         document.getElementById('support-message').value = '';
     } catch (err) {
-        showMsg('support-err', err.message, true);
+        console.error('[Soporte] Error:', err);
+        showMsg('support-err', err.message === 'Failed to fetch' ? 'Error de conexión con el servidor. ¿Está el backend encendido?' : err.message, true);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Enviar Mensaje';
+        }
     }
 }
 
