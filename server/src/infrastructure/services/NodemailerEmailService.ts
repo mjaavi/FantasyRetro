@@ -14,6 +14,9 @@ export class NodemailerEmailService implements IEmailService {
                 user: process.env.SMTP_USER || 'ethereal.user@ethereal.email',
                 pass: process.env.SMTP_PASS || 'etherealpassword',
             },
+            connectionTimeout: 5000, // 5 segundos
+            greetingTimeout: 5000,   // 5 segundos
+            socketTimeout: 5000      // 5 segundos
         });
     }
 

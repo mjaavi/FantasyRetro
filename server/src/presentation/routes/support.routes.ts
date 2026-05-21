@@ -84,7 +84,10 @@ export function createSupportRouter(): Router {
                 auth: {
                     user: smtpUser,
                     pass: smtpPass
-                }
+                },
+                connectionTimeout: 5000, // 5 segundos
+                greetingTimeout: 5000,   // 5 segundos
+                socketTimeout: 5000      // 5 segundos
             });
 
             const htmlContent = `
