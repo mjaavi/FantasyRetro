@@ -1645,8 +1645,13 @@
                                 <label class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">Mensaje</label>
                                 <textarea id="support-message" rows="5" placeholder="Describe tu problema con el mayor detalle posible..." class="form-input w-full resize-none"></textarea>
                             </div>
-                            <p id="support-msg" class="text-sm font-bold text-green-400 hidden">✓ Mensaje enviado. Te responderemos pronto.</p>
-                            <p id="support-err" class="text-sm font-bold text-red-400 hidden"></p>
+                            <!-- Premium Feedback Alert Container -->
+                            <div id="support-alert-container" class="hidden transition-all duration-300 transform scale-95 opacity-0">
+                                <div id="support-alert" class="flex items-center gap-3 p-4 rounded-2xl border backdrop-blur-md">
+                                    <div id="support-alert-icon" class="flex-shrink-0"></div>
+                                    <div id="support-alert-text" class="text-sm font-semibold"></div>
+                                </div>
+                            </div>
                             <div class="flex justify-end">
                                 <button onclick="sendSupport()" class="btn-primary w-full py-3 mt-2">Enviar Mensaje</button>
                             </div>

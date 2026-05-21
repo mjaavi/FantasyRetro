@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js';
+import { apiFetch } from './api.js';
 
 const fmt = n => new Intl.NumberFormat('es-ES').format(n);
 
@@ -65,14 +66,42 @@ export async function loadProfile() {
         if (avatarEl) {
             if (profile.avatar_url) {
                 avatarEl.textContent = '';
-                const urlObj = new URL(profile.avatar_url);
-                urlObj.searchParams.set('t', Date.now().toString());
-                avatarEl.style.backgroundImage = `url("${urlObj.toString()}")`;
+                let url = profile.avatar_url;
+                try {
+                    const urlObj = new URL(url);
+                    urlObj.searchParams.set('t', Date.now().toString());
+                    url = urlObj.toString();
+                } catch (e) {
+                    url = `${url}?t=${Date.now()}`;
+                }
+                avatarEl.style.backgroundImage = `url("${url}")`;
                 avatarEl.style.backgroundSize = 'cover';
                 avatarEl.style.backgroundPosition = 'center';
             } else {
+                avatarEl.style.backgroundImage = '';
                 avatarEl.textContent = getInitials(username);
-                avatarEl.style.backgroundImage = 'none';
+            }
+        }
+
+        // Actualizar también el avatar de la barra de navegación (#btn-perfil)
+        const btnPerfil = document.getElementById('btn-perfil');
+        if (btnPerfil) {
+            if (profile.avatar_url) {
+                btnPerfil.textContent = '';
+                let url = profile.avatar_url;
+                try {
+                    const urlObj = new URL(url);
+                    urlObj.searchParams.set('t', Date.now().toString());
+                    url = urlObj.toString();
+                } catch (e) {
+                    url = `${url}?t=${Date.now()}`;
+                }
+                btnPerfil.style.backgroundImage = `url("${url}")`;
+                btnPerfil.style.backgroundSize = 'cover';
+                btnPerfil.style.backgroundPosition = 'center';
+            } else {
+                btnPerfil.style.backgroundImage = '';
+                btnPerfil.textContent = getInitials(username);
             }
         }
 
@@ -104,10 +133,15 @@ export async function initProfileNav() {
             if (profile.avatar_url) {
                 console.log('[Profile Nav] Estableciendo avatar desde BD:', profile.avatar_url);
                 navBtn.textContent = '';
-                // Añadimos cache buster para forzar recarga de la imagen
-                const urlObj = new URL(profile.avatar_url);
-                urlObj.searchParams.set('t', Date.now().toString());
-                navBtn.style.backgroundImage = `url("${urlObj.toString()}")`;
+                let url = profile.avatar_url;
+                try {
+                    const urlObj = new URL(url);
+                    urlObj.searchParams.set('t', Date.now().toString());
+                    url = urlObj.toString();
+                } catch (e) {
+                    url = `${url}?t=${Date.now()}`;
+                }
+                navBtn.style.backgroundImage = `url("${url}")`;
                 navBtn.style.backgroundSize = 'cover';
                 navBtn.style.backgroundPosition = 'center';
             } else {
@@ -211,6 +245,12 @@ export async function uploadAvatar(input) {
     const file = input.files?.[0];
     if (!file) return;
 
+    // Límite de tamaño: 2MB
+    if (file.size > 2 * 1024 * 1024) {
+        alert('La imagen es demasiado grande. El límite es 2 MB.');
+        return;
+    }
+
     // Mostrar preview inmediato
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -238,7 +278,8 @@ export async function uploadAvatar(input) {
         if (!session) return;
 
         const ext      = file.name.split('.').pop();
-        const fileName = `${session.user.id}.${ext}`;
+        // Usar timestamp único evita conflictos RLS y refresca la caché al instante
+        const fileName = `${session.user.id}_${Date.now()}.${ext}`;
 
         const { error: uploadError } = await supabase.storage
             .from('avatars')
@@ -250,80 +291,135 @@ export async function uploadAvatar(input) {
             .from('avatars')
             .getPublicUrl(fileName);
 
-        const { error: updateError, data: updateData } = await supabase
-            .from('profiles')
-            .update({ avatar_url: publicUrl })
-            .eq('id', session.user.id)
-            .select();
+        const publicUrlWithBuster = `${publicUrl}?t=${Date.now()}`;
 
-        if (updateError) {
-            console.error('[Profile] Error actualizando BD:', updateError);
-            throw new Error(updateError.message);
+        const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ avatar_url: publicUrlWithBuster })
+            .eq('id', session.user.id);
+
+        if (updateError) throw new Error(updateError.message);
+
+        // Actualizar la barra de navegación (#btn-perfil) al instante
+        const btnPerfil = document.getElementById('btn-perfil');
+        if (btnPerfil) {
+            btnPerfil.textContent = '';
+            btnPerfil.style.backgroundImage = `url(${publicUrlWithBuster})`;
+            btnPerfil.style.backgroundSize = 'cover';
+            btnPerfil.style.backgroundPosition = 'center';
         }
-        
-        console.log('[Profile] Avatar actualizado en BD correctamente:', publicUrl);
 
     } catch (err) {
         console.error('[Profile] Error subiendo avatar:', err.message);
-        alert('Hubo un error guardando el avatar. Inténtalo de nuevo.');
+        alert('Hubo un error guardando el avatar: ' + err.message + '\n\nAsegúrate de que el bucket "avatars" de Supabase esté creado con acceso público.');
     }
 }
 
 // ── Soporte ───────────────────────────────────────────────────────────────────
 
+export function showSupportAlert(text, isErr = false) {
+    const container = document.getElementById('support-alert-container');
+    const alertBox = document.getElementById('support-alert');
+    const iconBox = document.getElementById('support-alert-icon');
+    const textBox = document.getElementById('support-alert-text');
+
+    if (!container || !alertBox || !iconBox || !textBox) return;
+
+    textBox.textContent = text;
+
+    if (isErr) {
+        alertBox.className = 'flex items-center gap-3 p-4 rounded-2xl border backdrop-blur-md bg-red-500/10 border-red-500/20 text-red-400 shadow-[0_0_20px_rgba(239,68,68,0.15)]';
+        iconBox.innerHTML = `
+            <svg class="w-5 h-5 text-red-400 animate-pulse" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>
+        `;
+    } else {
+        alertBox.className = 'flex items-center gap-3 p-4 rounded-2xl border backdrop-blur-md bg-emerald-500/10 border-emerald-500/20 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.15)]';
+        iconBox.innerHTML = `
+            <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+        `;
+    }
+
+    container.classList.remove('hidden');
+    // Force layout reflow to allow transition
+    container.offsetHeight; 
+    container.classList.remove('scale-95', 'opacity-0');
+    container.classList.add('scale-100', 'opacity-100');
+
+    if (!isErr) {
+        setTimeout(() => {
+            container.classList.remove('scale-100', 'opacity-100');
+            container.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                container.classList.add('hidden');
+            }, 300);
+        }, 5000);
+    }
+}
+
+export function hideSupportAlert() {
+    const container = document.getElementById('support-alert-container');
+    if (!container) return;
+    container.classList.remove('scale-100', 'opacity-100');
+    container.classList.add('scale-95', 'opacity-0');
+    setTimeout(() => {
+        container.classList.add('hidden');
+    }, 300);
+}
+
 export async function sendSupport() {
-    const btn = document.querySelector('#tab-soporte button.btn-primary');
     const subject = document.getElementById('support-subject')?.value;
     const message = document.getElementById('support-message')?.value?.trim();
-    hideMsg('support-msg'); hideMsg('support-err');
+    const btn = document.querySelector('#tab-soporte button');
+    
+    hideSupportAlert();
 
-    if (!message) { showMsg('support-err', 'Escribe un mensaje antes de enviar.', true); return; }
+    if (!message) { 
+        showSupportAlert('Escribe un mensaje antes de enviar.', true); 
+        return; 
+    }
 
     if (btn) {
         btn.disabled = true;
-        btn.textContent = 'Enviando...';
+        btn.innerHTML = `
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Enviando...
+        `;
     }
 
     try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) throw new Error('No autenticado');
-        
-        // Obtener la URL de la API del entorno o usar la base URL genérica
-        const apiUrl = window.__ENV__?.apiUrl ?? 'http://localhost:3000/api';
-        console.log('[Soporte] Enviando ticket a:', apiUrl);
+        const userEmail = session?.user?.email ?? 'anónimo';
+        const userId = session?.user?.id ?? null;
 
-        const res = await fetch(`${apiUrl}/support/ticket`, {
+        // Llamada a nuestro nuevo endpoint backend con Nodemailer y Supabase
+        await apiFetch('/support', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${session.access_token}`
-            },
             body: JSON.stringify({
                 subject,
                 message,
-                email: session?.user?.email,
-                user_id: session?.user?.id
+                email: userEmail,
+                userId
             })
         });
 
-        // Revisar si la respuesta es JSON válida antes de parsear
-        const contentType = res.headers.get("content-type");
-        if (contentType && contentType.indexOf("application/json") !== -1) {
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Error al enviar el ticket.');
-        } else {
-            if (!res.ok) throw new Error('El servidor no pudo procesar la solicitud (Endpoint no encontrado o en mantenimiento).');
-        }
-
-        showMsg('support-msg', '✓ Mensaje enviado. Te responderemos pronto.');
-        document.getElementById('support-message').value = '';
+        showSupportAlert('✓ Mensaje enviado. Te responderemos pronto.');
+        const messageEl = document.getElementById('support-message');
+        if (messageEl) messageEl.value = '';
+        
     } catch (err) {
-        console.error('[Soporte] Error:', err);
-        showMsg('support-err', err.message === 'Failed to fetch' ? 'Error de conexión con el servidor. ¿Está el backend encendido?' : err.message, true);
+        console.error('[Soporte] Error enviando soporte:', err.message);
+        showSupportAlert(err.message || 'Error al enviar el ticket. Inténtalo de nuevo.', true);
     } finally {
         if (btn) {
             btn.disabled = false;
-            btn.textContent = 'Enviar Mensaje';
+            btn.innerHTML = 'Enviar Mensaje';
         }
     }
 }

@@ -151,13 +151,13 @@ import { createAdminRouter }        from './presentation/routes/admin.routes';
 import { createDashboardRouter }    from './presentation/routes/dashboard.routes';
 import { createFixturesRouter }     from './presentation/routes/fixtures.routes';
 import { createConfigRouter }       from './presentation/routes/config.routes';
+import { createSupportRouter }      from './presentation/routes/support.routes';
 import { createAssetsRouter }       from './presentation/routes/assets.routes';
 import { createCatalogRouter }         from './presentation/routes/catalog.routes';
 import { createPlayerSearchRouter }    from './presentation/routes/playerSearch.routes';
 import { createRivalRosterRouter }     from './presentation/routes/rivalRoster.routes';
 import { createLeagueTransferRouter }  from './presentation/routes/leagueTransfer.routes';
 import { errorHandler }             from './presentation/middleware/errorHandler.middleware';
-import supportRoutes                from './presentation/routes/support.routes';
 
 // ── 6. Infrastructure: Cron ───────────────────────────────────────────────────
 import { MarketCron } from './presentation/cron/marketCron';
@@ -245,7 +245,7 @@ app.use('/api', createCatalogRouter(catalogCtrl));
 app.use('/api', createPlayerSearchRouter(playerSearchCtrl));
 app.use('/api', createRivalRosterRouter(rivalRosterCtrl));
 app.use('/api', createLeagueTransferRouter(leagueTransferCtrl));
-app.use('/api/support', supportRoutes);
+app.use('/api', createSupportRouter());
 
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
