@@ -48,15 +48,17 @@ export function createSupportRouter(): Router {
             }
 
             // 2. Enviar por correo usando Nodemailer
-            const smtpHost = process.env.SMTP_HOST;
-            const smtpPort = parseInt(process.env.SMTP_PORT ?? '465', 10);
-            const smtpUser = process.env.SMTP_USER;
-            const smtpPass = process.env.SMTP_PASS;
-            const supportEmail = process.env.SUPPORT_EMAIL ?? process.env.SUPPORT_ADMIN_EMAIL ?? smtpUser;
+            const smtpHost = process.env.SMTP_HOST?.trim().replace(/^['"]|['"]$/g, '');
+            const smtpPortRaw = (process.env.SMTP_PORT ?? '465').trim().replace(/^['"]|['"]$/g, '');
+            const smtpPort = parseInt(smtpPortRaw, 10);
+            const smtpUser = process.env.SMTP_USER?.trim().replace(/^['"]|['"]$/g, '');
+            const smtpPass = process.env.SMTP_PASS?.trim().replace(/^['"]|['"]$/g, '');
+            const supportEmail = (process.env.SUPPORT_EMAIL ?? process.env.SUPPORT_ADMIN_EMAIL ?? smtpUser)?.trim().replace(/^['"]|['"]$/g, '');
 
             const isConfigured = smtpUser && smtpPass && 
                 !smtpUser.includes('tu_correo') && 
-                !smtpPass.includes('tu_contrasea');
+                !smtpPass.includes('tu_contrasea') &&
+                smtpHost && !smtpHost.includes('tu_host');
 
             if (!isConfigured) {
                 console.log('\n┌────────────────────────────────────────────────────────┐');
@@ -76,18 +78,34 @@ export function createSupportRouter(): Router {
                 });
             }
 
+            // Detectar automáticamente el modo secure adecuado según el puerto si no está forzado por env
+            let isSecure = smtpPort === 465;
+            if (process.env.SMTP_SECURE !== undefined) {
+                isSecure = process.env.SMTP_SECURE.trim().replace(/^['"]|['"]$/g, '') === 'true';
+            }
+
+            console.log('[Soporte] Intentando conectar al servidor SMTP:');
+            console.log(`  - Host: "${smtpHost}"`);
+            console.log(`  - Port: ${smtpPort}`);
+            console.log(`  - Secure (SSL/TLS): ${isSecure}`);
+            console.log(`  - User: "${smtpUser}"`);
+            console.log(`  - Destinatario: "${supportEmail}"`);
+
             // Crear transporter con las credenciales SMTP
             const transporter = nodemailer.createTransport({
                 host: smtpHost,
                 port: smtpPort,
-                secure: smtpPort === 465 || process.env.SMTP_SECURE === 'true',
+                secure: isSecure,
                 auth: {
                     user: smtpUser,
                     pass: smtpPass
                 },
                 connectionTimeout: 5000, // 5 segundos
                 greetingTimeout: 5000,   // 5 segundos
-                socketTimeout: 5000      // 5 segundos
+                socketTimeout: 5000,     // 5 segundos
+                tls: {
+                    rejectUnauthorized: false // Evita fallos por certificados autofirmados o problemas de CA en hosting
+                }
             });
 
             const htmlContent = `
@@ -124,9 +142,15 @@ export function createSupportRouter(): Router {
 
         } catch (err: any) {
             console.error('[Soporte] Error al procesar el ticket de soporte:', err);
+            
+            let userFriendlyMessage = err.message || 'Error al procesar la solicitud.';
+            if (err.message?.includes('timeout') || err.code === 'ETIMEDOUT') {
+                userFriendlyMessage = 'Error de timeout SMTP. Verifica que tu host SMTP, puerto (465/587) y SSL/TLS coincidan en Render (p. ej. usa puerto 587 si tienes problemas con el 465).';
+            }
+
             return res.status(500).json({
                 status: 'error',
-                message: `Error al procesar la solicitud: ${err.message}`
+                message: userFriendlyMessage
             });
         }
     });
