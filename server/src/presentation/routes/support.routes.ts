@@ -103,10 +103,11 @@ export function createSupportRouter(): Router {
                 connectionTimeout: 5000, // 5 segundos
                 greetingTimeout: 5000,   // 5 segundos
                 socketTimeout: 5000,     // 5 segundos
+                family: 4,               // FORZAR IPv4 únicamente para evitar errores ENETUNREACH en Render (que carece de IPv6 outbound)
                 tls: {
                     rejectUnauthorized: false // Evita fallos por certificados autofirmados o problemas de CA en hosting
                 }
-            });
+            } as any);
 
             const htmlContent = `
                 <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; rounded-lg: 8px;">

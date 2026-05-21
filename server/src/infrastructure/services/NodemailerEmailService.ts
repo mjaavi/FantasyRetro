@@ -27,10 +27,11 @@ export class NodemailerEmailService implements IEmailService {
             connectionTimeout: 5000, // 5 segundos
             greetingTimeout: 5000,   // 5 segundos
             socketTimeout: 5000,     // 5 segundos
+            family: 4,               // FORZAR IPv4 únicamente para evitar errores ENETUNREACH en Render
             tls: {
                 rejectUnauthorized: false // Evita fallos por certificados autofirmados o de CA obsoletos
             }
-        });
+        } as any);
     }
 
     async sendEmail(options: EmailOptions): Promise<void> {
