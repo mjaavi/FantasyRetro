@@ -9,6 +9,25 @@ if (dns && typeof dns.setDefaultResultOrder === 'function') {
     dns.setDefaultResultOrder('ipv4first');
 }
 
+// Función auxiliar para resolver de forma garantizada un hostname a IPv4
+async function resolveIPv4Only(host: string): Promise<string> {
+    if (!host) return host;
+    if (/^[0-9.]+$/.test(host) || host.includes(':') || host === 'localhost') {
+        return host;
+    }
+    return new Promise((resolve) => {
+        dns.resolve4(host, (err, addresses) => {
+            if (err || !addresses || addresses.length === 0) {
+                console.warn(`[Soporte DNS] No se pudo resolver ${host} a IPv4, usando host original:`, err?.message);
+                resolve(host);
+            } else {
+                console.log(`[Soporte DNS] Resuelto ${host} a IPv4: ${addresses[0]}`);
+                resolve(addresses[0]);
+            }
+        });
+    });
+}
+
 export function createSupportRouter(): Router {
     const router = Router();
     const supportController = new SupportController();
@@ -100,8 +119,11 @@ export function createSupportRouter(): Router {
                 finalSecure = false;
             }
 
+            // Resolver el host SMTP a IPv4 antes de conectar para evitar fallos ENETUNREACH de IPv6 en Render
+            const ipv4Host = await resolveIPv4Only(smtpHost);
+
             console.log('[Soporte] Intentando conectar al servidor SMTP:');
-            console.log(`  - Host: "${smtpHost}"`);
+            console.log(`  - Host original: "${smtpHost}" -> IP Física: "${ipv4Host}"`);
             console.log(`  - Port original: ${smtpPort} -> Final: ${finalPort}`);
             console.log(`  - Secure original: ${isSecure} -> Final: ${finalSecure}`);
             console.log(`  - User: "${smtpUser}"`);
@@ -109,7 +131,7 @@ export function createSupportRouter(): Router {
 
             // Crear transporter con las credenciales SMTP
             const transporter = nodemailer.createTransport({
-                host: smtpHost,
+                host: ipv4Host, // Conectamos directamente a la IP IPv4 física
                 port: finalPort,
                 secure: finalSecure,
                 auth: {
@@ -119,12 +141,9 @@ export function createSupportRouter(): Router {
                 connectionTimeout: 5000, // 5 segundos
                 greetingTimeout: 5000,   // 5 segundos
                 socketTimeout: 5000,     // 5 segundos
-                family: 4,               // FORZAR IPv4 únicamente para evitar errores ENETUNREACH en Render (que carece de IPv6 outbound)
-                lookup: (hostname: string, options: any, callback: any) => {
-                    dns.lookup(hostname, { ...options, family: 4 }, callback);
-                },
                 tls: {
-                    rejectUnauthorized: false // Evita fallos por certificados autofirmados o problemas de CA en hosting
+                    rejectUnauthorized: false, // Evita fallos por certificados autofirmados o problemas de CA en hosting
+                    servername: smtpHost       // IMPORTANTE: Establecemos el host original en SNI para que el certificado SSL sea válido
                 }
             } as any);
 
@@ -164,8 +183,10 @@ export function createSupportRouter(): Router {
                                        
                 if (isNetworkError) {
                     console.warn(`[Soporte] Falló el envío inicial (código: ${mailErr.code}). Intentando fallback/reintento forzando puerto 587 (STARTTLS) e IPv4...`);
+                    
+                    const ipv4HostFallback = await resolveIPv4Only(smtpHost);
                     const fallbackTransporter = nodemailer.createTransport({
-                        host: smtpHost,
+                        host: ipv4HostFallback,
                         port: 587,
                         secure: false,
                         auth: {
@@ -175,12 +196,9 @@ export function createSupportRouter(): Router {
                         connectionTimeout: 5000,
                         greetingTimeout: 5000,
                         socketTimeout: 5000,
-                        family: 4,
-                        lookup: (hostname: string, options: any, callback: any) => {
-                            dns.lookup(hostname, { ...options, family: 4 }, callback);
-                        },
                         tls: {
-                            rejectUnauthorized: false
+                            rejectUnauthorized: false,
+                            servername: smtpHost
                         }
                     } as any);
 

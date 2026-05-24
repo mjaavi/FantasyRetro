@@ -7,10 +7,31 @@ if (dns && typeof dns.setDefaultResultOrder === 'function') {
     dns.setDefaultResultOrder('ipv4first');
 }
 
-export class NodemailerEmailService implements IEmailService {
-    private transporter: nodemailer.Transporter;
+// Función auxiliar para resolver de forma garantizada un hostname a IPv4
+async function resolveIPv4Only(host: string): Promise<string> {
+    if (!host) return host;
+    if (/^[0-9.]+$/.test(host) || host.includes(':') || host === 'localhost') {
+        return host;
+    }
+    return new Promise((resolve) => {
+        dns.resolve4(host, (err, addresses) => {
+            if (err || !addresses || addresses.length === 0) {
+                console.warn(`[EmailService DNS] No se pudo resolver ${host} a IPv4, usando host original:`, err?.message);
+                resolve(host);
+            } else {
+                console.log(`[EmailService DNS] Resuelto ${host} a IPv4: ${addresses[0]}`);
+                resolve(addresses[0]);
+            }
+        });
+    });
+}
 
-    constructor() {
+export class NodemailerEmailService implements IEmailService {
+    private transporter: nodemailer.Transporter | null = null;
+
+    private async getTransporter(): Promise<nodemailer.Transporter> {
+        if (this.transporter) return this.transporter;
+
         const smtpHost = (process.env.SMTP_HOST || 'smtp.ethereal.email').trim().replace(/^['"]|['"]$/g, '');
         const smtpPort = Number((process.env.SMTP_PORT ?? '587').trim().replace(/^['"]|['"]$/g, ''));
         const smtpUser = (process.env.SMTP_USER || 'ethereal.user@ethereal.email').trim().replace(/^['"]|['"]$/g, '');
@@ -31,9 +52,10 @@ export class NodemailerEmailService implements IEmailService {
             finalSecure = false;
         }
 
-        // Configuramos con las variables de entorno si existen, sino con un mock/ethereal para dev
+        const ipv4Host = await resolveIPv4Only(smtpHost);
+
         this.transporter = nodemailer.createTransport({
-            host: smtpHost,
+            host: ipv4Host,
             port: finalPort,
             secure: finalSecure,
             auth: {
@@ -43,19 +65,19 @@ export class NodemailerEmailService implements IEmailService {
             connectionTimeout: 5000, // 5 segundos
             greetingTimeout: 5000,   // 5 segundos
             socketTimeout: 5000,     // 5 segundos
-            family: 4,               // FORZAR IPv4 únicamente para evitar errores ENETUNREACH en Render
-            lookup: (hostname: string, options: any, callback: any) => {
-                dns.lookup(hostname, { ...options, family: 4 }, callback);
-            },
             tls: {
-                rejectUnauthorized: false // Evita fallos por certificados autofirmados o de CA obsoletos
+                rejectUnauthorized: false, // Evita fallos por certificados autofirmados o de CA obsoletos
+                servername: smtpHost       // IMPORTANTE: Establecemos el host original en SNI para la validez SSL/TLS
             }
         } as any);
+
+        return this.transporter;
     }
 
     async sendEmail(options: EmailOptions): Promise<void> {
         try {
-            const info = await this.transporter.sendMail({
+            const transporter = await this.getTransporter();
+            const info = await transporter.sendMail({
                 from: process.env.SMTP_FROM || '"RetroFantasy Support" <support@retrofantasy.com>',
                 to: options.to,
                 subject: options.subject,
@@ -71,7 +93,9 @@ export class NodemailerEmailService implements IEmailService {
         } catch (error: any) {
             console.error('[EmailService] Error inicial al enviar correo:', error);
             
-            const smtpPort = Number((process.env.SMTP_PORT ?? '587').trim().replace(/^['"]|['"]$/g, ''));
+            const smtpHost = (process.env.SMTP_HOST || 'smtp.ethereal.email').trim().replace(/^['"]|['"]$/g, '');
+            const smtpUser = (process.env.SMTP_USER || 'ethereal.user@ethereal.email').trim().replace(/^['"]|['"]$/g, '');
+            const smtpPass = (process.env.SMTP_PASS || 'etherealpassword').trim().replace(/^['"]|['"]$/g, '');
             
             const isNetworkError = error.code === 'ETIMEDOUT' || 
                                    error.code === 'ENETUNREACH' || 
@@ -84,12 +108,9 @@ export class NodemailerEmailService implements IEmailService {
             if (isNetworkError) {
                 console.warn(`[EmailService] Falló el envío inicial (código: ${error.code}). Reintentando automáticamente con puerto 587 (STARTTLS) e IPv4...`);
                 try {
-                    const smtpHost = (process.env.SMTP_HOST || 'smtp.ethereal.email').trim().replace(/^['"]|['"]$/g, '');
-                    const smtpUser = (process.env.SMTP_USER || 'ethereal.user@ethereal.email').trim().replace(/^['"]|['"]$/g, '');
-                    const smtpPass = (process.env.SMTP_PASS || 'etherealpassword').trim().replace(/^['"]|['"]$/g, '');
-                    
+                    const ipv4HostFallback = await resolveIPv4Only(smtpHost);
                     const fallbackTransporter = nodemailer.createTransport({
-                        host: smtpHost,
+                        host: ipv4HostFallback,
                         port: 587,
                         secure: false,
                         auth: {
@@ -99,12 +120,9 @@ export class NodemailerEmailService implements IEmailService {
                         connectionTimeout: 5000,
                         greetingTimeout: 5000,
                         socketTimeout: 5000,
-                        family: 4,
-                        lookup: (hostname: string, options: any, callback: any) => {
-                            dns.lookup(hostname, { ...options, family: 4 }, callback);
-                        },
                         tls: {
-                            rejectUnauthorized: false
+                            rejectUnauthorized: false,
+                            servername: smtpHost
                         }
                     } as any);
 
