@@ -20,6 +20,12 @@ import helmet    from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv    from 'dotenv';
 import path      from 'path';
+import dns       from 'dns';
+
+// Forzar la resolución de DNS para priorizar IPv4 globalmente, previniendo errores ENETUNREACH en entornos sin IPv6 saliente como Render
+if (dns && typeof dns.setDefaultResultOrder === 'function') {
+    dns.setDefaultResultOrder('ipv4first');
+}
 
 dotenv.config();
 

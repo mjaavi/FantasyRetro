@@ -2,6 +2,12 @@ import { Router } from 'express';
 import nodemailer from 'nodemailer';
 import { supabaseAdmin } from '../../infrastructure/supabase.client';
 import { SupportController } from '../controllers/support.controller';
+import dns from 'dns';
+
+// Forzar la resolución de DNS para priorizar IPv4 en este módulo, previniendo errores ENETUNREACH en entornos sin IPv6 saliente como Render
+if (dns && typeof dns.setDefaultResultOrder === 'function') {
+    dns.setDefaultResultOrder('ipv4first');
+}
 
 export function createSupportRouter(): Router {
     const router = Router();
@@ -114,6 +120,9 @@ export function createSupportRouter(): Router {
                 greetingTimeout: 5000,   // 5 segundos
                 socketTimeout: 5000,     // 5 segundos
                 family: 4,               // FORZAR IPv4 únicamente para evitar errores ENETUNREACH en Render (que carece de IPv6 outbound)
+                lookup: (hostname: string, options: any, callback: any) => {
+                    dns.lookup(hostname, { ...options, family: 4 }, callback);
+                },
                 tls: {
                     rejectUnauthorized: false // Evita fallos por certificados autofirmados o problemas de CA en hosting
                 }
@@ -145,10 +154,16 @@ export function createSupportRouter(): Router {
             } catch (mailErr: any) {
                 console.error('[Soporte] Error inicial al enviar correo:', mailErr);
                 
-                // Si falló por timeout/bloqueo de red y se usó puerto 465
-                const isTimeoutOrBlocked = mailErr.code === 'ETIMEDOUT' || mailErr.message?.includes('timeout') || mailErr.code === 'ECONNREFUSED' || mailErr.code === 'EADDRNOTAVAIL';
-                if (isTimeoutOrBlocked && finalPort === 465) {
-                    console.warn('[Soporte] Falló el envío en puerto 465. Intentando fallback automático con puerto 587 (STARTTLS)...');
+                // Si falló por timeout/bloqueo de red o error IPv6
+                const isNetworkError = mailErr.code === 'ETIMEDOUT' || 
+                                       mailErr.code === 'ENETUNREACH' || 
+                                       mailErr.code === 'EHOSTUNREACH' || 
+                                       mailErr.code === 'ECONNREFUSED' || 
+                                       mailErr.code === 'EADDRNOTAVAIL' || 
+                                       mailErr.message?.includes('timeout');
+                                       
+                if (isNetworkError) {
+                    console.warn(`[Soporte] Falló el envío inicial (código: ${mailErr.code}). Intentando fallback/reintento forzando puerto 587 (STARTTLS) e IPv4...`);
                     const fallbackTransporter = nodemailer.createTransport({
                         host: smtpHost,
                         port: 587,
@@ -161,6 +176,9 @@ export function createSupportRouter(): Router {
                         greetingTimeout: 5000,
                         socketTimeout: 5000,
                         family: 4,
+                        lookup: (hostname: string, options: any, callback: any) => {
+                            dns.lookup(hostname, { ...options, family: 4 }, callback);
+                        },
                         tls: {
                             rejectUnauthorized: false
                         }
@@ -174,7 +192,7 @@ export function createSupportRouter(): Router {
                         text: `Nuevo ticket de soporte de: ${senderEmail}\nAsunto: ${ticketSubject}\n\nMensaje:\n${message}`,
                         html: htmlContent
                     });
-                    console.log('[Soporte] Envío de soporte exitoso en puerto 587 mediante fallback!');
+                    console.log('[Soporte] Envío de soporte exitoso en puerto 587 mediante fallback e IPv4!');
                 } else {
                     throw mailErr;
                 }

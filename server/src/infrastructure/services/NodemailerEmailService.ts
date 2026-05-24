@@ -1,5 +1,11 @@
 import nodemailer from 'nodemailer';
 import { IEmailService, EmailOptions } from '../../domain/services/IEmailService';
+import dns from 'dns';
+
+// Forzar la resolución de DNS para priorizar IPv4 en este módulo, previniendo errores ENETUNREACH en entornos sin IPv6 saliente como Render
+if (dns && typeof dns.setDefaultResultOrder === 'function') {
+    dns.setDefaultResultOrder('ipv4first');
+}
 
 export class NodemailerEmailService implements IEmailService {
     private transporter: nodemailer.Transporter;
@@ -38,6 +44,9 @@ export class NodemailerEmailService implements IEmailService {
             greetingTimeout: 5000,   // 5 segundos
             socketTimeout: 5000,     // 5 segundos
             family: 4,               // FORZAR IPv4 únicamente para evitar errores ENETUNREACH en Render
+            lookup: (hostname: string, options: any, callback: any) => {
+                dns.lookup(hostname, { ...options, family: 4 }, callback);
+            },
             tls: {
                 rejectUnauthorized: false // Evita fallos por certificados autofirmados o de CA obsoletos
             }
@@ -63,11 +72,17 @@ export class NodemailerEmailService implements IEmailService {
             console.error('[EmailService] Error inicial al enviar correo:', error);
             
             const smtpPort = Number((process.env.SMTP_PORT ?? '587').trim().replace(/^['"]|['"]$/g, ''));
-            const isTimeoutOrBlocked = error.code === 'ETIMEDOUT' || error.message?.includes('timeout') || error.code === 'ECONNREFUSED' || error.code === 'EADDRNOTAVAIL';
             
-            // Si falló por timeout/bloqueo de red y se usó puerto 465, intentamos con 587
-            if (isTimeoutOrBlocked && smtpPort === 465) {
-                console.warn('[EmailService] Falló el envío en puerto 465 (posible bloqueo). Reintentando automáticamente con puerto 587 (STARTTLS)...');
+            const isNetworkError = error.code === 'ETIMEDOUT' || 
+                                   error.code === 'ENETUNREACH' || 
+                                   error.code === 'EHOSTUNREACH' || 
+                                   error.code === 'ECONNREFUSED' || 
+                                   error.code === 'EADDRNOTAVAIL' || 
+                                   error.message?.includes('timeout');
+            
+            // Si falló por algún error de red, intentamos el reintento/fallback forzando puerto 587 e IPv4
+            if (isNetworkError) {
+                console.warn(`[EmailService] Falló el envío inicial (código: ${error.code}). Reintentando automáticamente con puerto 587 (STARTTLS) e IPv4...`);
                 try {
                     const smtpHost = (process.env.SMTP_HOST || 'smtp.ethereal.email').trim().replace(/^['"]|['"]$/g, '');
                     const smtpUser = (process.env.SMTP_USER || 'ethereal.user@ethereal.email').trim().replace(/^['"]|['"]$/g, '');
@@ -85,6 +100,9 @@ export class NodemailerEmailService implements IEmailService {
                         greetingTimeout: 5000,
                         socketTimeout: 5000,
                         family: 4,
+                        lookup: (hostname: string, options: any, callback: any) => {
+                            dns.lookup(hostname, { ...options, family: 4 }, callback);
+                        },
                         tls: {
                             rejectUnauthorized: false
                         }
@@ -101,7 +119,7 @@ export class NodemailerEmailService implements IEmailService {
                     return;
                 } catch (fallbackError) {
                     console.error('[EmailService] Error también en el fallback de puerto 587:', fallbackError);
-                    throw new Error('No se pudo enviar el correo en ninguno de los puertos SMTP (465/587).');
+                    throw new Error('No se pudo enviar el correo en ninguno de los puertos SMTP (465/587) ni configuraciones IPv4.');
                 }
             }
             
