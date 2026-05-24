@@ -84,18 +84,28 @@ export function createSupportRouter(): Router {
                 isSecure = process.env.SMTP_SECURE.trim().replace(/^['"]|['"]$/g, '') === 'true';
             }
 
+            let finalPort = smtpPort;
+            let finalSecure = isSecure;
+
+            // Render bloquea el puerto 465, si estamos allí reconfiguramos al 587
+            if (process.env.RENDER === 'true' && finalPort === 465) {
+                console.warn('[Soporte] Detectado entorno Render con puerto 465. Reconfigurando automáticamente a puerto 587 (STARTTLS) para evitar bloqueo de red.');
+                finalPort = 587;
+                finalSecure = false;
+            }
+
             console.log('[Soporte] Intentando conectar al servidor SMTP:');
             console.log(`  - Host: "${smtpHost}"`);
-            console.log(`  - Port: ${smtpPort}`);
-            console.log(`  - Secure (SSL/TLS): ${isSecure}`);
+            console.log(`  - Port original: ${smtpPort} -> Final: ${finalPort}`);
+            console.log(`  - Secure original: ${isSecure} -> Final: ${finalSecure}`);
             console.log(`  - User: "${smtpUser}"`);
             console.log(`  - Destinatario: "${supportEmail}"`);
 
             // Crear transporter con las credenciales SMTP
             const transporter = nodemailer.createTransport({
                 host: smtpHost,
-                port: smtpPort,
-                secure: isSecure,
+                port: finalPort,
+                secure: finalSecure,
                 auth: {
                     user: smtpUser,
                     pass: smtpPass
@@ -122,15 +132,53 @@ export function createSupportRouter(): Router {
                 </div>
             `;
 
-            // Enviar el correo electrónico
-            await transporter.sendMail({
-                from: `"${senderEmail}" <${smtpUser}>`, // Enviado a través de nuestro SMTP pero indicando el remitente original
-                replyTo: senderEmail,
-                to: supportEmail,
-                subject: `[RetroFantasy Soporte] ${ticketSubject}`,
-                text: `Nuevo ticket de soporte de: ${senderEmail}\nAsunto: ${ticketSubject}\n\nMensaje:\n${message}`,
-                html: htmlContent
-            });
+            // Enviar el correo electrónico con fallback automático
+            try {
+                await transporter.sendMail({
+                    from: `"${senderEmail}" <${smtpUser}>`, // Enviado a través de nuestro SMTP pero indicando el remitente original
+                    replyTo: senderEmail,
+                    to: supportEmail,
+                    subject: `[RetroFantasy Soporte] ${ticketSubject}`,
+                    text: `Nuevo ticket de soporte de: ${senderEmail}\nAsunto: ${ticketSubject}\n\nMensaje:\n${message}`,
+                    html: htmlContent
+                });
+            } catch (mailErr: any) {
+                console.error('[Soporte] Error inicial al enviar correo:', mailErr);
+                
+                // Si falló por timeout/bloqueo de red y se usó puerto 465
+                const isTimeoutOrBlocked = mailErr.code === 'ETIMEDOUT' || mailErr.message?.includes('timeout') || mailErr.code === 'ECONNREFUSED' || mailErr.code === 'EADDRNOTAVAIL';
+                if (isTimeoutOrBlocked && finalPort === 465) {
+                    console.warn('[Soporte] Falló el envío en puerto 465. Intentando fallback automático con puerto 587 (STARTTLS)...');
+                    const fallbackTransporter = nodemailer.createTransport({
+                        host: smtpHost,
+                        port: 587,
+                        secure: false,
+                        auth: {
+                            user: smtpUser,
+                            pass: smtpPass
+                        },
+                        connectionTimeout: 5000,
+                        greetingTimeout: 5000,
+                        socketTimeout: 5000,
+                        family: 4,
+                        tls: {
+                            rejectUnauthorized: false
+                        }
+                    } as any);
+
+                    await fallbackTransporter.sendMail({
+                        from: `"${senderEmail}" <${smtpUser}>`,
+                        replyTo: senderEmail,
+                        to: supportEmail,
+                        subject: `[RetroFantasy Soporte] ${ticketSubject}`,
+                        text: `Nuevo ticket de soporte de: ${senderEmail}\nAsunto: ${ticketSubject}\n\nMensaje:\n${message}`,
+                        html: htmlContent
+                    });
+                    console.log('[Soporte] Envío de soporte exitoso en puerto 587 mediante fallback!');
+                } else {
+                    throw mailErr;
+                }
+            }
 
             console.log(`[Soporte] Correo de soporte enviado correctamente a ${supportEmail}`);
 
