@@ -3,6 +3,7 @@ import nodemailer from 'nodemailer';
 import { supabaseAdmin } from '../../infrastructure/supabase.client';
 import { SupportController } from '../controllers/support.controller';
 import dns from 'dns';
+import axios from 'axios';
 
 // Forzar la resolución de DNS para priorizar IPv4 en este módulo, previniendo errores ENETUNREACH en entornos sin IPv6 saliente como Render
 if (dns && typeof dns.setDefaultResultOrder === 'function') {
@@ -160,82 +161,132 @@ export function createSupportRouter(): Router {
                 </div>
             `;
 
-            // Enviar el correo electrónico con fallback automático
-            try {
-                await transporter.sendMail({
-                    from: `"${senderEmail}" <${smtpUser}>`, // Enviado a través de nuestro SMTP pero indicando el remitente original
-                    replyTo: senderEmail,
-                    to: supportEmail,
-                    subject: `[RetroFantasy Soporte] ${ticketSubject}`,
-                    text: `Nuevo ticket de soporte de: ${senderEmail}\nAsunto: ${ticketSubject}\n\nMensaje:\n${message}`,
-                    html: htmlContent
-                });
-            } catch (mailErr: any) {
-                console.error('[Soporte] Error inicial al enviar correo:', mailErr);
-                
-                // Si falló por timeout/bloqueo de red o error IPv6
-                const isNetworkError = mailErr.code === 'ETIMEDOUT' || 
-                                       mailErr.code === 'ENETUNREACH' || 
-                                       mailErr.code === 'EHOSTUNREACH' || 
-                                       mailErr.code === 'ECONNREFUSED' || 
-                                       mailErr.code === 'EADDRNOTAVAIL' || 
-                                       mailErr.message?.includes('timeout');
-                                       
-                if (isNetworkError) {
-                    console.warn(`[Soporte] Falló el envío inicial (código: ${mailErr.code}). Intentando fallback/reintento forzando puerto 587 (STARTTLS) e IPv4...`);
-                    
-                    const ipv4HostFallback = await resolveIPv4Only(smtpHost);
-                    const fallbackTransporter = nodemailer.createTransport({
-                        host: ipv4HostFallback,
-                        port: 587,
-                        secure: false,
-                        auth: {
-                            user: smtpUser,
-                            pass: smtpPass
-                        },
-                        connectionTimeout: 5000,
-                        greetingTimeout: 5000,
-                        socketTimeout: 5000,
-                        tls: {
-                            rejectUnauthorized: false,
-                            servername: smtpHost
-                        }
-                    } as any);
+            // Enviar el correo electrónico
+            let emailSent = false;
+            let emailErrorMsg = '';
 
-                    await fallbackTransporter.sendMail({
-                        from: `"${senderEmail}" <${smtpUser}>`,
+            // 2.a. Intentar envío con Resend HTTPS API (si hay API key configurada)
+            const resendApiKey = process.env.RESEND_API_KEY?.trim().replace(/^['"]|['"]$/g, '');
+            if (resendApiKey) {
+                try {
+                    console.log('[Soporte] Intentando enviar correo usando Resend HTTPS API (Puerto 443, inmune a bloqueos SMTP)...');
+                    await axios.post('https://api.resend.com/emails', {
+                        from: `RetroFantasy Soporte <onboarding@resend.dev>`,
+                        to: supportEmail,
+                        subject: `[RetroFantasy Soporte] ${ticketSubject}`,
+                        html: htmlContent,
+                        reply_to: senderEmail
+                    }, {
+                        headers: {
+                            'Authorization': `Bearer ${resendApiKey}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    console.log('[Soporte] Correo enviado exitosamente usando Resend!');
+                    emailSent = true;
+                } catch (resendErr: any) {
+                    const errMsg = resendErr.response?.data ? JSON.stringify(resendErr.response.data) : resendErr.message;
+                    console.error('[Soporte] Falló el intento de envío con Resend:', errMsg);
+                    emailErrorMsg = `Resend: ${errMsg}`;
+                }
+            }
+
+            // 2.b. Fallback a Nodemailer SMTP (si Resend no está configurado o falló)
+            if (!emailSent) {
+                try {
+                    await transporter.sendMail({
+                        from: `"${senderEmail}" <${smtpUser}>`, // Enviado a través de nuestro SMTP pero indicando el remitente original
                         replyTo: senderEmail,
                         to: supportEmail,
                         subject: `[RetroFantasy Soporte] ${ticketSubject}`,
                         text: `Nuevo ticket de soporte de: ${senderEmail}\nAsunto: ${ticketSubject}\n\nMensaje:\n${message}`,
                         html: htmlContent
                     });
-                    console.log('[Soporte] Envío de soporte exitoso en puerto 587 mediante fallback e IPv4!');
-                } else {
-                    throw mailErr;
+                    console.log(`[Soporte] Correo de soporte enviado correctamente vía SMTP a ${supportEmail}`);
+                    emailSent = true;
+                } catch (mailErr: any) {
+                    console.error('[Soporte] Error inicial al enviar correo vía SMTP:', mailErr);
+                    
+                    // Si falló por timeout/bloqueo de red o error IPv6
+                    const isNetworkError = mailErr.code === 'ETIMEDOUT' || 
+                                           mailErr.code === 'ENETUNREACH' || 
+                                           mailErr.code === 'EHOSTUNREACH' || 
+                                           mailErr.code === 'ECONNREFUSED' || 
+                                           mailErr.code === 'EADDRNOTAVAIL' || 
+                                           mailErr.message?.includes('timeout');
+                                           
+                    if (isNetworkError) {
+                        try {
+                            console.warn(`[Soporte] Falló el envío inicial SMTP (código: ${mailErr.code}). Intentando fallback/reintento forzando puerto 587 (STARTTLS) e IPv4...`);
+                            
+                            const ipv4HostFallback = await resolveIPv4Only(smtpHost);
+                            const fallbackTransporter = nodemailer.createTransport({
+                                host: ipv4HostFallback,
+                                port: 587,
+                                secure: false,
+                                auth: {
+                                    user: smtpUser,
+                                    pass: smtpPass
+                                },
+                                connectionTimeout: 5000,
+                                greetingTimeout: 5000,
+                                socketTimeout: 5000,
+                                tls: {
+                                    rejectUnauthorized: false,
+                                    servername: smtpHost
+                                }
+                            } as any);
+
+                            await fallbackTransporter.sendMail({
+                                from: `"${senderEmail}" <${smtpUser}>`,
+                                replyTo: senderEmail,
+                                to: supportEmail,
+                                subject: `[RetroFantasy Soporte] ${ticketSubject}`,
+                                text: `Nuevo ticket de soporte de: ${senderEmail}\nAsunto: ${ticketSubject}\n\nMensaje:\n${message}`,
+                                html: htmlContent
+                            });
+                            console.log('[Soporte] Envío de soporte exitoso en puerto 587 mediante fallback e IPv4!');
+                            emailSent = true;
+                        } catch (fallbackErr: any) {
+                            console.error('[Soporte] Falló también el reintento de fallback SMTP:', fallbackErr);
+                            emailErrorMsg = `SMTP (inicial): ${mailErr.message} | SMTP (fallback): ${fallbackErr.message}`;
+                        }
+                    } else {
+                        emailErrorMsg = `SMTP: ${mailErr.message}`;
+                    }
                 }
             }
 
-            console.log(`[Soporte] Correo de soporte enviado correctamente a ${supportEmail}`);
-
-            return res.json({
-                status: 'ok',
-                message: '✓ Mensaje enviado por correo electrónico correctamente.',
-                savedInDb,
-                simulated: false
-            });
+            if (savedInDb) {
+                if (emailSent) {
+                    return res.json({
+                        status: 'ok',
+                        message: '✓ Mensaje enviado y registrado correctamente.',
+                        savedInDb: true,
+                        emailSent: true,
+                        simulated: false
+                    });
+                } else {
+                    console.warn('[Soporte] El ticket fue guardado en la base de datos, pero la notificación por correo falló:', emailErrorMsg);
+                    return res.json({
+                        status: 'ok',
+                        message: '✓ Mensaje recibido correctamente. Tu ticket ha sido registrado en la base de datos de soporte (Nota: el correo de notificación falló por restricciones de red del hosting, pero nuestro equipo ya lo tiene registrado en el panel de control).',
+                        savedInDb: true,
+                        emailSent: false,
+                        simulated: false,
+                        warning: 'Error en envío de correo: ' + emailErrorMsg
+                    });
+                }
+            } else {
+                throw new Error('No se pudo registrar el ticket de soporte en la base de datos ni por correo. Error de correo: ' + emailErrorMsg);
+            }
 
         } catch (err: any) {
             console.error('[Soporte] Error al procesar el ticket de soporte:', err);
             
-            let userFriendlyMessage = err.message || 'Error al procesar la solicitud.';
-            if (err.message?.includes('timeout') || err.code === 'ETIMEDOUT') {
-                userFriendlyMessage = 'Error de timeout SMTP. Verifica que tu host SMTP, puerto (465/587) y SSL/TLS coincidan en Render (p. ej. usa puerto 587 si tienes problemas con el 465).';
-            }
-
             return res.status(500).json({
                 status: 'error',
-                message: userFriendlyMessage
+                message: err.message || 'Error al procesar la solicitud.'
             });
         }
     });

@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer';
 import { IEmailService, EmailOptions } from '../../domain/services/IEmailService';
 import dns from 'dns';
+import axios from 'axios';
 
 // Forzar la resolución de DNS para priorizar IPv4 en este módulo, previniendo errores ENETUNREACH en entornos sin IPv6 saliente como Render
 if (dns && typeof dns.setDefaultResultOrder === 'function') {
@@ -75,73 +76,112 @@ export class NodemailerEmailService implements IEmailService {
     }
 
     async sendEmail(options: EmailOptions): Promise<void> {
-        try {
-            const transporter = await this.getTransporter();
-            const info = await transporter.sendMail({
-                from: process.env.SMTP_FROM || '"RetroFantasy Support" <support@retrofantasy.com>',
-                to: options.to,
-                subject: options.subject,
-                text: options.text,
-                html: options.html || options.text,
-            });
-            console.log(`[EmailService] Correo enviado a ${options.to}. MessageID: ${info.messageId}`);
-            
-            // Si usamos ethereal, podemos ver la url de prueba
-            if (process.env.SMTP_HOST === 'smtp.ethereal.email' || !process.env.SMTP_HOST) {
-                console.log(`[EmailService] Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
-            }
-        } catch (error: any) {
-            console.error('[EmailService] Error inicial al enviar correo:', error);
-            
-            const smtpHost = (process.env.SMTP_HOST || 'smtp.ethereal.email').trim().replace(/^['"]|['"]$/g, '');
-            const smtpUser = (process.env.SMTP_USER || 'ethereal.user@ethereal.email').trim().replace(/^['"]|['"]$/g, '');
-            const smtpPass = (process.env.SMTP_PASS || 'etherealpassword').trim().replace(/^['"]|['"]$/g, '');
-            
-            const isNetworkError = error.code === 'ETIMEDOUT' || 
-                                   error.code === 'ENETUNREACH' || 
-                                   error.code === 'EHOSTUNREACH' || 
-                                   error.code === 'ECONNREFUSED' || 
-                                   error.code === 'EADDRNOTAVAIL' || 
-                                   error.message?.includes('timeout');
-            
-            // Si falló por algún error de red, intentamos el reintento/fallback forzando puerto 587 e IPv4
-            if (isNetworkError) {
-                console.warn(`[EmailService] Falló el envío inicial (código: ${error.code}). Reintentando automáticamente con puerto 587 (STARTTLS) e IPv4...`);
-                try {
-                    const ipv4HostFallback = await resolveIPv4Only(smtpHost);
-                    const fallbackTransporter = nodemailer.createTransport({
-                        host: ipv4HostFallback,
-                        port: 587,
-                        secure: false,
-                        auth: {
-                            user: smtpUser,
-                            pass: smtpPass,
-                        },
-                        connectionTimeout: 5000,
-                        greetingTimeout: 5000,
-                        socketTimeout: 5000,
-                        tls: {
-                            rejectUnauthorized: false,
-                            servername: smtpHost
-                        }
-                    } as any);
+        let emailSent = false;
+        let emailErrorMsg = '';
 
-                    const info = await fallbackTransporter.sendMail({
-                        from: process.env.SMTP_FROM || '"RetroFantasy Support" <support@retrofantasy.com>',
-                        to: options.to,
-                        subject: options.subject,
-                        text: options.text,
-                        html: options.html || options.text,
-                    });
-                    console.log(`[EmailService] Correo enviado exitosamente usando fallback de puerto 587 a ${options.to}. MessageID: ${info.messageId}`);
-                    return;
-                } catch (fallbackError) {
-                    console.error('[EmailService] Error también en el fallback de puerto 587:', fallbackError);
-                    throw new Error('No se pudo enviar el correo en ninguno de los puertos SMTP (465/587) ni configuraciones IPv4.');
+        // 1. Intentar con Resend HTTPS API (si hay API key configurada)
+        const resendApiKey = process.env.RESEND_API_KEY?.trim().replace(/^['"]|['"]$/g, '');
+        if (resendApiKey) {
+            try {
+                console.log('[EmailService] Intentando enviar usando Resend HTTPS API (Puerto 443)...');
+                await axios.post('https://api.resend.com/emails', {
+                    from: process.env.SMTP_FROM || 'RetroFantasy Support <onboarding@resend.dev>',
+                    to: options.to,
+                    subject: options.subject,
+                    html: options.html || options.text,
+                    text: options.text
+                }, {
+                    headers: {
+                        'Authorization': `Bearer ${resendApiKey}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                console.log(`[EmailService] Correo enviado exitosamente usando Resend a ${options.to}`);
+                emailSent = true;
+                return;
+            } catch (resendErr: any) {
+                const errMsg = resendErr.response?.data ? JSON.stringify(resendErr.response.data) : resendErr.message;
+                console.error('[EmailService] Error al enviar con Resend:', errMsg);
+                emailErrorMsg = `Resend: ${errMsg}`;
+            }
+        }
+
+        // 2. Fallback/Alternativa con SMTP
+        if (!emailSent) {
+            try {
+                const transporter = await this.getTransporter();
+                const info = await transporter.sendMail({
+                    from: process.env.SMTP_FROM || '"RetroFantasy Support" <support@retrofantasy.com>',
+                    to: options.to,
+                    subject: options.subject,
+                    text: options.text,
+                    html: options.html || options.text,
+                });
+                console.log(`[EmailService] Correo enviado a ${options.to}. MessageID: ${info.messageId}`);
+                
+                // Si usamos ethereal, podemos ver la url de prueba
+                if (process.env.SMTP_HOST === 'smtp.ethereal.email' || !process.env.SMTP_HOST) {
+                    console.log(`[EmailService] Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
+                }
+                emailSent = true;
+            } catch (error: any) {
+                console.error('[EmailService] Error inicial al enviar correo vía SMTP:', error);
+                
+                const smtpHost = (process.env.SMTP_HOST || 'smtp.ethereal.email').trim().replace(/^['"]|['"]$/g, '');
+                const smtpUser = (process.env.SMTP_USER || 'ethereal.user@ethereal.email').trim().replace(/^['"]|['"]$/g, '');
+                const smtpPass = (process.env.SMTP_PASS || 'etherealpassword').trim().replace(/^['"]|['"]$/g, '');
+                
+                const isNetworkError = error.code === 'ETIMEDOUT' || 
+                                       error.code === 'ENETUNREACH' || 
+                                       error.code === 'EHOSTUNREACH' || 
+                                       error.code === 'ECONNREFUSED' || 
+                                       error.code === 'EADDRNOTAVAIL' || 
+                                       error.message?.includes('timeout');
+                
+                // Si falló por algún error de red, intentamos el reintento/fallback forzando puerto 587 e IPv4
+                if (isNetworkError) {
+                    console.warn(`[EmailService] Falló el envío inicial (código: ${error.code}). Reintentando automáticamente con puerto 587 (STARTTLS) e IPv4...`);
+                    try {
+                        const ipv4HostFallback = await resolveIPv4Only(smtpHost);
+                        const fallbackTransporter = nodemailer.createTransport({
+                            host: ipv4HostFallback,
+                            port: 587,
+                            secure: false,
+                            auth: {
+                                user: smtpUser,
+                                pass: smtpPass,
+                            },
+                            connectionTimeout: 5000,
+                            greetingTimeout: 5000,
+                            socketTimeout: 5000,
+                            tls: {
+                                rejectUnauthorized: false,
+                                servername: smtpHost
+                            }
+                        } as any);
+
+                        const info = await fallbackTransporter.sendMail({
+                            from: process.env.SMTP_FROM || '"RetroFantasy Support" <support@retrofantasy.com>',
+                            to: options.to,
+                            subject: options.subject,
+                            text: options.text,
+                            html: options.html || options.text,
+                        });
+                        console.log(`[EmailService] Correo enviado exitosamente usando fallback de puerto 587 a ${options.to}. MessageID: ${info.messageId}`);
+                        emailSent = true;
+                        return;
+                    } catch (fallbackError: any) {
+                        console.error('[EmailService] Error también en el fallback de puerto 587:', fallbackError);
+                        emailErrorMsg = `SMTP (inicial): ${error.message} | SMTP (fallback): ${fallbackError.message}`;
+                    }
+                } else {
+                    emailErrorMsg = `SMTP: ${error.message}`;
                 }
             }
-            
-            throw new Error('No se pudo enviar el correo.');
+        }
+
+        if (!emailSent) {
+            throw new Error('No se pudo enviar el correo de soporte ni por API ni por SMTP. Detalles: ' + emailErrorMsg);
         }
     }
 }
