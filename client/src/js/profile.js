@@ -399,7 +399,7 @@ export async function sendSupport() {
         const userId = session?.user?.id ?? null;
 
         // Llamada a nuestro nuevo endpoint backend con Nodemailer y Supabase
-        await apiFetch('/support', {
+        await apiFetch('/support/ticket', {
             method: 'POST',
             body: JSON.stringify({
                 subject,

@@ -1,58 +1,65 @@
+import { ISupportRepository, SupportTicket } from '../../domain/ports/ISupportRepository';
 import { IEmailService } from '../../domain/services/IEmailService';
-import { SupabaseSupportRepository, SupportTicket } from '../../infrastructure/repositories/SupabaseSupportRepository';
 
 export class SupportService {
-    private emailService: IEmailService;
-    private supportRepo: SupabaseSupportRepository;
+    constructor(
+        private readonly emailService: IEmailService,
+        private readonly supportRepo: ISupportRepository,
+    ) {}
 
-    constructor(emailService: IEmailService, supportRepo: SupabaseSupportRepository) {
-        this.emailService = emailService;
-        this.supportRepo = supportRepo;
-    }
+    async submitTicket(ticket: SupportTicket): Promise<{ ticketId: string }> {
+        const storedTicket = await this.supportRepo.createTicket(ticket);
+        const adminEmail = process.env.SUPPORT_ADMIN_EMAIL || process.env.SUPPORT_TO_EMAIL;
 
-    async submitTicket(ticket: SupportTicket): Promise<void> {
-        // 1. Guardar en base de datos
-        await this.supportRepo.createTicket(ticket);
-
-        // 2. Enviar correo al equipo de soporte
-        const adminEmail = process.env.SUPPORT_ADMIN_EMAIL || 'admin@retrofantasy.com';
-        const emailContent = `
-Nuevo ticket de soporte recibido:
-
-De: ${ticket.email}
-Usuario ID: ${ticket.user_id || 'Anónimo'}
-Asunto (Categoría): ${ticket.subject}
-
-Mensaje:
-${ticket.message}
-        `;
+        if (!adminEmail) {
+            throw new Error('SUPPORT_ADMIN_EMAIL no esta configurado.');
+        }
 
         await this.emailService.sendEmail({
             to: adminEmail,
             subject: `[RetroFantasy Support] ${ticket.subject}`,
-            text: emailContent,
+            text: this.buildAdminEmail(ticket, storedTicket.id),
         });
-        
-        // 3. (Opcional) Enviar correo de confirmación al usuario
-        const userEmailContent = `
-Hola,
 
-Hemos recibido tu solicitud de soporte con el asunto: "${ticket.subject}".
-Nuestro equipo revisará tu mensaje y te contactaremos pronto.
-
-Tu mensaje:
-${ticket.message}
-
-Atentamente,
-El equipo de RetroFantasy
-        `;
-
-        if (ticket.email && ticket.email !== 'anónimo') {
-            await this.emailService.sendEmail({
+        if (ticket.email && ticket.email !== 'anonimo') {
+            this.emailService.sendEmail({
                 to: ticket.email,
-                subject: `Hemos recibido tu solicitud de soporte - RetroFantasy`,
-                text: userEmailContent,
+                subject: 'Hemos recibido tu solicitud de soporte - RetroFantasy',
+                text: this.buildUserConfirmation(ticket),
+            }).catch(error => {
+                console.warn('[SupportService] No se pudo enviar confirmacion al usuario:', error.message);
             });
         }
+
+        return { ticketId: storedTicket.id };
+    }
+
+    private buildAdminEmail(ticket: SupportTicket, ticketId: string): string {
+        return [
+            'Nuevo ticket de soporte recibido:',
+            '',
+            `Ticket ID: ${ticketId}`,
+            `De: ${ticket.email}`,
+            `Usuario ID: ${ticket.userId || 'Anonimo'}`,
+            `Asunto: ${ticket.subject}`,
+            '',
+            'Mensaje:',
+            ticket.message,
+        ].join('\n');
+    }
+
+    private buildUserConfirmation(ticket: SupportTicket): string {
+        return [
+            'Hola,',
+            '',
+            `Hemos recibido tu solicitud de soporte con el asunto: "${ticket.subject}".`,
+            'Nuestro equipo revisara tu mensaje y te contactaremos pronto.',
+            '',
+            'Tu mensaje:',
+            ticket.message,
+            '',
+            'Atentamente,',
+            'El equipo de RetroFantasy',
+        ].join('\n');
     }
 }

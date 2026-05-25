@@ -1,34 +1,30 @@
-import { createClient } from '@supabase/supabase-js';
+import { ISupportRepository, SupportTicket, SupportTicketRecord } from '../../domain/ports/ISupportRepository';
+import { supabaseAdmin } from '../supabase.client';
 
-export interface SupportTicket {
-    user_id: string | null;
-    email: string;
-    subject: string;
-    message: string;
-}
-
-export class SupabaseSupportRepository {
-    private supabase;
-
-    constructor() {
-        const supabaseUrl = process.env.SUPABASE_URL || '';
-        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
-        this.supabase = createClient(supabaseUrl, supabaseKey);
-    }
-
-    async createTicket(ticket: SupportTicket): Promise<void> {
-        const { error } = await this.supabase
+export class SupabaseSupportRepository implements ISupportRepository {
+    async createTicket(ticket: SupportTicket): Promise<SupportTicketRecord> {
+        const { data, error } = await supabaseAdmin
             .from('support_tickets')
             .insert({
-                user_id: ticket.user_id,
+                user_id: ticket.userId,
                 email: ticket.email,
                 subject: ticket.subject,
-                message: ticket.message
-            });
+                message: ticket.message,
+            })
+            .select('id, user_id, email, subject, message, created_at')
+            .single();
 
         if (error) {
-            console.warn('[SupportRepository] Tabla support_tickets no encontrada o error:', error.message);
-            // Si la tabla no existe (ej. no se corrieron migraciones), no rompemos la app (como pidió el user para el TFG)
+            throw new Error(`No se pudo registrar el ticket de soporte: ${error.message}`);
         }
+
+        return {
+            id: String(data.id),
+            userId: data.user_id ? String(data.user_id) : null,
+            email: String(data.email),
+            subject: String(data.subject),
+            message: String(data.message),
+            createdAt: String(data.created_at),
+        };
     }
 }

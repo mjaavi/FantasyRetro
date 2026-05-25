@@ -46,6 +46,7 @@ import { SupabaseCatalogRepository }       from './infrastructure/repositories/S
 import { SupabasePlayerMarketValueRepository } from './infrastructure/repositories/SupabasePlayerMarketValueRepository';
 import { SupabasePlayerSearchRepository }  from './infrastructure/repositories/SupabasePlayerSearchRepository';
 import { SupabaseLeagueTransferRepository } from './infrastructure/repositories/SupabaseLeagueTransferRepository';
+import { SupabaseSupportRepository } from './infrastructure/repositories/SupabaseSupportRepository';
 
 const leagueRepo       = new SupabaseLeagueRepository();
 const leagueMarketRepo = new SupabaseLeagueMarketRepository();
@@ -62,6 +63,7 @@ const catalogRepo      = new SupabaseCatalogRepository(supabaseAdmin);
 const playerMarketValueRepo = new SupabasePlayerMarketValueRepository(supabaseAdmin);
 const playerSearchRepo      = new SupabasePlayerSearchRepository();
 const leagueTransferRepo    = new SupabaseLeagueTransferRepository();
+const supportRepo           = new SupabaseSupportRepository();
 
 // ── 2. Application: Servicios puros (sin I/O) ─────────────────────────────────
 import { ScoringEngine }             from './application/services/scoring/ScoringEngine';
@@ -87,6 +89,12 @@ import { PlayerMarketValueHistoryService } from './application/services/economy/
 import { PlayerSearchService }  from './application/services/playerSearch.service';
 import { RivalRosterService }   from './application/services/rivalRoster.service';
 import { LeagueTransferService } from './application/services/leagueTransfer.service';
+import { SupportService }       from './application/services/support.service';
+import { IEmailService }        from './domain/services/IEmailService';
+import { FailoverEmailService } from './infrastructure/services/FailoverEmailService';
+import { GmailApiEmailService } from './infrastructure/services/GmailApiEmailService';
+import { NodemailerEmailService } from './infrastructure/services/NodemailerEmailService';
+import { ResendEmailService }   from './infrastructure/services/ResendEmailService';
 
 const marketValueRecalculationService = new LeagueMarketValueRecalculationService(playerMarketValueRepo);
 const marketValueHistoryService = new PlayerMarketValueHistoryService(playerMarketValueRepo);
@@ -111,6 +119,11 @@ const dashboardService    = new DashboardService(dashboardRepo, rankingRepo, lea
 const playerSearchService = new PlayerSearchService(playerSearchRepo, leagueRepo, leagueMarketRepo, marketValueProjector, playerMarketValueRepo);
 const rivalRosterService  = new RivalRosterService(rosterRepo, leagueRepo, playerMarketValueRepo);
 const leagueTransferService = new LeagueTransferService(leagueTransferRepo, leagueRepo, playerMarketValueRepo);
+const emailProviders: IEmailService[] = [];
+if (process.env.GMAIL_CLIENT_ID && process.env.GMAIL_CLIENT_SECRET && process.env.GMAIL_REFRESH_TOKEN) emailProviders.push(new GmailApiEmailService());
+if (process.env.RESEND_API_KEY) emailProviders.push(new ResendEmailService());
+if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) emailProviders.push(new NodemailerEmailService());
+const supportService = new SupportService(new FailoverEmailService(emailProviders), supportRepo);
 
 // ── 4. Infrastructure: Controllers ───────────────────────────────────────────
 import { LeagueController }       from './presentation/controllers/league.controller';
@@ -128,6 +141,7 @@ import { CatalogController }          from './presentation/controllers/catalog.c
 import { PlayerSearchController }     from './presentation/controllers/playerSearch.controller';
 import { RivalRosterController }      from './presentation/controllers/rivalRoster.controller';
 import { LeagueTransferController }   from './presentation/controllers/leagueTransfer.controller';
+import { SupportController }          from './presentation/controllers/support.controller';
 
 const leagueCtrl       = new LeagueController(leagueService, catalogService);
 const leagueMarketCtrl = new LeagueMarketController(leagueMarketService);
@@ -144,6 +158,7 @@ const catalogCtrl      = new CatalogController(catalogService, catalogImportServ
 const playerSearchCtrl = new PlayerSearchController(playerSearchService);
 const rivalRosterCtrl  = new RivalRosterController(rivalRosterService);
 const leagueTransferCtrl = new LeagueTransferController(leagueTransferService);
+const supportCtrl      = new SupportController(supportService);
 
 // ── 5. Infrastructure: Routers ────────────────────────────────────────────────
 import { createLeagueRouter }       from './presentation/routes/league.routes';
@@ -157,12 +172,12 @@ import { createAdminRouter }        from './presentation/routes/admin.routes';
 import { createDashboardRouter }    from './presentation/routes/dashboard.routes';
 import { createFixturesRouter }     from './presentation/routes/fixtures.routes';
 import { createConfigRouter }       from './presentation/routes/config.routes';
-import { createSupportRouter }      from './presentation/routes/support.routes';
 import { createAssetsRouter }       from './presentation/routes/assets.routes';
 import { createCatalogRouter }         from './presentation/routes/catalog.routes';
 import { createPlayerSearchRouter }    from './presentation/routes/playerSearch.routes';
 import { createRivalRosterRouter }     from './presentation/routes/rivalRoster.routes';
 import { createLeagueTransferRouter }  from './presentation/routes/leagueTransfer.routes';
+import { createSupportRouter }         from './presentation/routes/support.routes';
 import { errorHandler }             from './presentation/middleware/errorHandler.middleware';
 
 // ── 6. Infrastructure: Cron ───────────────────────────────────────────────────
@@ -251,7 +266,7 @@ app.use('/api', createCatalogRouter(catalogCtrl));
 app.use('/api', createPlayerSearchRouter(playerSearchCtrl));
 app.use('/api', createRivalRosterRouter(rivalRosterCtrl));
 app.use('/api', createLeagueTransferRouter(leagueTransferCtrl));
-app.use('/api', createSupportRouter());
+app.use('/api/support', createSupportRouter(supportCtrl));
 
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
