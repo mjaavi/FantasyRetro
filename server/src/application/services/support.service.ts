@@ -1,5 +1,10 @@
 import { ISupportRepository, SupportTicket } from '../../domain/ports/ISupportRepository';
 import { IEmailService } from '../../domain/services/IEmailService';
+import {
+    buildSupportTicketUserEmail,
+    buildSupportTicketAdminEmail,
+    SupportTicketEmailData,
+} from '../../infrastructure/email';
 
 export class SupportService {
     constructor(
@@ -15,17 +20,28 @@ export class SupportService {
             throw new Error('SUPPORT_ADMIN_EMAIL no esta configurado.');
         }
 
+        const emailData: SupportTicketEmailData = {
+            ticketId: storedTicket.id,
+            userEmail: ticket.email,
+            userName: ticket.userId ?? undefined,
+            subject: ticket.subject,
+            message: ticket.message,
+            userId: ticket.userId ?? undefined,
+        };
+
         await this.emailService.sendEmail({
             to: adminEmail,
             subject: `[RetroFantasy Support] ${ticket.subject}`,
-            text: this.buildAdminEmail(ticket, storedTicket.id),
+            text: this.buildAdminEmailPlainText(ticket, storedTicket.id),
+            html: buildSupportTicketAdminEmail(emailData),
         });
 
         if (ticket.email && ticket.email !== 'anonimo') {
             this.emailService.sendEmail({
                 to: ticket.email,
                 subject: 'Hemos recibido tu solicitud de soporte - RetroFantasy',
-                text: this.buildUserConfirmation(ticket),
+                text: this.buildUserConfirmationPlainText(ticket),
+                html: buildSupportTicketUserEmail(emailData),
             }).catch(error => {
                 console.warn('[SupportService] No se pudo enviar confirmacion al usuario:', error.message);
             });
@@ -34,7 +50,7 @@ export class SupportService {
         return { ticketId: storedTicket.id };
     }
 
-    private buildAdminEmail(ticket: SupportTicket, ticketId: string): string {
+    private buildAdminEmailPlainText(ticket: SupportTicket, ticketId: string): string {
         return [
             'Nuevo ticket de soporte recibido:',
             '',
@@ -48,7 +64,7 @@ export class SupportService {
         ].join('\n');
     }
 
-    private buildUserConfirmation(ticket: SupportTicket): string {
+    private buildUserConfirmationPlainText(ticket: SupportTicket): string {
         return [
             'Hola,',
             '',
