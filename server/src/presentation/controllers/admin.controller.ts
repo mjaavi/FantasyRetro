@@ -108,6 +108,20 @@ export class AdminController {
         }
     };
 
+    auditarSaldosNegativos = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const leagueId = Number(req.params.leagueId);
+            if (!Number.isInteger(leagueId) || leagueId <= 0) {
+                throw new ValidationError('ID de liga invalido.');
+            }
+
+            const resultado = await this.adminService.auditarYAlertarSaldosNegativos(leagueId);
+            res.json({ status: 'ok', data: resultado });
+        } catch (err) {
+            next(err);
+        }
+    };
+
     getMarketValueHistory = async (req: Request, res: Response, next: NextFunction) => {
         try {
             const leagueId = Number(req.params.leagueId);

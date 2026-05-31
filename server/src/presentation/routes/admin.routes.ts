@@ -12,6 +12,7 @@ export function createAdminRouter(ctrl: AdminController): Router {
     router.post('/admin/ligas/:leagueId/procesar', ...leagueAdminGuard, ctrl.procesarJornada);
     router.post('/admin/ligas/:leagueId/regenerar-mercado', ...leagueAdminGuard, ctrl.regenerarMercado);
     router.post('/admin/ligas/:leagueId/resolver-mercado', ...leagueAdminGuard, ctrl.resolverMercado);
+    router.post('/admin/ligas/:leagueId/auditar-saldos', ...leagueAdminGuard, ctrl.auditarSaldosNegativos);
     router.get('/admin/ligas/:leagueId/jornada/:jornada', ...leagueAdminGuard, ctrl.getPuntosJornada);
     router.get('/admin/ligas/:leagueId/scores', ...leagueParticipantGuard, ctrl.getScoresLiga);
     router.get('/admin/ligas/:leagueId/global-scores', ...leagueParticipantGuard, ctrl.getGlobalScores);

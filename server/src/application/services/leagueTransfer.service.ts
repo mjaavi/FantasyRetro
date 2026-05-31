@@ -9,6 +9,9 @@ import { IPlayerMarketValueRepository } from '../../domain/ports/IPlayerMarketVa
 import { InitialPricingService } from './economy/InitialPricingService';
 import { ReleaseClausePolicy } from './economy/ReleaseClausePolicy';
 import { PlayerPosition } from '../../domain/models/player.models';
+import { IEmailService } from '../../domain/services/IEmailService';
+import { buildTransferNotificationEmail } from '../../infrastructure/email';
+import { supabaseAdmin } from '../../infrastructure/supabase.client';
 
 export class LeagueTransferService {
     constructor(
@@ -17,6 +20,7 @@ export class LeagueTransferService {
         private readonly marketValueRepo?: IPlayerMarketValueRepository,
         private readonly pricingService: InitialPricingService = new InitialPricingService(),
         private readonly releaseClausePolicy: ReleaseClausePolicy = new ReleaseClausePolicy(),
+        private readonly emailService?: IEmailService,
     ) {}
 
     async placeDirectOffer(
@@ -60,6 +64,31 @@ export class LeagueTransferService {
         const newBudget = budget - realCost;
         await this.repo.updateUserBudget(buyerUserId, leagueId, newBudget);
 
+        if (this.emailService) {
+            this.getUserEmail(sellerUserId).then(sellerEmail => {
+                if (sellerEmail) {
+                    const buyerName = buyer.profiles?.username || buyer.profiles?.team_name || 'Un manager';
+                    const sellerName = seller.profiles?.username || seller.profiles?.team_name || 'Manager';
+                    const html = buildTransferNotificationEmail({
+                        userName: sellerName,
+                        playerName: rosterPlayer.name,
+                        amount: `${amount.toLocaleString()} €`,
+                        fromUser: buyerName,
+                        toUser: sellerName,
+                        status: 'received',
+                        marketUrl: 'https://fantasyretro.pages.dev',
+                    });
+
+                    this.emailService!.sendEmail({
+                        to: sellerEmail,
+                        subject: `¡Nueva oferta recibida por ${rosterPlayer.name}!`,
+                        html,
+                        text: `Hola ${sellerName}, has recibido una nueva oferta de traspaso de ${buyerName} por ${rosterPlayer.name} de ${amount.toLocaleString()} €.`,
+                    }).catch(err => console.error('[EmailService] Error al enviar email de oferta recibida:', err));
+                }
+            }).catch(err => console.error('[EmailService] Error al obtener email de vendedor:', err));
+        }
+
         return {
             message: previousOffer ? 'Oferta actualizada.' : 'Oferta enviada. Queda pendiente de aceptacion.',
             newBudget,
@@ -80,8 +109,41 @@ export class LeagueTransferService {
             throw new AppError('Oferta no encontrada o no pertenece a tu equipo.', 404);
         }
 
+        const [rosterPlayer, buyerParticipant, sellerParticipant] = await Promise.all([
+            this.repo.getRosterPlayer(leagueId, sellerUserId, offer.playerApiId),
+            this.leagueRepo.findParticipant(leagueId, offer.buyerUserId),
+            this.leagueRepo.findParticipant(leagueId, sellerUserId),
+        ]);
+        const playerName = rosterPlayer?.name ?? 'Desconocido';
+
         await this.repo.acceptDirectOffer(offerId, sellerUserId);
         const newBudget = await this.repo.getUserBudget(sellerUserId, leagueId);
+
+        if (this.emailService) {
+            this.getUserEmail(offer.buyerUserId).then(buyerEmail => {
+                if (buyerEmail) {
+                    const buyerName = buyerParticipant?.profiles?.username || buyerParticipant?.profiles?.team_name || 'Manager';
+                    const sellerName = sellerParticipant?.profiles?.username || sellerParticipant?.profiles?.team_name || 'Un manager';
+                    const html = buildTransferNotificationEmail({
+                        userName: buyerName,
+                        playerName,
+                        amount: `${offer.amount.toLocaleString()} €`,
+                        fromUser: sellerName,
+                        toUser: buyerName,
+                        status: 'accepted',
+                        marketUrl: 'https://fantasyretro.pages.dev',
+                    });
+
+                    this.emailService!.sendEmail({
+                        to: buyerEmail,
+                        subject: `¡Oferta aceptada por ${playerName}!`,
+                        html,
+                        text: `¡Fichaje completado! ${sellerName} ha aceptado tu oferta de ${offer.amount.toLocaleString()} € por ${playerName}.`,
+                    }).catch(err => console.error('[EmailService] Error al enviar email de oferta aceptada:', err));
+                }
+            }).catch(err => console.error('[EmailService] Error al obtener email de comprador:', err));
+        }
+
         return { message: 'Oferta aceptada. Traspaso completado.', newBudget };
     }
 
@@ -91,9 +153,42 @@ export class LeagueTransferService {
             throw new AppError('Oferta no encontrada o no pertenece a tu equipo.', 404);
         }
 
+        const [rosterPlayer, buyerParticipant, sellerParticipant] = await Promise.all([
+            this.repo.getRosterPlayer(leagueId, sellerUserId, offer.playerApiId),
+            this.leagueRepo.findParticipant(leagueId, offer.buyerUserId),
+            this.leagueRepo.findParticipant(leagueId, sellerUserId),
+        ]);
+        const playerName = rosterPlayer?.name ?? 'Desconocido';
+
         const buyerBudget = await this.repo.getUserBudget(offer.buyerUserId, leagueId);
         await this.repo.markDirectOfferStatus(offerId, 'rejected');
         await this.repo.updateUserBudget(offer.buyerUserId, leagueId, buyerBudget + offer.amount);
+
+        if (this.emailService) {
+            this.getUserEmail(offer.buyerUserId).then(buyerEmail => {
+                if (buyerEmail) {
+                    const buyerName = buyerParticipant?.profiles?.username || buyerParticipant?.profiles?.team_name || 'Manager';
+                    const sellerName = sellerParticipant?.profiles?.username || sellerParticipant?.profiles?.team_name || 'Un manager';
+                    const html = buildTransferNotificationEmail({
+                        userName: buyerName,
+                        playerName,
+                        amount: `${offer.amount.toLocaleString()} €`,
+                        fromUser: sellerName,
+                        toUser: buyerName,
+                        status: 'rejected',
+                        marketUrl: 'https://fantasyretro.pages.dev',
+                    });
+
+                    this.emailService!.sendEmail({
+                        to: buyerEmail,
+                        subject: `Oferta rechazada por ${playerName}`,
+                        html,
+                        text: `Hola ${buyerName}, ${sellerName} ha rechazado tu oferta de ${offer.amount.toLocaleString()} € por ${playerName}. Se te ha devuelto el presupuesto.`,
+                    }).catch(err => console.error('[EmailService] Error al enviar email de oferta rechazada:', err));
+                }
+            }).catch(err => console.error('[EmailService] Error al obtener email de comprador:', err));
+        }
+
         return { message: 'Oferta rechazada. Presupuesto devuelto al comprador.' };
     }
 
@@ -138,6 +233,31 @@ export class LeagueTransferService {
             nextReleaseClause,
         });
         const newBudget = await this.repo.getUserBudget(buyerUserId, leagueId);
+
+        if (this.emailService) {
+            this.getUserEmail(sellerUserId).then(sellerEmail => {
+                if (sellerEmail) {
+                    const buyerName = buyer.profiles?.username || buyer.profiles?.team_name || 'Un manager';
+                    const sellerName = seller.profiles?.username || seller.profiles?.team_name || 'Manager';
+                    const html = buildTransferNotificationEmail({
+                        userName: sellerName,
+                        playerName: rosterPlayer.name,
+                        amount: `${clauseAmount.toLocaleString()} €`,
+                        fromUser: sellerName,
+                        toUser: buyerName,
+                        status: 'accepted',
+                        marketUrl: 'https://fantasyretro.pages.dev',
+                    });
+
+                    this.emailService!.sendEmail({
+                        to: sellerEmail,
+                        subject: `¡Clausulazo! Se han llevado a ${rosterPlayer.name}`,
+                        html,
+                        text: `¡Hola ${sellerName}! El mánager ${buyerName} ha pagado la cláusula de rescisión de ${rosterPlayer.name} por ${clauseAmount.toLocaleString()} €. El jugador se ha incorporado a su equipo y tú has recibido el dinero.`,
+                    }).catch(err => console.error('[EmailService] Error al enviar email de clausulazo:', err));
+                }
+            }).catch(err => console.error('[EmailService] Error al obtener email de vendedor:', err));
+        }
 
         return {
             message: 'Clausulazo ejecutado. Fichaje completado.',
@@ -206,5 +326,11 @@ export class LeagueTransferService {
             ovr: player.overall,
             position: player.position as PlayerPosition,
         }).price;
+    }
+
+    private async getUserEmail(userId: string): Promise<string | null> {
+        const { data, error } = await supabaseAdmin.auth.admin.getUserById(userId);
+        if (error || !data?.user) return null;
+        return data.user.email ?? null;
     }
 }

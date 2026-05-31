@@ -96,6 +96,12 @@ import { GmailApiEmailService } from './infrastructure/services/GmailApiEmailSer
 import { NodemailerEmailService } from './infrastructure/services/NodemailerEmailService';
 import { ResendEmailService }   from './infrastructure/services/ResendEmailService';
 
+const emailProviders: IEmailService[] = [];
+if (process.env.GMAIL_CLIENT_ID && process.env.GMAIL_CLIENT_SECRET && process.env.GMAIL_REFRESH_TOKEN) emailProviders.push(new GmailApiEmailService());
+if (process.env.RESEND_API_KEY) emailProviders.push(new ResendEmailService());
+if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) emailProviders.push(new NodemailerEmailService());
+const emailService = new FailoverEmailService(emailProviders);
+
 const marketValueRecalculationService = new LeagueMarketValueRecalculationService(playerMarketValueRepo);
 const marketValueHistoryService = new PlayerMarketValueHistoryService(playerMarketValueRepo);
 const marketValueProjector = new LeagueMarketValueProjector();
@@ -108,22 +114,33 @@ const leagueMarketService = new LeagueMarketService(
 const leagueOnboardingSvc = new LeagueOnboardingService(leagueMarketRepo, leagueRepo);
 const catalogService      = new CatalogService(catalogRepo);
 const catalogImportService = new CatalogImportService(catalogRepo);
-const leagueService       = new LeagueService(leagueRepo, catalogService, leagueMarketService, leagueOnboardingSvc);
+const leagueService       = new LeagueService(leagueRepo, catalogService, leagueMarketService, leagueOnboardingSvc, emailService);
 const marketService       = new MarketService(marketRepo);
 const rankingService      = new RankingService(leagueRepo, rankingRepo);
 const rosterService       = new RosterService(rosterRepo);
 const scoringService      = new ScoringService(scoringRepo, datasetParser, scoringEngine);
 const seedService         = new SeedService(seedRepo);
-const adminService        = new AdminService(adminRepo, datasetParser, scoringEngine, marketValueRecalculationService, marketValueHistoryService);
+const adminService        = new AdminService(
+    adminRepo,
+    datasetParser,
+    scoringEngine,
+    marketValueRecalculationService,
+    marketValueHistoryService,
+    leagueRepo,
+    emailService,
+);
 const dashboardService    = new DashboardService(dashboardRepo, rankingRepo, leagueRepo, fixturesRepo);
 const playerSearchService = new PlayerSearchService(playerSearchRepo, leagueRepo, leagueMarketRepo, marketValueProjector, playerMarketValueRepo);
 const rivalRosterService  = new RivalRosterService(rosterRepo, leagueRepo, playerMarketValueRepo);
-const leagueTransferService = new LeagueTransferService(leagueTransferRepo, leagueRepo, playerMarketValueRepo);
-const emailProviders: IEmailService[] = [];
-if (process.env.GMAIL_CLIENT_ID && process.env.GMAIL_CLIENT_SECRET && process.env.GMAIL_REFRESH_TOKEN) emailProviders.push(new GmailApiEmailService());
-if (process.env.RESEND_API_KEY) emailProviders.push(new ResendEmailService());
-if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) emailProviders.push(new NodemailerEmailService());
-const supportService = new SupportService(new FailoverEmailService(emailProviders), supportRepo);
+const leagueTransferService = new LeagueTransferService(
+    leagueTransferRepo,
+    leagueRepo,
+    playerMarketValueRepo,
+    undefined,
+    undefined,
+    emailService,
+);
+const supportService = new SupportService(emailService, supportRepo);
 
 // ── 4. Infrastructure: Controllers ───────────────────────────────────────────
 import { LeagueController }       from './presentation/controllers/league.controller';

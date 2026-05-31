@@ -8,6 +8,7 @@ export function createLeagueRouter(ctrl: LeagueController): Router {
     r.get('/leagues',    requireAuth,  ctrl.getMisLigas);
     r.post('/leagues',   requireAuth,  ctrl.crearLiga);
     r.post('/leagues/join', requireAuth, ctrl.unirseALiga);
+    r.post('/leagues/:leagueId/invite', requireAuth, ctrl.enviarInvitacion);
     r.get('/leagues/:leagueId', requireAuth, ctrl.getLiga);
     return r;
 }

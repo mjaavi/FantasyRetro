@@ -65,6 +65,19 @@ export class LeagueController {
         } catch (err) { next(err); }
     };
 
+    enviarInvitacion = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const leagueId = parseInt(req.params.leagueId, 10);
+            if (Number.isNaN(leagueId)) throw new ValidationError('ID de liga invalido.');
+
+            const { email } = req.body;
+            if (!email?.trim()) throw new ValidationError('El email del destinatario es obligatorio.');
+
+            await this.leagueService.enviarInvitacion(leagueId, email.trim(), req.userId!);
+            res.json({ status: 'ok', message: 'Invitación enviada por correo electrónico.' });
+        } catch (err) { next(err); }
+    };
+
     getTemporadas = async (_req: Request, res: Response, next: NextFunction) => {
         try {
             const temporadas = await this.catalogService.getAvailableSeasonLabels();

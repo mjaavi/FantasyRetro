@@ -4,6 +4,8 @@ import { SupabaseLeagueRepository } from '../../infrastructure/repositories/Supa
 import { CatalogService, LEGACY_CATALOG_SEASONS } from './catalog.service';
 import { LeagueMarketService } from './leagueMarket.service';
 import { LeagueOnboardingService } from './leagueOnboarding.service';
+import { IEmailService } from '../../domain/services/IEmailService';
+import { buildLeagueInvitationEmail } from '../../infrastructure/email';
 
 export const TEMPORADAS_DISPONIBLES = [...LEGACY_CATALOG_SEASONS];
 
@@ -13,6 +15,7 @@ export class LeagueService {
         private readonly catalogService: CatalogService,
         private readonly marketService: LeagueMarketService,
         private readonly onboardingService: LeagueOnboardingService,
+        private readonly emailService?: IEmailService,
     ) {}
 
     async crearLiga(input: {
@@ -87,6 +90,36 @@ export class LeagueService {
         if (!liga) throw new AppError('Liga no encontrada.', 404);
 
         return liga;
+    }
+
+    async enviarInvitacion(leagueId: number, emailDestino: string, inviterUserId: string): Promise<void> {
+        if (!this.emailService) {
+            throw new AppError('Servicio de email no configurado en el servidor.', 500);
+        }
+
+        const [liga, inviter] = await Promise.all([
+            this.repo.findById(leagueId),
+            this.repo.findParticipant(leagueId, inviterUserId),
+        ]);
+
+        if (!liga) throw new AppError('Liga no encontrada.', 404);
+        if (!inviter) throw new AppError('No participas en esta liga para poder invitar.', 403);
+
+        const inviterName = inviter.profiles?.username || inviter.profiles?.team_name || 'Un manager de RetroFantasy';
+
+        const html = buildLeagueInvitationEmail({
+            inviterName,
+            leagueName: liga.name,
+            inviteCode: liga.invite_code,
+            joinUrl: `https://fantasyretro.pages.dev?join=${liga.invite_code}`,
+        });
+
+        await this.emailService.sendEmail({
+            to: emailDestino,
+            subject: `¡${inviterName} te ha invitado a unirte a la liga ${liga.name}!`,
+            html,
+            text: `¡Hola! ${inviterName} te ha invitado a unirte a su liga privada ${liga.name} en RetroFantasy. Código de invitación: ${liga.invite_code}. Únete en: https://fantasyretro.pages.dev`,
+        });
     }
 
     private generarCodigoInvitacion(): string {

@@ -8,6 +8,11 @@ import { inferirPosicionesDesdeMatch } from '../../infrastructure/repositories/p
 import { LeagueMarketValueRecalculationService } from './economy/LeagueMarketValueRecalculationService';
 import { PlayerMarketValueHistoryService, PlayerMarketValueHistoryResult } from './economy/PlayerMarketValueHistoryService';
 import { ScoringEngine } from './scoring/ScoringEngine';
+import { ILeagueRepository } from '../../domain/ports/ILeagueRepository';
+import { SupabaseLeagueRepository } from '../../infrastructure/repositories/SupabaseLeagueRepository';
+import { IEmailService } from '../../domain/services/IEmailService';
+import { buildNegativeBalanceEmail } from '../../infrastructure/email';
+import { supabaseAdmin } from '../../infrastructure/supabase.client';
 
 export interface ProcesoJornadaResult {
     leagueId: number;
@@ -33,6 +38,8 @@ export class AdminService {
         private readonly engine: ScoringEngine = new ScoringEngine(),
         private readonly marketValueRecalculationService?: LeagueMarketValueRecalculationService,
         private readonly marketValueHistoryService?: PlayerMarketValueHistoryService,
+        private readonly leagueRepo: ILeagueRepository = new SupabaseLeagueRepository(),
+        private readonly emailService?: IEmailService,
     ) {}
 
     async procesarJornada(leagueId: number, jornada: number): Promise<ProcesoJornadaResult> {
@@ -235,6 +242,59 @@ export class AdminService {
 
         const jornadaActual = await this.repo.getLeagueCurrentRound(leagueId);
         return this.marketValueHistoryService.getHistory(leagueId, playerApiId, jornadaActual);
+    }
+
+    async auditarYAlertarSaldosNegativos(leagueId: number): Promise<{ alertsSent: number; usersAlerted: string[] }> {
+        if (!this.emailService) {
+            throw new AppError('Servicio de email no configurado en el servidor.', 500);
+        }
+
+        const [liga, participants] = await Promise.all([
+            this.leagueRepo.findById(leagueId),
+            this.leagueRepo.findParticipantsByLeague(leagueId),
+        ]);
+
+        if (!liga) throw new AppError('Liga no encontrada.', 404);
+
+        const negativeParticipants = participants.filter(p => p.budget < 0);
+        const usersAlerted: string[] = [];
+        let alertsSent = 0;
+
+        for (const p of negativeParticipants) {
+            try {
+                const { data, error } = await supabaseAdmin.auth.admin.getUserById(p.user_id);
+                if (error || !data?.user?.email) {
+                    console.warn(`[AdminService] No se pudo obtener email del usuario ${p.user_id}`);
+                    continue;
+                }
+
+                const email = data.user.email;
+                const username = p.profiles?.username || p.profiles?.team_name || email;
+                const nextJornada = (liga.jornada_actual ?? 0) + 1;
+
+                const html = buildNegativeBalanceEmail({
+                    userName: username,
+                    currentBalance: `${p.budget.toLocaleString()} €`,
+                    gameweekNumber: nextJornada,
+                    deadlineTime: 'Viernes 20:00h (Inicio de jornada)',
+                    rosterUrl: 'https://fantasyretro.pages.dev',
+                });
+
+                await this.emailService.sendEmail({
+                    to: email,
+                    subject: `⚠️ ¡Saldo en negativo! Corrige tu plantilla para puntuar en la Jornada ${nextJornada}`,
+                    html,
+                    text: `Hola ${username}, tienes saldo negativo (${p.budget.toLocaleString()} €) para la Jornada ${nextJornada}. Vende jugadores antes del viernes para evitar puntuar 0.`,
+                });
+
+                usersAlerted.push(username);
+                alertsSent++;
+            } catch (err: any) {
+                console.error(`[AdminService] Error al alertar saldo negativo para usuario ${p.user_id}:`, err.message);
+            }
+        }
+
+        return { alertsSent, usersAlerted };
     }
 
     private accumulate(target: Map<number, PuntosCalc>, playerApiId: number, delta: PuntosCalc): void {
