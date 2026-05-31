@@ -219,6 +219,22 @@ export class SupabaseLeagueTransferRepository implements ILeagueTransferReposito
         if (error) throw new AppError(`Error al subir la clausula: ${error.message}`, 500);
     }
 
+    async dismissPlayer(input: {
+        leagueId: number;
+        userId: string;
+        playerApiId: number;
+        recoveredAmount: number;
+    }): Promise<void> {
+        const { error } = await supabaseAdmin.rpc('dismiss_league_player', {
+            p_league_id: input.leagueId,
+            p_user_id: input.userId,
+            p_player_api_id: input.playerApiId,
+            p_recovered_amount: input.recoveredAmount,
+        });
+
+        if (error) throw new AppError(`Error al despedir el jugador: ${error.message}`, 500);
+    }
+
     async getUserBudget(userId: string, leagueId: number): Promise<number> {
         const { data, error } = await supabaseAdmin
             .from('league_participants')

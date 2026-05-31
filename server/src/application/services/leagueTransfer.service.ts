@@ -309,6 +309,38 @@ export class LeagueTransferService {
         };
     }
 
+    async dismissPlayer(
+        leagueId: number,
+        userId: string,
+        playerApiId: number,
+    ): Promise<{ message: string; newBudget: number; recoveredAmount: number }> {
+        const [participant, rosterPlayer] = await Promise.all([
+            this.leagueRepo.findParticipant(leagueId, userId),
+            this.repo.getRosterPlayer(leagueId, userId, playerApiId),
+        ]);
+
+        if (!participant) throw new AppError('No participas en esta liga.', 403);
+        if (!rosterPlayer) throw new AppError('Este jugador no pertenece a tu equipo.', 404);
+
+        const marketValue = await this.getCurrentMarketValue(leagueId, playerApiId, rosterPlayer);
+        const recoveredAmount = Math.floor(marketValue * 0.5);
+
+        await this.repo.dismissPlayer({
+            leagueId,
+            userId,
+            playerApiId,
+            recoveredAmount,
+        });
+
+        const newBudget = await this.repo.getUserBudget(userId, leagueId);
+
+        return {
+            message: 'Jugador despedido.',
+            newBudget,
+            recoveredAmount,
+        };
+    }
+
     private async getCurrentMarketValue(
         leagueId: number,
         playerApiId: number,

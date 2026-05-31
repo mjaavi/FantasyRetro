@@ -1,0 +1,23 @@
+\chapter{Conclusiones}
+\label{chap:conclusiones}
+
+Este Trabajo de Fin de Grado ha abordado y resuelto con éxito la carencia detectada en el mercado de simuladores de fútbol virtual: la imposibilidad de revivir temporadas históricas con leyendas del deporte en un formato \textit{Fantasy} asíncrono y autogestionado por los usuarios. 
+
+A continuación, se detallan los logros alcanzados y las futuras líneas de investigación sugeridas para expandir la plataforma.
+
+\section{Consecución de Objetivos y Logros}
+El desarrollo del proyecto ha completado de manera satisfactoria todos los objetivos específicos planteados en la fase de introducción:
+\begin{itemize}
+    \item \textbf{Diseño de un Modelo de Datos Histórico y Dinámico}: Se implementó un esquema de base de datos relacional robusto en PostgreSQL alojado en Supabase, integrando las estadísticas de juego estáticas con el catálogo de entidades dinámicas (pujas, mercado de fichajes y control de ligas) de forma consistente.
+    \item \textbf{Desarrollo del Backend Asíncrono}: Construido en Node.js, TypeScript y Express siguiendo los principios de la \textit{Clean Architecture}. Se programó un motor de puntuación mixto e híbrido que calcula y simula el impacto estadístico y subjetivo (cronista virtual) de partidos históricos basándose en micro-eventos XML.
+    \item \textbf{Implementación del Frontend Moderno}: Diseñado bajo el paradigma \textit{Bento Cards Layout} con estética \textit{Glassmorphism} usando Vanilla JavaScript y Tailwind CSS. Se eliminaron por completo las recargas de páginas, logrando una experiencia fluida tipo SPA (\textit{Single Page Application}) adaptada a dispositivos móviles.
+    \item \textbf{Sistema de Email Transaccional de Alta Compatibilidad}: Integración de un servicio de notificaciones asíncronas con failover secundario redundante (Gmail API + SMTP de Nodemailer). El diseño e implementación final de las plantillas resolvió los fallos de visibilidad de botones y el truncamiento de líneas del protocolo SMTP, logrando una renderización perfecta en Gmail y Outlook.
+\end{itemize}
+
+\section{Líneas de Trabajo Futuro}
+Para continuar enriqueciendo el ecosistema de Retro Fantasy, se sugieren las siguientes líneas de desarrollo e investigación futura:
+\begin{itemize}
+    \item \textbf{Simulación Multi-Liga Simultánea}: Ampliar la arquitectura del backend para permitir que una misma liga privada de usuarios configure calendarios mixtos de diferentes ligas históricas europeas (por ejemplo, combinar la Serie A de 1998 con LaLiga de 2004 en una misma temporada).
+    \item \textbf{Inteligencia Artificial para Mánagers Inactivos}: Implementar un módulo de aprendizaje automático o heurística avanzada que asuma el control de los equipos inactivos de una liga privada, realizando alineaciones lógicas y pujas en el mercado para mantener competitiva la experiencia de los jugadores humanos activos.
+    \item \textbf{Sincronización Avanzada de Notificaciones}: Diseñar integraciones asíncronas adicionales más allá del correo transaccional, tales como alertas automáticas vía Webhooks o mensajería instantánea (bots en Discord o Telegram) ante pujas sobrepasadas, clausulazos en tiempo real o el inicio de una nueva jornada histórica.
+\end{itemize}

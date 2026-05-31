@@ -1,0 +1,203 @@
+\chapter{Documento de Diseño del Juego (GDD)}
+\label{app:gdd}
+
+En este apéndice se van a documentar todas las decisiones de diseño, mecánicas, reglas económicas y dirección de arte del proyecto \textit{Retro Fantasy}. Su propósito es actuar como la fuente de la verdad de diseño del juego, separando la visión que hace más caso al diseño del juego y las reglas de sistema de la implementación técnica y arquitectónica de la aplicación.
+
+\section{Ficha Técnica y Visión General}
+\begin{itemize}
+    \item \textbf{Título del Juego:} Retro Fantasy.
+    \item \textbf{Género:} Simulador de Gestión Deportiva (\textit{Mánager Fantasy} asíncrono).
+    \item \textbf{Plataforma:} Aplicación Web (SPA).
+    \item \textbf{Base de Datos:} European Soccer Database (Kaggle), con las temporadas desde 2008 hasta 2016, ampliable por los usuarios mediante la opción de catálogo.
+    \item \textbf{Público Objetivo:} Todos los públicos, especialmente aquellos usuarios de otros fantasy, debido a que tiene una funcionalidad única en este tipo de juegos.
+\end{itemize}
+
+\subsection{Concepto General}
+\textit{Retro Fantasy} es un mánager de fútbol virtual que permite a los usuarios revivir la época dorada de la ligas de fútbol europeo. A diferencia de los \textit{fantasy} tradicionales que funcionan en tiempo real vinculados al calendario deportivo de las ligas, Retro Fantasy se apoya en un set de datos con el que los jugadores podrán jugar una temporada desde en un año hasta en una tarde, esto le da libertad total a los jugadores y elimina uno de los problemas más importante del fantasy como son los jugadores inactivos, ya que cada liga dura el tiempo que quieran sus miembros. Al igual que en otros fantasy, el jugador asume el rol de mánager, debiendo gestionar un presupuesto limitado para fichar jugadores, crear alineaciones y competir en ligas basándose en el rendimiento real que tuvieron esos futbolistas en el pasado.
+
+\section{Bucle de Juego y Estados}
+El flujo principal de interacción del usuario está diseñado para que los usuarios decidan entre sesiones cortas, habituales en este tipo de juegos, que requiere conexiones diarias de entre 5 y 10 minutos o sesiones largas en las que los jugadores se junten para jugar la liga.
+
+\begin{enumerate}
+    \item \textbf{Onboarding:} El usuario se registra, accede o crea una liga, recibe su plantilla y saldo iniciales.
+    \item \textbf{Fase de Mercado (Entre jornadas):} El usuario revisa los jugadores libres publicados por el sistema, analiza sus estadísticas y realiza pujas. Paralelamente, pone a la venta a sus descartes y revisa las plantillas de los rivales para realizar clausulazos.
+    \item \textbf{Fase de Gestión (Pre-Jornada):} El mánager ajusta su formación y selecciona a los 11 titulares que crea que vayan a hacer más puntos.
+    \item \textbf{Fase de Resolución (Simulación):} El administrador ejecuta la jornada. Se otorgan los puntos, se actualiza la clasificación y fluctúan los valores económicos de los futbolistas.
+\end{enumerate}
+
+\section{Mecánicas de Gestión de Plantilla}
+Atendiendo a las mecánicas propias de gestión que tiene el juego, podemos observar las siguientes:
+
+\subsection{Límites de Once y Alineación}
+\begin{itemize}
+    \item \textbf{Tamaño de la plantilla:} Un mánager puede tener un máximo de \textbf{25 jugadores} en su plantilla. Si alcanza el límite, el sistema bloqueará la opción de realizar nuevas pujas hasta que venda o le clausulen un jugador.
+    \item \textbf{Formaciones Permitidas:} El usuario tendrá que elegir entre las alineaciones disponibles para formar su once: 3-4-3, 3-5-2, 4-4-2, 4-3-3, 4-5-1 o 5-3-2. 
+\end{itemize}
+
+\section{Economía y Reglas del Mercado}
+El mercado es el principal punto de interacción del juego. Toda la economía está aislada entre ligas (cada liga tiene su propia economía).
+
+\subsection{Modelo de Inicio Híbrido}
+En el unboarding de \textit{Retro Fantasy} se asigna:
+\begin{itemize}
+    \item \textbf{Plantilla Base:} 15 jugadores generados procedimentalmente, con un valor de mercado conjunto de entre 180 y 200 millones como máximo. Las clausulas de estos jugadores serán por defecto de un 50\% más del valor inicial.
+    \item \textbf{Saldo:} 300 Millones en efectivo. Un saldo negativo impide que se pueda puntuar en la jornada siguiente.
+\end{itemize}
+
+\subsection{Tasación Inicial (Algoritmo de Precios)}
+El valor de salida (precio base) de un jugador en la base de datos se calcula mediante una fórmula que tiene como objetivo equilibrar los precios entre posiciones, aplicando factores por posición:
+\[ \text{Precio}_{\text{base}} = \left( (\text{Overall}^2 \times \text{Factor}_{\text{pos}}) + (\text{Potencial} \times 0.5) \right) \times 13\,000 \]
+\textit{Factores de posición:} Delanteros (1.5), Centrocampistas (1.3), Defensas (1.2) y Porteros (0.8).
+
+\subsection{Reglas de Puja y Resolución de Empates}
+\begin{itemize}
+    \item \textbf{Pujas Ciegas:} Ningún mánager puede ver las ofertas de sus rivales, pero si podrán ver el número de pujas que tiene cada jugador en el mercado.
+    \item \textbf{Límite de Puja:} La puja máxima está limitada al saldo líquido actual del usuario.
+    \item \textbf{Resolución de Empates:} Si dos mánagers pujan exactamente la misma cantidad por un jugador libre, el motor del mercado asignará el jugador al usuario cuya puja haya sido registrada antes (basado en el \textit{timestamp} de la base de datos).
+    \item \textbf{Clausulazos:} Un mánager puede comprar a un jugador de una plantilla de un rival directamente sin negociar con el, abonando el valor de su clausula.
+\end{itemize}
+
+\subsection{Venta Inmediata (Despido de Jugadores)}
+Para agilizar la reestructuración de plantillas y dotar de liquidez inmediata a los mánagers, se establece la mecánica de \textbf{Venta Inmediata}. Cualquier mánager puede deshacerse de forma instantánea de un jugador de su propiedad bajo las siguientes reglas económicas del juego:
+\begin{itemize}
+    \item \textbf{Penalización por Despido:} El club recupera exactamente el \textbf{50\% del valor de mercado actual} del futbolista (redondeado hacia abajo en caso de fracciones). El 50\% restante se pierde como penalización por rescisión unilateral del contrato.
+    \item \textbf{Destino del Jugador:} El jugador es liberado de manera inmediata, eliminándose de la plantilla y alineación del usuario, y pasando directamente al pozo común de agentes libres de la liga para volver a estar disponible en futuros ciclos de mercado diario.
+    \item \textbf{Inmediatez y Efectivo:} El saldo líquido recuperado se añade al presupuesto disponible del mánager de forma instantánea al procesarse el despido, permitiendo reinvertir ese capital de inmediato en el mercado diario de pujas ciegas o clausulazos.
+\end{itemize}
+
+\subsection{Fluctuación Dinámica (Subidas y Bajadas)}
+
+\begin{itemize}
+    \item \textbf{Por Demanda:} Si un jugador es fichado por una puja superior a su valor, su nuevo valor de mercado absorbe el 50\% de la diferencia. Si el jugador completa el ciclo de mercado sin recibir pujas, se devalúa un 3\% diario.
+    \item \textbf{Por Rendimiento:} Obtener \(\geq\) 10 puntos en una jornada incrementa su valor un 5\%. Obtener puntos negativos (por expulsiones o goles en propia) lo reduce un 5\%.
+\end{itemize}
+
+\section{Sistema de Puntuación (Mecánica Principal)}
+\label{sec:gdd_puntuacion}
+
+La simulación de los partidos históricos alimenta un sistema de puntuación mixto diseñado aplicando el patrón \textit{Strategy}.
+
+\subsection{Motor Estadístico}
+Calcula una nota objetiva basada en la ponderación de las acciones del XML del partido, variando según la posición del jugador para equiparar el impacto de atacantes y defensores.
+
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabular}{|p{2.2cm}|p{3.8cm}|c|c|c|c|}
+        \hline
+        \textbf{Categoría} & \textbf{Acción (Etiqueta XML)} & \textbf{PT} & \textbf{DF} & \textbf{MC} & \textbf{DL} \\
+        \hline
+        Ataque & Gol anotado (\texttt{goal}) & +6 & +5 & +4 & +3 \\ \cline{2-6}
+               & Asistencia (\texttt{goal} $\rightarrow$ \texttt{player2}) & +2 & +2 & +2 & +2 \\ \cline{2-6}
+               & Tiro a puerta (\texttt{shoton}) & +0.5 & +0.5 & +0.5 & +0.5 \\ \cline{2-6}
+               & Tiro al palo (\texttt{crossbar}) & +1 & +1 & +1 & +1 \\ \cline{2-6}
+               & Centro al área (\texttt{cross}) & 0 & +0.5 & +0.5 & 0 \\
+               & Posesión > 60\% & 0 & 0 & +1 & 0 \\
+        \hline
+        Defensa & Falta cometida (\texttt{foulcommit}) & -0.2 & -0.2 & -0.2 & -0.2 \\ \cline{2-6}
+                & Tarjeta Amarilla (\texttt{card}) & -1 & -1 & -1 & -1 \\ \cline{2-6}
+                & Tarjeta Roja (\texttt{card}) & -3 & -3 & -3 & -3 \\
+        \hline
+        Inferencia & Portería a cero & +4 & +3 & 0 & 0 \\ \cline{2-6}
+                   & Parada deducida & +0.5 & 0 & 0 & 0 \\ \cline{2-6}
+                   & Tiro rival bloqueado & 0 & +0.5 & 0 & 0 \\
+        \hline
+        Contexto & Victoria del equipo & +1 & +1 & +1 & +1 \\ \cline{2-6}
+                 & Empate del equipo & 0 & 0 & 0 & 0 \\ \cline{2-6}
+                 & Derrota del equipo & -1 & -1 & -1 & -1 \\
+        \hline
+    \end{tabular}
+    \caption{Matriz de equivalencias del motor de puntuación estadístico del GDD.}
+    \label{tab:estadisticas_gdd}
+\end{table}
+
+\subsection{Motor del Cronista Virtual}
+\label{app:gdd_cronistas}
+Para emular la volatilidad de la prensa deportiva, el sistema cuenta con perfiles de cronistas virtuales (Analítico, Exigente, Pasional) que evalúan la puntuación estadística pura y, mediante algoritmos de probabilidad, otorgan \textit{Picas}.
+
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabular}{|p{2.6cm}|p{3.3cm}|p{3.3cm}|p{3.3cm}|}
+        \hline
+        \textbf{Puntuación Base} & \textbf{Cronista Analítico} & \textbf{Cronista Exigente} & \textbf{Cronista Pasional} \\
+        \hline
+        $<$ 2 puntos & 100\% Negativo & 100\% Negativo & 80\% Negativo \\ \cline{4-4}
+         & & & 20\% 1 Pica \\ 
+        \hline
+        2 a 4.9 puntos & 100\% 1 Pica & 70\% S.C. (0 pts) & 50\% 1 Pica \\ \cline{3-4}
+         & & 30\% 1 Pica & 50\% 2 Picas \\ 
+        \hline
+        5 a 7.9 puntos & 100\% 2 Picas & 80\% 1 Pica & 30\% 2 Picas \\ \cline{3-4}
+         & & 20\% 2 Picas & 70\% 3 Picas \\ 
+        \hline
+        8 a 10.9 puntos & 100\% 3 Picas & 70\% 2 Picas & 20\% 3 Picas \\ \cline{3-4}
+         & & 30\% 3 Picas & 80\% 4 Picas \\ 
+        \hline
+        11 a 13.9 puntos & 100\% 4 Picas & 80\% 3 Picas & 100\% 4 Picas \\ \cline{3-3}
+         & & 20\% 4 Picas & \\ 
+        \hline
+        $\geq$ 14 puntos & 100\% 4 Picas & 100\% 4 Picas & 100\% 4 Picas \\
+        \hline
+    \end{tabular}
+    \caption{Matriz probabilística del Cronista Virtual (Picas según motor estadístico).}
+    \label{tab:cronistas_gdd}
+\end{table}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|p{5.5cm}|c|}
+        \hline
+        \textbf{Valoración del Cronista} & \textbf{Modificador Híbrido} \\
+        \hline
+        Negativo (-) & -3 puntos \\ \hline
+        Sin Calificar (S.C.) & 0 puntos \\ \hline
+        1 Pica & +1 punto \\ \hline
+        2 Picas & +4 puntos \\ \hline
+        3 Picas & +8 puntos \\ \hline
+        4 Picas & +12 puntos \\
+        \hline
+    \end{tabular}
+    \caption{Equivalencia de picas a puntos del cronista virtual.}
+    \label{tab:conversion_hibrida_gdd}
+\end{table}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|p{3.5cm}|c|c|c|p{4.5cm}|}
+        \hline
+        \textbf{Jugador y Contexto} & \textbf{LaLiga} & \textbf{Biwenger} & \textbf{Stats/Mixto} & \textbf{Conclusión del Modelo} \\
+        \hline
+        \textbf{K. Mbappé} \newline \textit{Valencia 0-2 R. Madrid} & 11 & 9 & \textbf{5/9} & Nota buena pero no muy alta, ya que marcó pero no destacó. \\ 
+        \hline
+        \textbf{Vinícius Jr.} \newline \textit{R. Madrid 4-1 R. Soc.} & 18 & 16 & \textbf{9/17} & Capta perfectamente el gran partido con doblete de goles y victoria. \\ 
+        \hline
+        \textbf{Lamine Yamal} \newline \textit{Girona 2-1 Barcelona} & 5 & -2 & \textbf{2/2} & El sistema no penaliza severamente por estadísticas válidas a pesar de la derrota. \\
+        \hline
+    \end{tabular}
+    \caption{Comparativa de ejemplo de puntuaciones del GDD frente a otras plataformas.}
+    \label{tab:comparativa_final_gdd}
+\end{table}
+
+\section{Dirección de Arte e Interfaz de Usuario (UI/UX)}
+
+El diseño visual tiene como objetivo desmarcarse de las aplicaciones corporativas y asépticas, acercándose a un estilo \textit{arcade}.
+
+\subsection{Estética Retro-Futurista Neón}
+\begin{itemize}
+    \item \textbf{Fondo:} Espacios negativos en tonos antracita y negro absoluto (orientado a pantallas OLED de móviles).
+    \item \textbf{Acentos:} Cian brillante, Magenta y Verde Lima para resaltar datos interactivos, subidas de precio e interacciones (botones, \textit{sliders}).
+    \item \textbf{Tipografía:} \textit{Sans-serif} modernas para las estadísticas (maximizando la legibilidad) y fuentes de corte 8-bits para títulos y marcadores.
+\end{itemize}
+
+\subsection{Navegación y Bento Cards}
+
+La estructura de pantallas obedece a un patrón \textit{Mobile-First}:
+\begin{itemize}
+    \item \textbf{Barra de Navegación Inferior (Bottom Bar):} Acceso rápido a las cuatro pantallas principales: Dashboard, Alineación, Mercado y Clasificación.
+    \item \textbf{Patrón Bento Cards:} Las estadísticas de los futbolistas (Valor de Mercado, Histórico de Puntos, Radar de Atributos) no se muestran en listas tabulares, sino encapsuladas en tarjetas modulares con bordes redondeados (estilo \textit{Bento}), permitiendo un escaneo visual instantáneo de la jerarquía de los datos.
+\end{itemize}
+
+\section{Condiciones de Victoria y Retención}
+El juego fomenta la retención del usuario al dividir el progreso histórico en \textbf{Ligas de Temporada}.
+El vencedor absoluto es el mánager que acumula la mayor cantidad de puntos totales al finalizar la simulación completa de las 38 jornadas históricas. Se otorgan insignias y recompensas visuales en el perfil del mánager por hitos como "Mayor goleada", "Mánager más rico" o "Mejor racha de imbatibilidad", fomentando metas secundarias más allá de la victoria general.

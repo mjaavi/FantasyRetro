@@ -1,0 +1,189 @@
+\chapter{Estado de la cuestión}
+\label{chap:estado_arte}
+
+\section{Orígenes} El fantasy es un juego que tiene más años de los que se cree de forma popular, ya después de la segunda guerra mundial empezó la primera forma, más rudimentaria y primitiva de juego fantasy, que fué evolucionando, añadiendo estadísticas y sistemas de puntuación hasta transformarse en lo que es hoy en día.
+
+    \subsection{El nacimiento del concepto Fantasy: La GOPPPL y la Rotisserie League} 
+    El primer juego fantasy lo inició un empresario de Oakland y socio minoritario de los Oakland Riders, Wilfred "Bill" Winkenbach, aunque cualquier parecido con los juegos actuales era una coincidencia, pues no tenían nada que ver con las complejas webs y aplicaciones actuales. Este inició en la segunda mitad de la década de los 50' el deporte donde inició este tipo de juegos fue el golf, los jugadores seleccionaban un grupo de golfistas y ganaba aquel que consiguiese el equipo con menos golpes, una fórmula sencilla con la que comenzó este fenómeno, posteriormente en 1962 Bill creó la Greater Oakland Professional Pigskin Pronosticators League (GOPPPL) \cite{origen_gopppl}. 
+    
+    Posteriormente nacería el fantasy tal y como lo conocemos, con estadísticas avanzadas, ya que fue la primera vez que se seleccionaban deportistas y se seguían sus estadísticas durante una temporada, surgió en un restaurante francés de Nueva York llamado La Rotisserie Française y su creador fue Daniel Okrent, escritor y editor. En 1980 se publicó un artículo en el New York Times sobre la liga, lo que provocó que se propagase por todo Estados Unidos \cite{rotisserie_nyt}, la gente copiaba las reglas y empezaban a jugar.
+
+    \subsection{El primer Fantasy de fútbol: Fantacalcio} 
+    En 1988, Riccardo Albini, un periodista italiano, viajó a Estados Unidos y compró un libro sobre las reglas del Fantasy Football y la Rotisserie League, al volver a Italia, se quedó con la duda de por qué no exisitía eso pero con la Serie A, por lo que estuvo un par de años modificando y adaptando las reglas para el fútbol y finalmente en 1990 publicó el manual del Fantacalcio, el primer juego fantasy de fútbol, para que posteriormente se publicase en la Gazzeta dello Sport el juego oficial \cite{fantacalcio_historia}.
+
+    \subsection{La llegada a España: La Liga Fantástica Marca} El inicio de la locura fantasy en España inició en 1994 cuando el periódico Marca observó en el Fantacalcio una gran iniciativa que todavía no había aterrizado en España, por lo que para la temporada 1994/95 surgió La Liga Fantástica Marca, de esta forma podrían fidelizar a los lectores para que lo compraran todos los días y no solo los lunes para ver los resultados.
+
+    Te daban un presupuesto y tenias que formar un once para la jornada, que se rellenaba con recortes de los cupones que traía el periódico. Esos cupones se enviaban por fax o correo antes del inicio de la jornada, por lo que, si querías cambiar algún lesionado del once de última hora, tenías que llamar a un número de pago para que te hiciesen el cambio.
+
+    \subsection{Actualidad en los juegos Fantasy} En la década de los 2000, comenzó la masificación de Internet lo que conllevó a la evolución de los juegos Fantasy, en lo que ahora conocemos, webs o aplicaciones interactivas, el precursor de esto fué Comunio, creado en Alemania en el año 2000, alcanzó un éxito masivo en España a partir del 2006 \cite{comunio_origen}.
+
+    Ahora los managers no tenían que rellenar cupones del periódico, simplemente entraban a la web y podían crear ligas privadas con amigos y pujar en mercados que se actualizaban diariamente, actualizando así los precios de los jugadores, dependiendo de cuantos managers pujasen y de cuanto pujasen. Estas webs usaban el sistema de picas tradicional ya que por ese entonces, todavía no existían proveedores de datos deportivos al nivel que existen actualmente.
+
+    Actualmente, con el avance de la tecnología y de la recopilación de datos, la mayoría de los juegos fantasy implementan sistemas de puntuación basados en estadísticas o sistemas híbridos.
+
+\section{Sistemas de puntuación}
+Los juegos fantasy de fútbol tienen diversos sistemas de puntuación que han ido cambiando a lo largo de los años, fruto también del número de estadísticas de las que se disponían. Debido a que hace más de dos décadas no era común que se recogiesen datos como los balones perdidos, las faltas cometidas o los tiros a puerta, los sistemas de puntuación no dependían de ellos sino de cronistas, que eran asignados a los partidos por los diferentes periódicos o webs que gestionaban el fantasy, por lo que podemos dividir los sistemas en varios grupos.
+
+\begin{itemize}
+    \item Los sistemas de puntuación basados en estadísticas son aquellos cuyo sistema da puntos en función de la puntuación Sofascore, que se otorga a cada jugador dependiendo de estadísticas como tiros totales, tiros a puerta, pases precisos, pases clave, regates, faltas recibidas, posesiones perdidas, entradas, intercepciones, despejes, etc.
+
+    Algunos ejemplos de este sistema son:
+    \begin{itemize}
+        \item LaLiga Fantasy
+        \item Biwenger Sofascore.
+        \item Mister Sofascore.
+    \end{itemize}
+
+    \item Los sistemas de puntuación basados en cronistas son aquellos en los que la mayor parte de la puntuación se otorga con un baremo, que traduce de picas a puntos, al que se le añaden puntos extra por eventos mayores como goles, asistencias o tarjetas recibidas.
+
+    Algunos ejemplos de este sistema son:
+    \begin{itemize}
+        \item Biwenger Cronistas.
+        \item Comunio.
+        \item Futmondo prensa.
+    \end{itemize}
+
+    \item También existen modelos de puntuación mixtos que combinan las métricas avanzadas de los sistemas de estadísticas con una parte de puntuación dada por los cronistas. Generalmente estos sistemas añaden un apartado que da entre 0 y 4 puntos basado la puntuación que le da el cronista elegido para el partido al partido del jugador.
+
+    Algunos ejemplos de este sistema son:
+    \begin{itemize}
+        \item Fantasy Marca.
+    \end{itemize}
+\end{itemize}
+
+Para poder comprender de mejor forma los distintos sistemas de puntuación, a continuación se podrán ver tablas con las equivalencias de los sistemas a puntos fantasy (estas tablas están basadas en plataformas líderes como Biwenger) \cite{reglas_biwenger}. Tras analizar estas tablas se podrá, determinar el mejor modelo para el dataset usado en este proyecto, el cuál se expondrá y analizará posteriormente en este documento.
+
+\subsubsection{Comparativa de Baremos de Puntuación}
+
+El modelo basado en cronistas (Tabla \ref{tab:puntos_picas}) destaca por su simplicidad y su subjetividad que dependiendo del contexto del partido traduce de mejor manera la actuación del jugador en el partido a puntos.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|l|c|}
+        \hline
+        \textbf{Valoración del Cronista} & \textbf{Significado} & \textbf{Puntos Fantasy} \\
+        \hline
+        Sin calificar (S.C.) & Tiempo insuficiente en el campo & 0 \\
+        \hline
+        0 Picas (-) & Mal partido o expulsión temprana & -2 \\
+        \hline
+        1 Pica ($\spadesuit$) & Partido regular o aceptable & 2 \\
+        \hline
+        2 Picas ($\spadesuit\spadesuit$) & Buen partido & 6 \\
+        \hline
+        3 Picas ($\spadesuit\spadesuit\spadesuit$) & Partido excepcional & 10 \\
+        \hline
+        4 Picas ($\spadesuit\spadesuit\spadesuit\spadesuit$) & Actuación histórica o perfecta & 14 \\
+        \hline
+    \end{tabular}
+    \caption{Sistema de puntuación tradicional basado en cronistas deportivos (Picas).}
+    \label{tab:puntos_picas}
+\end{table}
+
+Por el contrario, el sistema estadístico (Tabla \ref{tab:puntos_sofascore}) depende de un motor de \textit{Big Data} (como Sofascore u Opta) que evalúa decenas de métricas en tiempo real (pases clave, duelos ganados, pérdidas, faltas recibidas, toques, regates, despejes, etc). Este motor calcula una nota decimal del 1 al 10, que posteriormente el juego \textit{Fantasy} traduce a puntos, ofreciendo una precisión mucho mayor en términos generales de la actuación del jugador en el partido.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c|c|c|}
+        \hline
+        \textbf{Nota Estadística} & \textbf{Puntos} & \textbf{Nota Estadística} & \textbf{Puntos} \\
+        \hline
+        0 -- 4.9 & -6 & 7.0 -- 7.1 & 5 \\ \hline
+        5.0 -- 5.1 & -5 & 7.2 -- 7.3 & 6 \\ \hline
+        5.2 -- 5.3 & -4 & 7.4 -- 7.5 & 7 \\ \hline
+        5.4 -- 5.5 & -3 & 7.6 -- 7.7 & 8 \\ \hline
+        5.6 -- 5.7 & -2 & 7.8 -- 7.9 & 9 \\ \hline
+        5.8 -- 5.9 & -1 & 8.0 -- 8.1 & 10 \\ \hline
+        6.0 -- 6.1 & 0 & 8.2 -- 8.5 & 11 \\ \hline
+        6.2 -- 6.3 & 1 & 8.6 -- 8.9 & 12 \\ \hline
+        6.4 -- 6.5 & 2 & 9.0 -- 9.4 & 13 \\ \hline
+        6.6 -- 6.7 & 3 & 9.5 -- 10 & 14 \\ \hline
+        6.8 -- 6.9 & 4 & \multicolumn{2}{c|}{} \\ \hline
+    \end{tabular}
+    \caption{Mapeo oficial de nota estadística SofaScore a puntos Fantasy en Biwenger.}
+    \label{tab:puntos_sofascore}
+\end{table}
+
+Adicionalmente al sistema de puntuación base elegido, cronistas o estadísticas, todos los sistemas implementan una capa extra de \textbf{Eventos Fijos} (Tabla \ref{tab:eventos_fijos}). Estos eventos suman o restan puntos basándose en acontecimientos verificables que ocurren en los partidos, cuyo valor varía en función de la posición que le es asignada por el juego.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|c|c|c|c|}
+        \hline
+        \textbf{Evento de Partido} & \textbf{Portero} & \textbf{Defensa} & \textbf{Medio} & \textbf{Delantero} \\
+        \hline
+        Gol anotado & +6 & +5 & +4 & +3 \\
+        \hline
+        Asistencia de gol & +1 & +1 & +1 & +1 \\
+        \hline
+        Penalti fallado & -2 & -2 & -2 & -2 \\
+        \hline
+        Penalti parado & +3 & +3 & +3 & +3 \\
+        \hline
+        Tarjeta Amarilla & -1 & -1 & -1 & -1 \\
+        \hline
+        Tarjeta Roja & -3 & -3 & -3 & -3 \\
+        \hline
+    \end{tabular}
+    \caption{Bonificaciones y penalizaciones por eventos fijos según la posición del jugador.}
+    \label{tab:eventos_fijos}
+\end{table}
+
+Además, algunas plataformas modernas oficiales, como \textbf{LaLiga Fantasy}, el cuál es el juego fantasy oficial de LaLiga, optan por no hacer uso de una nota decimal global y prefieren un modelo de micro-eventos \cite{reglas_laligafantasy}. En este sistema, el algoritmo suma y resta puntos constantemente basándose en métricas avanzadas de \textit{Big Data} (Tabla \ref{tab:puntuacion_laliga_fantasy}).
+
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabular}{|p{4.5cm}|c|c|c|c|}
+        \hline
+        \textbf{Acción Evaluada} & \textbf{PT} & \textbf{DF} & \textbf{MC} & \textbf{DL} \\
+        \hline
+        \textbf{Minutos Jugados} & \multicolumn{4}{c|}{} \\ \hline
+        Menos de 60 minutos & +1 & +1 & +1 & +1 \\ \hline
+        Más de 60 minutos & +2 & +2 & +2 & +2 \\ \hline
+        \textbf{Goles y Asistencias} & \multicolumn{4}{c|}{} \\ \hline
+        Gol anotado & +6 & +6 & +5 & +4 \\ \hline
+        Asistencia de gol & +3 & +3 & +3 & +3 \\ \hline
+        Ocasión manifiesta (Pase clave) & +1 & +1 & +1 & +1 \\ \hline
+        \textbf{Defensa y Portería} & \multicolumn{4}{c|}{} \\ \hline
+        Portería a cero ($>$ 60 min) & +4 & +3 & +2 & +1 \\ \hline
+        Goles recibidos (Cada 2 goles) & -2 & -2 & -1 & -1 \\ \hline
+        Paradas (Cada 2 paradas) & +1 & - & - & - \\ \hline
+        Balones recuperados (Cada 5) & +1 & +1 & +1 & +1 \\ \hline
+        Despejes (Cada 3) & +1 & +1 & +1 & +1 \\ \hline
+        \textbf{Penaltis y Sanciones} & \multicolumn{4}{c|}{} \\ \hline
+        Penalti parado & +5 & - & - & - \\ \hline
+        Penalti provocado a favor & +2 & +2 & +2 & +2 \\ \hline
+        Penalti cometido o fallado & -2 & -2 & -2 & -2 \\ \hline
+        Tarjeta Amarilla & -1 & -1 & -1 & -1 \\ \hline
+        Tarjeta Roja & -3 & -3 & -3 & -3 \\ \hline
+        \textbf{Bonus de Ataque} & \multicolumn{4}{c|}{} \\ \hline
+        Tiros a puerta (Cada 2) & +1 & +1 & +1 & +1 \\ \hline
+        Regates logrados (Cada 2) & +1 & +1 & +1 & +1 \\ \hline
+        Balones al área (Cada 2) & +1 & +1 & +1 & +1 \\ \hline
+        \textbf{Penalizaciones de Posesión} & \multicolumn{4}{c|}{} \\ \hline
+        Pérdidas de balón (-1 punto) & Cada 8 & Cada 8 & Cada 10 & Cada 12 \\ \hline
+        \textbf{Nota Subjetiva Adicional} & \multicolumn{4}{c|}{} \\ \hline
+        Puntos DAZN (Impacto en partido) & 0 a +4 & 0 a +4 & 0 a +4 & 0 a +4 \\ \hline
+    \end{tabular}
+    \caption{Sistema oficial de puntuación de LaLiga Fantasy detallado por demarcación (PT: Portero, DF: Defensa, MC: Medio, DL: Delantero).}
+    \label{tab:puntuacion_laliga_fantasy}
+\end{table}
+
+La inclusión de estas métricas anteriormente mencionadas (Tabla \ref{tab:puntuacion_laliga_fantasy}) demuestra la evolución de la granularidad de los datos recogidos por las empresas encargadas de conseguirlos y tratarlos. Mientras que un juego 'antiguo' puede funcionar leyendo un simple resumen de partido en el que aparecen datos como los goles, asistencias y tarjetas, un juego 'moderno' en muchas ocasiones requiere de procesar archivos o bases de datos que registren cada acción individual del jugador sobre el terreno de juego.
+
+\section{Dataset y Origen de los Datos}
+Como se ha podido observar en el punto anterior de los sistemas de puntuación modernos (Tabla \ref{tab:puntuacion_laliga_fantasy}), la implementación de un sistema \textit{Fantasy} contemporáneo requiere procesar cierto número de micro-eventos por partido. Para poder usarlo y alimentar la base de datos de este Trabajo de Fin de Grado, se ha recurrido a fuentes de datos estructurados de terceros.
+
+Después de considerar diferentes fuentes, se ha seleccionado un \textit{dataset} alojado en la plataforma \textbf{Kaggle} \cite{kaggle_dataset}, esta es un repositorio de datos con gran cantidad de bases de datos. Este conjunto de datos proporciona el nivel de detalle justo y necesario para poder usar un sistema basado en estadísticas. En el siguiente capítulo, se podrá ver como se han extraído los datos para generar el sistema de puntuación.
+
+\subsection{Estructura y Formato de los Datos}
+El \textit{dataset} seleccionado se compone de un archivo en formato  .sqlite que ha sido extraído y exportado, dividido en tablas con formato CSV, a Supabase, una plataforma muy potente y usada actualmente, de gestión de bases de datos PostgreSQL. La información extraída se puede dividir principalmente en tres bloques:
+
+\begin{itemize}
+    \item \textbf{Entidades Estáticas:} Son aquellas tablas que contienen la información inmutable, en este grupo podemos identificar las tablas de Country, Leage, Player, PlayerAttributes y Team, estas contienen información como los ids de los jugadores y de las ligas, nombres de las ligas, nombres de los países, datos de los jugadores, etc.
+    \item \textbf{Entidad Match:} Esta es la tabla que contiene la información que define el contexto de un encuentro específico, incluyendo la fecha, la jornada, el árbitro, las alineaciones titulares y el resultado final.
+    \item \textbf{Datos de Eventos:} Es el núcleo de los micro-eventos. Es el conjunto de columnas de la tabla Match que contiene los xmls con la información cronológica específica de los eventos de cada partido como quién marca los goles, quién da las asistencias, tiros a puerta, tiros fuera, etc. Cada columna incluye el minuto exacto, el identificador del jugador que lo realiza y, en muchos casos, sus coordenadas espaciales ($X, Y$) en el campo.
+\end{itemize}
+
+Debido a que hay un gran volumen de datos y no todos pueden ser leídos directamente, el backend diseñado parseará los datos de las columnas de eventos que contienen los xml, para posteriormente agregarlos en limpio, a tablas que pueda leer el algoritmo que se ha usado en el sistema de puntuación, para ser asignado a cada jugador. Esto se detallará a continuación.

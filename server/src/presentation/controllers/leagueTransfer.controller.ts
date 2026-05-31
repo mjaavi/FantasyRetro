@@ -78,4 +78,17 @@ export class LeagueTransferController {
             res.json({ status: 'ok', data: result });
         } catch (err) { next(err); }
     };
+
+    dismissPlayer = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const leagueId = Number(req.params.leagueId);
+            const playerApiId = Number(req.params.playerApiId);
+            if (!Number.isInteger(playerApiId) || playerApiId <= 0) {
+                throw new ValidationError('playerApiId invalido.');
+            }
+
+            const result = await this.service.dismissPlayer(leagueId, req.userId!, playerApiId);
+            res.json({ status: 'ok', data: result });
+        } catch (err) { next(err); }
+    };
 }

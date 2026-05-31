@@ -148,6 +148,156 @@ function _renderMarketChart(container, data) {
                     <p style="font-size:18px;font-weight:900;color:#e2e8f0">${formatCurrency(h.price)}</p></div>
                 <div style="text-align:right"><p style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Cambio</p>
                     <p style="font-size:18px;font-weight:900;color:${chgColor}">${chgSign}${chg}%</p></div>
+// ─────────────────────────────────────────────────────────────────────────────
+// player-drawer.js
+// Drawer lateral reutilizable para ver el historial de puntos de un jugador.
+// Se usa desde market.js (scouting) y roster.js (plantilla).
+// ─────────────────────────────────────────────────────────────────────────────
+
+import { apiFetch }    from './api.js';
+import { getLigaActiva } from './leagues.js';
+
+const PICAS_LABEL    = { NEG: '👎 Negativo', SC: 'S.C.', P1: '★ 1 Pica', P2: '★★ 2 Picas', P3: '★★★ 3 Picas', P4: '★★★★ 4 Picas' };
+const CRONISTA_COLOR = { analitico: '#60a5fa', exigente: '#f59e0b', pasional: '#a855f7' };
+const POS_LABEL      = { PT: 'Portero', DF: 'Defensa', MC: 'Centrocampista', DL: 'Delantero' };
+const BID_STEP = 100_000;
+
+// -- Tab state ----------------------------------------------------------------
+const TAB_ACTIVE_CLS  = 'bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-[0_0_8px_rgba(59,130,246,0.15)]';
+const TAB_INACTIVE_CLS = 'text-slate-500 hover:text-slate-300 border border-transparent';
+let _currentDrawerContext = null;
+let _marketDataLoaded = false;
+
+function formatCurrency(value) {
+    return `${new Intl.NumberFormat('es-ES').format(Number(value ?? 0))} €`;
+}
+
+function parseCurrency(value) {
+    return parseInt(String(value ?? '').replace(/\D/g, ''), 10) || 0;
+}
+
+function getAvailableBidBudget(currentBid) {
+    const budgetText = document.getElementById('user-budget')?.textContent ?? '';
+    return parseCurrency(budgetText) + Number(currentBid?.amount ?? 0);
+}
+
+// -- Tab switching ------------------------------------------------------------
+
+function _switchTab(tabName) {
+    const rendBtn = document.getElementById('pd-tab-rendimiento-btn');
+    const mercBtn = document.getElementById('pd-tab-mercado-btn');
+    const rendTab = document.getElementById('pd-tab-rendimiento');
+    const mercTab = document.getElementById('pd-tab-mercado');
+    if (!rendBtn || !mercBtn || !rendTab || !mercTab) return;
+
+    if (tabName === 'rendimiento') {
+        rendBtn.className = `flex-1 text-xs font-bold py-2 px-3 rounded-lg transition-all duration-200 ${TAB_ACTIVE_CLS}`;
+        mercBtn.className = `flex-1 text-xs font-bold py-2 px-3 rounded-lg transition-all duration-200 ${TAB_INACTIVE_CLS}`;
+        rendTab.style.display = '';
+        mercTab.style.display = 'none';
+    } else {
+        mercBtn.className = `flex-1 text-xs font-bold py-2 px-3 rounded-lg transition-all duration-200 ${TAB_ACTIVE_CLS}`;
+        rendBtn.className = `flex-1 text-xs font-bold py-2 px-3 rounded-lg transition-all duration-200 ${TAB_INACTIVE_CLS}`;
+        rendTab.style.display = 'none';
+        mercTab.style.display = '';
+        if (!_marketDataLoaded && _currentDrawerContext) {
+            _marketDataLoaded = true;
+            _loadMarketChart();
+        }
+    }
+}
+
+function _initTabListeners() {
+    document.getElementById('pd-tab-rendimiento-btn')?.addEventListener('click', () => _switchTab('rendimiento'));
+    document.getElementById('pd-tab-mercado-btn')?.addEventListener('click', () => _switchTab('mercado'));
+}
+_initTabListeners();
+
+// -- Market chart (SVG) -------------------------------------------------------
+
+async function _loadMarketChart() {
+    const chartEl = document.getElementById('pd-market-chart');
+    if (!chartEl || !_currentDrawerContext) return;
+    chartEl.innerHTML = '<p style="color:#475569;font-size:12px;text-align:center;padding:32px 0">Cargando datos de mercado...</p>';
+    try {
+        const { leagueId, playerApiId } = _currentDrawerContext;
+        const res = await apiFetch(`/admin/ligas/${leagueId}/jugador/${playerApiId}/valor-mercado-historial`);
+        const data = res.data;
+        if (!data.history || data.history.length < 2) {
+            chartEl.innerHTML = '<p style="color:#475569;font-size:12px;text-align:center;padding:32px 0">Sin datos de mercado disponibles</p>';
+            return;
+        }
+        _renderMarketChart(chartEl, data);
+    } catch (e) {
+        chartEl.innerHTML = '<p style="color:#475569;font-size:12px;text-align:center;padding:32px 0">Error al cargar datos de mercado</p>';
+    }
+}
+
+function _renderMarketChart(container, data) {
+    const { history, initialPrice } = data;
+    const W = 320, H = 160, PAD_X = 10, PAD_Y = 20, PAD_B = 28;
+    const prices = history.map(h => h.price);
+    const minP = Math.min(...prices) * 0.95;
+    const maxP = Math.max(...prices) * 1.05;
+    const rangeP = maxP - minP || 1;
+    const n = history.length;
+    const stepX = (W - PAD_X * 2) / Math.max(n - 1, 1);
+    const toX = i => PAD_X + i * stepX;
+    const toY = p => PAD_Y + (1 - (p - minP) / rangeP) * (H - PAD_Y - PAD_B);
+    const pts = history.map((h, i) => `${toX(i).toFixed(1)},${toY(h.price).toFixed(1)}`).join(' ');
+    const areaD = `M${toX(0).toFixed(1)},${toY(history[0].price).toFixed(1)} ` +
+        history.map((h, i) => `L${toX(i).toFixed(1)},${toY(h.price).toFixed(1)}`).join(' ') +
+        ` L${toX(n - 1).toFixed(1)},${H - PAD_B} L${toX(0).toFixed(1)},${H - PAD_B} Z`;
+    const dots = history.map((h, i) => {
+        const cx = toX(i).toFixed(1), cy = toY(h.price).toFixed(1);
+        return `<circle cx="${cx}" cy="${cy}" r="4" fill="#3b82f6" stroke="#0b1120" stroke-width="2" class="pd-market-dot" data-idx="${i}" style="cursor:pointer"/>`;
+    }).join('');
+    const labels = history.map((h, i) => {
+        const label = h.jornada === 0 ? 'INI' : `J${h.jornada}`;
+        return `<text x="${toX(i).toFixed(1)}" y="${H - 6}" text-anchor="middle" fill="#475569" font-size="9" font-weight="700">${label}</text>`;
+    }).join('');
+    const gridLines = [0.25, 0.5, 0.75].map(pct => {
+        const y = PAD_Y + (1 - pct) * (H - PAD_Y - PAD_B);
+        return `<line x1="${PAD_X}" y1="${y.toFixed(1)}" x2="${W - PAD_X}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>`;
+    }).join('');
+    container.innerHTML = `
+        <svg viewBox="0 0 ${W} ${H}" class="w-full" preserveAspectRatio="xMidYMid meet" style="height:${H}px">
+            <defs><linearGradient id="pdMarketGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.3"/>
+                <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+            </linearGradient></defs>
+            ${gridLines}
+            <path d="${areaD}" fill="url(#pdMarketGrad)"/>
+            <polyline points="${pts}" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            ${dots}${labels}
+        </svg>`;
+    const detailEl = document.createElement('div');
+    detailEl.style.cssText = 'margin-top:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px 16px;min-height:50px;transition:all .2s;';
+    const lastH = history[history.length - 1];
+    const variation = initialPrice > 0 ? (((lastH.price - initialPrice) / initialPrice) * 100).toFixed(1) : '0.0';
+    const varColor = variation >= 0 ? '#60a5fa' : '#f87171';
+    const varSign = variation >= 0 ? '+' : '';
+    detailEl.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
+        <div><p style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Valor Actual</p>
+            <p style="font-size:18px;font-weight:900;color:#e2e8f0">${formatCurrency(lastH.price)}</p></div>
+        <div style="text-align:right"><p style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Variaci\u00f3n</p>
+            <p style="font-size:18px;font-weight:900;color:${varColor}">${varSign}${variation}%</p></div>
+    </div>`;
+    container.appendChild(detailEl);
+    container.querySelectorAll('.pd-market-dot').forEach(dot => {
+        dot.addEventListener('click', () => {
+            const idx = Number(dot.dataset.idx);
+            const h = history[idx];
+            const prev = idx > 0 ? history[idx - 1].price : initialPrice;
+            const chg = prev > 0 ? (((h.price - prev) / prev) * 100).toFixed(1) : '0.0';
+            const chgColor = chg >= 0 ? '#60a5fa' : '#f87171';
+            const chgSign = chg >= 0 ? '+' : '';
+            const lbl = h.jornada === 0 ? 'Precio Inicial' : `Jornada ${h.jornada}`;
+            detailEl.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
+                <div><p style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">${lbl}</p>
+                    <p style="font-size:18px;font-weight:900;color:#e2e8f0">${formatCurrency(h.price)}</p></div>
+                <div style="text-align:right"><p style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Cambio</p>
+                    <p style="font-size:18px;font-weight:900;color:${chgColor}">${chgSign}${chg}%</p></div>
             </div>`;
         });
     });
@@ -173,6 +323,7 @@ export async function abrirPlayerDrawer({
     releaseClause,
     onReleaseClause,
     onRaiseReleaseClause,
+    onDismissPlayer,
 }) {
     const drawer  = document.getElementById('player-drawer');
     const overlay = document.getElementById('player-drawer-overlay');
@@ -188,12 +339,13 @@ export async function abrirPlayerDrawer({
     // Mostrar/ocultar sección de puja
     const bidSection = document.getElementById('pd-bid-section');
     if (bidSection) {
-        if (onBid || onReleaseClause || onRaiseReleaseClause) {
+        if (onBid || onReleaseClause || onRaiseReleaseClause || onDismissPlayer) {
             bidSection.style.display = '';
             _setupBidSection(playerApiId, name, marketValue, onBid, currentBid, {
                 releaseClause,
                 onReleaseClause,
                 onRaiseReleaseClause,
+                onDismissPlayer,
             });
         } else {
             bidSection.style.display = 'none';
@@ -524,11 +676,19 @@ function _setupBidSection(playerApiId, name, marketValue, onBid, currentBid, cla
     const canOffer = Boolean(onBid);
     const canPayClause = Boolean(clauseOptions.onReleaseClause);
     const canRaiseClause = Boolean(clauseOptions.onRaiseReleaseClause);
+    const canDismiss = Boolean(clauseOptions.onDismissPlayer);
     let mode = canOffer ? 'offer' : 'clause';
     const availableBudget = getAvailableBidBudget(currentBid);
 
     const setAmount = (nextAmount) => {
         if (!amountInput) return;
+
+        if (mode === 'dismiss') {
+            const normalized = Math.floor(minimumAmount * 0.5);
+            amountInput.dataset.amount = String(normalized);
+            amountInput.value = formatCurrency(normalized);
+            return;
+        }
 
         const minAmount = mode === 'offer'
             ? minimumAmount
@@ -545,6 +705,7 @@ function _setupBidSection(playerApiId, name, marketValue, onBid, currentBid, cla
     if (amountInput) {
         setAmount(currentBid?.amount ?? (mode === 'clause' ? releaseClause : minimumAmount));
         amountInput.onfocus = () => {
+            if (mode === 'dismiss') return;
             if (mode === 'clause' && canPayClause && !canRaiseClause) return;
             amountInput.value = String(getAmount());
             amountInput.select();
@@ -563,6 +724,7 @@ function _setupBidSection(playerApiId, name, marketValue, onBid, currentBid, cla
 
     bidSection?.querySelectorAll('[data-bid-action]').forEach((button) => {
         button.onclick = () => {
+            if (mode === 'dismiss') return;
             const action = button.dataset.bidAction;
             const currentAmount = getAmount();
             if (mode === 'clause' && canPayClause && !canRaiseClause && action !== 'max') {
@@ -582,6 +744,12 @@ function _setupBidSection(playerApiId, name, marketValue, onBid, currentBid, cla
     if (submitBtn) {
         submitBtn.onclick = () => {
             const amount = getAmount();
+            if (mode === 'dismiss') {
+                if (clauseOptions.onDismissPlayer) {
+                    clauseOptions.onDismissPlayer({ playerApiId, name, marketValue });
+                }
+                return;
+            }
             if (mode === 'clause') {
                 if (canPayClause) {
                     clauseOptions.onReleaseClause({ playerApiId, name, marketValue, amount: releaseClause });
@@ -620,15 +788,21 @@ function _setupBidSection(playerApiId, name, marketValue, onBid, currentBid, cla
 
     function setupBidModeTabs() {
         bidSection?.querySelector('[data-pd-bid-tabs]')?.remove();
-        if (!bidSection || (!canOffer && !canPayClause && !canRaiseClause)) return;
-        if (canOffer && !canPayClause && !canRaiseClause) return;
+        
+        const modes = [];
+        if (canOffer) modes.push({ id: 'offer', label: 'Oferta' });
+        if (canPayClause || canRaiseClause) modes.push({ id: 'clause', label: 'Clausula' });
+        if (canDismiss) modes.push({ id: 'dismiss', label: 'Despedir' });
+
+        if (modes.length <= 1) return;
 
         const tabs = document.createElement('div');
         tabs.dataset.pdBidTabs = 'true';
         tabs.className = 'flex bg-white/5 rounded-xl p-1 border border-white/10 gap-1 mb-3';
 
-        if (canOffer) tabs.appendChild(createModeBtn('offer', 'Oferta'));
-        tabs.appendChild(createModeBtn('clause', 'Clausula'));
+        modes.forEach(m => {
+            tabs.appendChild(createModeBtn(m.id, m.label));
+        });
         bidSection.prepend(tabs);
     }
 
@@ -646,34 +820,64 @@ function _setupBidSection(playerApiId, name, marketValue, onBid, currentBid, cla
 
     function applyBidMode() {
         bidSection?.querySelectorAll('[data-pd-bid-tabs] button').forEach((btn) => {
-            const active = (btn.textContent === 'Oferta' && mode === 'offer') || (btn.textContent === 'Clausula' && mode === 'clause');
+            const btnMode = btn.textContent === 'Oferta' ? 'offer' : (btn.textContent === 'Clausula' ? 'clause' : 'dismiss');
+            const active = (mode === btnMode);
             btn.className = `flex-1 text-xs font-bold py-2 px-3 rounded-lg transition-all duration-200 ${active ? TAB_ACTIVE_CLS : TAB_INACTIVE_CLS}`;
         });
 
-        if (titleLabel) titleLabel.textContent = mode === 'offer' ? 'Tu oferta' : (canRaiseClause ? 'Subir clausula' : 'Clausula');
+        const stepperContainer = bidSection?.querySelector('.bid-stepper');
+        const quickActions = bidSection?.querySelector('.bid-quick-actions');
+
+        if (mode === 'dismiss') {
+            if (stepperContainer) {
+                stepperContainer.querySelectorAll('button').forEach(btn => btn.style.display = 'none');
+            }
+            if (quickActions) quickActions.style.display = 'none';
+        } else {
+            if (stepperContainer) {
+                stepperContainer.querySelectorAll('button').forEach(btn => btn.style.display = '');
+            }
+            if (quickActions) quickActions.style.display = '';
+        }
+
+        if (titleLabel) {
+            titleLabel.textContent = mode === 'offer' ? 'Tu oferta' : (mode === 'clause' ? (canRaiseClause ? 'Subir clausula' : 'Clausula') : 'Despedir jugador');
+        }
         if (minEl) {
             minEl.textContent = mode === 'offer'
                 ? `Min. ${formatCurrency(minimumAmount)}`
-                : canRaiseClause
-                    ? 'Cada euro suma x2'
-                    : 'Fichaje inmediato';
+                : mode === 'clause'
+                    ? (canRaiseClause ? 'Cada euro suma x2' : 'Fichaje inmediato')
+                    : 'Recuperas el 50% de su valor de mercado de forma inmediata.';
         }
         if (currentEl) {
             currentEl.textContent = mode === 'offer'
                 ? (currentBid ? `Actual ${formatCurrency(currentBid.amount)}` : 'Sin puja activa')
-                : `Clausula ${formatCurrency(releaseClause)}`;
+                : mode === 'clause'
+                    ? `Clausula ${formatCurrency(releaseClause)}`
+                    : `Recuperas: ${formatCurrency(Math.floor(minimumAmount * 0.5))}`;
         }
-        if (availableEl) availableEl.textContent = `Disponible ${formatCurrency(availableBudget)}`;
+        if (availableEl) {
+            availableEl.textContent = mode === 'dismiss'
+                ? `Valor: ${formatCurrency(minimumAmount)}`
+                : `Disponible ${formatCurrency(availableBudget)}`;
+        }
         if (submitBtn) {
-            submitBtn.textContent = mode === 'offer'
-                ? 'Confirmar Oferta'
-                : canRaiseClause
-                    ? 'Subir Clausula'
-                    : 'Pagar Clausula';
+            if (mode === 'dismiss') {
+                submitBtn.className = 'flex-1 py-3 bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 rounded-xl font-bold transition-all duration-200';
+                submitBtn.textContent = 'Despedir Jugador';
+            } else {
+                submitBtn.className = 'btn-primary flex-1 py-3';
+                submitBtn.textContent = mode === 'offer'
+                    ? 'Confirmar Oferta'
+                    : canRaiseClause
+                        ? 'Subir Clausula'
+                        : 'Pagar Clausula';
+            }
         }
         if (amountInput) {
-            amountInput.readOnly = mode === 'clause' && canPayClause && !canRaiseClause;
-            setAmount(mode === 'offer' ? (currentBid?.amount ?? minimumAmount) : (canRaiseClause ? 1_000_000 : releaseClause));
+            amountInput.readOnly = (mode === 'clause' && canPayClause && !canRaiseClause) || mode === 'dismiss';
+            setAmount(mode === 'offer' ? (currentBid?.amount ?? minimumAmount) : (mode === 'clause' ? (canRaiseClause ? 1_000_000 : releaseClause) : Math.floor(minimumAmount * 0.5)));
         }
         if (cancelBtn) {
             cancelBtn.style.display = mode === 'offer' && currentBid ? '' : 'none';

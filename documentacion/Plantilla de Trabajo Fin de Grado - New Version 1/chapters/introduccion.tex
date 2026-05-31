@@ -1,0 +1,48 @@
+\chapter{Introducción}
+\label{chap:introduccion}
+
+Actualmente, estamos viviendo una época de cambio en cuánto a la forma en que se consume el deporte. Numerosas figuras del entorno del fútbol han advertido y señalado esta tendencia, y es que cada vez son más los espectadores que no consumen los noventa minutos observando únicamente al dispositivo donde se está reproduciendo el partido, sino que habitualmente y sobre todo durante las interrupciones en el juego, usan una segunda pantalla, casi siempre siendo esta el móvil. Esta tendencia ha impulsado de forma clara los juegos Fantasy, que se han popularizado en los últimos años, convirtiéndolos en un fenómeno imparable y una herramienta clave para compartir y comentar la experiencia deportiva con el entorno.
+
+Sin embargo, a pesar de este auge tecnológico y de la entrada masiva de nuevos usuarios, existe un vacío importante en el mercado. Gran parte de estos usuarios, son jóvenes, que consumen este tipo de juegos de forma habitual y que no han podido jugar con sus ídolos de la infancia, ya que o no conocían este tipo de juegos o simplemente no quisieron probarlos, y es que, para la mayoría de los aficionados, se forja la máxima ilusión por este deporte en esa etapa. Actualmente, es imposible revivir esas épocas doradas en las plataformas \textit{Fantasy} comerciales principales, ya que no ofrecen el servicio de jugar en temporadas pasadas debido a que no hay un calendario a seguir y sería un caos para todos los usuarios sin poder saber cuando tienen que alinear o cuando se va a jugar la jornada.
+
+Este Trabajo de Fin de Grado nace para ofrecer una solución tecnológica a este problema: permitir que la historia del deporte vuelva a ser jugable, dando a los usuarios la posibilidad de organizarse y dedicarle el tiempo que ellos quieran, además de poder revivir las primeras experiencias Fantasy en las que se organizaban planes para jugar y los usuarios decidían cuando y cómo jugar, unido a que estos usuarios podrían jugar con los jugadores de su época favorita.
+
+\section{Objetivos}
+El objetivo principal de este proyecto es el diseño y desarrollo de una plataforma \textit{Fantasy} híbrida, capaz de adaptar su motor de puntuación a la calidad de los datos históricos disponibles. 
+
+Para alcanzar este propósito, se establecen los siguientes objetivos específicos:
+\begin{itemize}
+    \item \textbf{Desarrollo de un modelo de datos:} Implementar una base de datos en PostgreSQL en el entorno de Supabase.
+    \item \textbf{Implementación Back-end:} Construir un \textit{backend} robusto con Node.js, TypeScript y Express.
+    \item \textbf{Diseño Front-end:} Crear un \textit{frontend} utilizando Tailwind CSS.
+\end{itemize}
+\section{Alcance del proyecto}
+En cuanto al alcance del proyecto se pueden observar tres diferentes frentes tecnológicos:
+\begin{itemize}
+    \item Base de datos: En este primer frente encontramos el corazón de los datos que alimenta la web. 
+    \begin{itemize}
+        \item Alojamiento de dataset histórico, con el que se enriquecerán las tablas necesarias para el motor de puntuación del juego.
+        \item Creación y mantenimiento de las tablas relacionales que soportan la lógica del Fantasy.
+        \item Garantizar la consistencia de la base de datos, para así realizar empleo de buenas prácticas.
+    \end{itemize}
+    \item Frontend: En este campo observamos toda la parte visual del Fantasy, así como las llamadas al backend.
+    \begin{itemize}
+        \item Desarrollo de una arquitectura SPA (Single Page Application) en la que se eliminan las recargas de páginas entre secciones, otorgando una mayor fluidez a la experiencia de usuario.
+        \item Diseño estilo Glassmorphism, estructura basada en Bento Cards Layout.
+        \item Consumición de la API del backend mediante peticiones asíncronas de tipo \textit{fetch}.
+    \end{itemize}
+    \item Backend: En este último frente nos encontramos con la lógica y reglas del juego.
+    \begin{itemize}
+        \item Creación de un motor de cálculo de puntos con un algoritmo que asigne puntos a las diferentes actuaciones históricas.
+        \item Gestión del mercado integrando una lógica para actualizarlo diariamente, finalizando pujas y restando el saldo.
+        \item Gestión de ligas permitiendo crear y configurar ligas privadas, además de validar códigos de invitación.
+    \end{itemize}
+\end{itemize}
+\section{Estructura de la memoria}
+El resto del documento se organiza de la siguiente manera: 
+\begin{itemize}
+    \item El Capítulo 2 expone el Estado de la Cuestión, repasando la evolución histórica de los \textit{Fantasy} y sus sistemas de puntuación.
+    \item El Capítulo 3 detalla la Descripción informática del sistema, estructurando sus requisitos funcionales y no funcionales, el análisis de clases y algoritmos clave, el diseño arquitectónico de la Clean Architecture y de la base de datos, los detalles de implementación física en TypeScript y Express, y el plan de verificación y pruebas.
+    \item El Capítulo 4 recoge las Conclusiones finales y las futuras líneas de investigación y trabajo.
+\end{itemize}
+

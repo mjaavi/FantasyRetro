@@ -139,6 +139,13 @@ export async function raiseReleaseClauseRequest(leagueId, playerApiId, contribut
     });
 }
 
+export async function dismissPlayerRequest(leagueId, playerApiId) {
+    return apiFetch(`/leagues/${leagueId}/transfers/dismiss/${playerApiId}`, {
+        method: 'POST',
+        body: JSON.stringify({}),
+    });
+}
+
 
 // Endpoints de ligas
 

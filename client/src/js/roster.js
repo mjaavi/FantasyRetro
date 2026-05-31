@@ -1,6 +1,6 @@
 import { fetchRoster, fetchRosterLineups, fetchRosterScores, saveRosterFormation, toggleStarter } from './api.js';
 import { abrirPlayerDrawer } from './player-drawer.js';
-import { raiseReleaseClause } from './market.js';
+import { raiseReleaseClause, dismissPlayer } from './market.js';
 import { getLigaActiva } from './leagues.js';
 import { createPlayerAvatar, createPlayerPortrait, createClubLogo } from './player-image.js';
 
@@ -762,6 +762,32 @@ function abrirPanelJugador(jugador) {
                 if (submitBtn) {
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'Subir Clausula';
+                }
+            }
+        },
+        onDismissPlayer: async ({ playerApiId }) => {
+            const errorEl = document.getElementById('pd-bid-error');
+            const submitBtn = document.getElementById('pd-submit-btn');
+            if (errorEl) errorEl.classList.add('hidden');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Despidiendo...';
+            }
+
+            try {
+                await dismissPlayer({ playerApiId });
+                _roster = _roster.filter(p => String(p.player_api_id ?? p.id) !== String(playerApiId));
+                window.cerrarPlayerDrawer?.();
+                renderTodo();
+            } catch (error) {
+                if (errorEl) {
+                    errorEl.textContent = error.message ?? 'Error al despedir al jugador.';
+                    errorEl.classList.remove('hidden');
+                }
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Despedir Jugador';
                 }
             }
         },

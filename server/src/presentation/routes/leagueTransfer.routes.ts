@@ -41,6 +41,7 @@ export function createLeagueTransferRouter(ctrl: LeagueTransferController): Rout
     r.post('/leagues/:leagueId/transfers/offers/:offerId/reject', ...participantGuard, ctrl.rejectOffer);
     r.post('/leagues/:leagueId/transfers/release-clauses/:sellerUserId/:playerApiId/pay', ...participantGuard, ctrl.payReleaseClause);
     r.post('/leagues/:leagueId/transfers/release-clauses/:playerApiId/raise', ...participantGuard, validateBody(RaiseReleaseClauseSchema), ctrl.raiseReleaseClause);
+    r.post('/leagues/:leagueId/transfers/dismiss/:playerApiId', ...participantGuard, ctrl.dismissPlayer);
 
     return r;
 }

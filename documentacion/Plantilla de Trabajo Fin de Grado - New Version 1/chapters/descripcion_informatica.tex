@@ -1,0 +1,266 @@
+\chapter{Descripción informática}
+\label{chap:descripcion_informatica}
+
+En este capítulo se expone detalladamente la descripción informática de la plataforma \textit{Retro Fantasy}. Para ello, se estructuran las fases clave de la ingeniería de software: el listado de requisitos funcionales y no funcionales, el análisis de clases y de los sistemas clave, el diseño arquitectónico y de datos (integrando los textos redactados previamente por el autor), los detalles de implementación física de la Clean Architecture y la estrategia de verificación y pruebas.
+
+---
+
+\section{Requisitos del Sistema}
+\label{sec:requisitos}
+
+El comportamiento y los objetivos de la aplicación web se definen mediante requisitos funcionales (RF), que describen las capacidades operativas del sistema, y requisitos no funcionales (RNF), que establecen las restricciones de calidad, rendimiento y seguridad.
+
+\subsection{Requisitos Funcionales}
+En la Tabla~\ref{tab:requisitos_funcionales} se desglosan los requisitos funcionales implementados en la plataforma, vinculándolos con su identificador único y prioridad.
+
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabularx}{\textwidth}{|l|l|X|c|}
+        \hline
+        \textbf{ID} & \textbf{Requisito} & \textbf{Descripción} & \textbf{Prioridad} \\
+        \hline
+        RF-1 & Registro y Acceso & El sistema debe permitir el registro y login seguro de mánagers mediante email y contraseña cifrada. & Alta \\ \hline
+        RF-2 & Gestión de Ligas & Los mánagers deben poder crear ligas privadas, configurarlas y unirse a ellas mediante un código de invitación único. & Alta \\ \hline
+        RF-3 & Asignación Híbrida & El sistema debe asignar procedimentalmente una plantilla base (15 jugadores) y 300 millones de saldo inicial a cada nuevo mánager. & Alta \\ \hline
+        RF-4 & Mercado Diario & Publicación diaria de jugadores libres disponibles para puja ciega. El sistema adjudica el jugador al mayor postor al finalizar el ciclo. & Alta \\ \hline
+        RF-5 & Compraventa Directa & Un mánager debe poder poner transferibles a sus futbolistas y aceptar/rechazar ofertas directas de otros usuarios de la liga. & Alta \\ \hline
+        RF-6 & Clausulazos & Pago directo de la cláusula de rescisión para robar un jugador de la plantilla de un rival de forma automática. & Media \\ \hline
+        RF-7 & Motor de Puntos & Procesamiento y parseo asíncrono de micro-eventos XML históricos de partidos para calcular los puntos reales obtenidos. & Alta \\ \hline
+        RF-8 & Cronista Virtual & Simulación matemática de picas subjetivas aplicando perfiles de cronista (Analítico, Exigente, Pasional) mediante probabilidades. & Media \\ \hline
+        RF-9 & Auditoría de Saldos & Endpoint administrativo para auditar saldos negativos y notificar a los mánagers en números rojos antes de cada jornada. & Media \\ \hline
+        RF-10 & Notificaciones Email & Envío de alertas automatizadas ante ofertas, transferencias, clausulazos, saldos negativos e invitaciones usando failover redundante. & Alta \\ \hline
+        RF-11 & Venta Inmediata & Permite a un mánager despedir a un jugador de su plantilla de forma inmediata a cambio del 50\% de su valor de mercado en saldo líquido. & Media \\
+        \hline
+    \end{tabularx}
+    \caption{Listado detallado de Requisitos Funcionales de Retro Fantasy.}
+    \label{tab:requisitos_funcionales}
+\end{table}
+
+\subsection{Requisitos No Funcionales}
+Los atributos de calidad de Retro Fantasy garantizan que la aplicación sea escalable, segura y fluida:
+\begin{itemize}
+    \item \textbf{RNF-1 (Rendimiento):} La interfaz web debe comportarse como una Single Page Application (SPA), realizando transiciones y envíos de datos de forma asíncrona mediante peticiones \textit{fetch} sin recargar la página, logrando tiempos de respuesta inferiores a 150ms.
+    \item \textbf{RNF-2 (Escalabilidad y Legibilidad):} El backend debe seguir los principios de Clean Architecture y SOLID para desacoplar completamente la lógica del negocio de los frameworks o de la persistencia de datos.
+    \item \textbf{RNF-3 (Seguridad):} La base de datos en Supabase debe implementar políticas RLS (Row Level Security) para evitar que un usuario manipule el saldo, la alineación o los jugadores de otro mánager de forma directa.
+    \item \textbf{RNF-4 (Compatibilidad de Comunicaciones):} Las plantillas de correo transaccional deben ser 100\% compatibles con clientes de correo estrictos (como Gmail y Outlook), utilizando layouts con colores hex sólidos y una maquetación de línea SMTP limitada a menos de 998 caracteres para evitar truncamientos.
+\end{itemize}
+
+---
+
+\section{Sección de Análisis}
+\label{sec:seccion_analisis}
+
+La fase de análisis traduce los requisitos en modelos abstractos de datos, algoritmos y flujos de información del negocio.
+
+\subsection{Diagrama de Clases de Análisis}
+El modelado conceptual de Retro Fantasy gira en torno al usuario (Manager) y a su interacción con el mercado y las ligas. A continuación, se detalla la especificación de las entidades de análisis con sus atributos clave y cardinalidades:
+
+\begin{itemize}
+    \item \textbf{Manager (Mánager):} Identificador único, email, nombre de usuario, saldo actual y rol. Se relaciona de uno a muchos ($1 \rightarrow *$) con sus plantillas en las distintas ligas.
+    \item \textbf{League (Liga):} Código de invitación, nombre, temporada histórica y estado. Se relaciona de muchos a muchos ($* \rightarrow *$) con los Managers que participan en ella.
+    \item \textbf{Player (Jugador Real):} ID estático, nombre completo, demarcación, equipo de origen y valor. Vinculado a sus atributos históricos a través de la tabla relacional de evolución.
+    \item \textbf{Roster (Plantilla de Liga):} Relación intermedia ($* \rightarrow *$) que asigna qué Manager de qué liga es dueño de qué Player, guardando además su cláusula de rescisión personalizada.
+    \item \textbf{Bid (Puja de Mercado):} Relación entre Manager, Player y Mercado, registrando el importe ofertado y el \textit{timestamp} exacto de creación.
+    \item \textbf{Transfer (Historial de Traspaso):} Registro de auditoría que guarda el traspaso, indicando el jugador, el importe, el mánager origen y el de destino, sirviendo además para disparar notificaciones asíncronas.
+\end{itemize}
+
+\subsection{Análisis de Datos}
+Los datos se dividen claramente en dos dominios aislados. El bloque estático e histórico proviene del dataset de Kaggle (tablas de países, ligas, partidos históricos y atributos evolutivos anuales de los jugadores). El bloque dinámico del juego se almacena en tablas dedicadas que vinculan a los usuarios con sus ligas privadas, plantillas generadas, mercado activo de fichajes y ofertas de compraventa en curso.
+
+\subsection{Análisis de Seguridad}
+El sistema delega la gestión de usuarios e inicio de sesión a la API de Supabase Auth mediante el protocolo JSON Web Token (JWT). El frontend almacena temporalmente la sesión y firma cada petición al backend en la cabecera \textit{Authorization}. Adicionalmente, se configuran políticas Row Level Security (RLS) en PostgreSQL para restringir los accesos directos, y se protegen las credenciales críticas del servidor mediante variables de entorno en Render.
+
+\subsection{Análisis de Algoritmos Clave}
+El sistema implementa tres núcleos algorítmicos fundamentales:
+\begin{enumerate}
+    \item \textbf{Algoritmo de Tasación de Precios de Jugadores}:
+    Corrige los sesgos habituales de los simuladores empleando la fórmula del valor de mercado de salida base de un jugador:
+    \[ \text{Precio}_{\text{base}} = \left( (\text{Overall}^2 \times \text{Factor}_{\text{pos}}) + (\text{Potencial} \times 0.5) \right) \times 13\,000 \]
+    Esto garantiza un valor de salida equilibrado basado en la demarcación, previniendo la devaluación sistémica de porteros y defensas.
+    \item \textbf{Algoritmo del Motor de Puntuación (Patrón Strategy)}:
+    El backend procesa asíncronamente los XML de los partidos de la base de datos histórica. Mediante el patrón \textit{Strategy}, separamos la lógica pura del motor estadístico y la de los cronistas virtuales que simulan la volatilidad de la prensa.
+    \item \textbf{Algoritmo de Envío de Email con Failover Redundante}:
+    Diseñado para asegurar la recepción de correos transaccionales del juego mediante un servicio que cuenta con proveedores en cascada: API de Gmail (remitente primario) y SMTP de Nodemailer (proveedor secundario de contingencia).
+\end{enumerate}
+
+\subsection{Análisis de Tecnologías}
+La elección de tecnologías obedece a un criterio de desarrollo robusto, asíncrono y mantenible:
+\begin{itemize}
+    \item \textbf{TypeScript}: Proporciona tipado estático y robustez al backend, previniendo errores de integración de base de datos en tiempo de compilación.
+    \item \textbf{Express}: Framework ligero para la exposición de endpoints REST, permitiendo estructurar los routers de ligas, plantillas, mercado y administración de forma modular.
+    \item \textbf{Vanilla JavaScript (ES6+)}: Usado en el cliente para mantener el rendimiento al máximo, manipulando el DOM de forma reactiva y evitando la pesadez de frameworks SPA como React o Angular.
+    \item \textbf{Supabase (PostgreSQL)}: Plataforma Serverless que otorga un motor relacional sólido, perfecto para la integridad transaccional de pujas e historial de mercado de fichajes.
+\end{itemize}
+
+---
+
+\section{Sección de Diseño}
+\label{sec:seccion_diseno}
+
+En esta sección se integran las decisiones de diseño arquitectónico y de datos redactadas por el autor de la memoria.
+
+\subsection{Arquitectura del Sistema}
+El sistema sigue un modelo de arquitectura \textit{Cliente-Servidor} en el que el código se rige por una \textit{CLEAN Architecture}, aplicando principios como DRY (Don't Repeat Yourself) y SRP (Single Responsibility Principle), centrados en la mantenibilidad, escalabilidad y legibilidad del código.
+
+El sistema se estructura en cuatro capas principales. La regla de dependencia establece que el código fuente solo puede apuntar hacia adentro; es decir, las capas externas dependen de las internas, pero el núcleo ignora por completo cómo se implementa el exterior:
+
+\begin{itemize}
+    \item \textbf{Capa de Presentación (Presentation):} Esta capa es la frontera visual e interactiva del sistema. Desarrollada utilizando HTML, JavaScript nativo (\textit{Vanilla JavaScript}) y Tailwind CSS para los estilos, se encarga exclusivamente de manipular el DOM, renderizar la interfaz y capturar los eventos del usuario para pasárselos a la siguiente capa, la de aplicación. Esta capa no contiene ninguna lógica de negocio.
+    
+    \item \textbf{Capa de Infraestructura (Infrastructure):} Acompaña a la presentación en el anillo exterior y agrupa todas las implementaciones técnicas, el enrutamiento y la persistencia. En este proyecto, engloba el servidor web desarrollado con \textbf{Node.js, TypeScript y el \textit{framework} Express}, la comunicación con la base de datos relacional y el \textit{Object Storage} gestionados mediante Supabase, así como la infraestructura de red para las tareas automatizadas (como el ciclo de mercado diario) y el sistema de email redundante.
+    
+    \item \textbf{Capa de Aplicación (Application):} Actúa como orquestador del sistema, conteniendo los casos de uso específicos de \textit{Retro Fantasy}. Esta capa define los flujos de información: recibe las peticiones del cliente web, solicita los datos necesarios a la infraestructura y utiliza el dominio para ejecutar acciones concretas (por ejemplo, registrar una puja, asignar el presupuesto híbrido inicial o invocar el cálculo de puntuaciones al finalizar un partido).
+    
+    \item \textbf{Capa de Dominio (Domain):} Es el núcleo central, puro y totalmente independiente de librerías, bases de datos o \textit{frameworks}. Contiene las entidades principales de la aplicación (\textit{Player}, \textit{Team}, \textit{Manager}, \textit{Market}) y las reglas de negocio universales que rigen el juego, como la fórmula de tasación base o las reglas de cálculo mixtas de los cronistas.
+\end{itemize}
+
+\subsection{Diseño de la Base de Datos}
+Dada la naturaleza fuertemente estructurada e interconectada de los datos en un juego de tipo \textit{Fantasy}, se ha optado por un modelo de base de datos relacional. El modelo Entidad-Relación (E/R) se ha diseñado integrando el histórico del \textit{European Soccer Database} con nuevas entidades creadas específicamente para las mecánicas del juego. 
+
+Las entidades principales se agrupan en dos dominios:
+
+\textbf{1. Dominio de Datos Históricos (Fútbol Real):}
+\begin{itemize}
+    \item \textbf{Player:} Contiene la información estática del futbolista (identificador, nombre, fecha de nacimiento y URLs de sus recursos multimedia).
+    \item \textbf{Team:} Almacena la información de los clubes.
+    \item \textbf{Player\_Attributes:} Tabla fundamental que registra la evolución histórica del jugador. Almacena valoraciones temporales (\textit{overall rating}), posición en el campo y rendimiento, permitiendo al sistema consultar la versión exacta del jugador en la temporada seleccionada de la base de datos.
+\end{itemize}
+
+\textbf{2. Dominio del Juego (Fantasy):}
+\begin{itemize}
+    \item \textbf{User / Manager:} Almacena el perfil del jugador y el presupuesto disponible.
+    \item \textbf{User\_Team (Plantilla):} Entidad relacional que vincula a un usuario con los jugadores que posee actualmente.
+    \item \textbf{Market / Bids (Mercado y Pujas):} Registra las transacciones financieras dentro del juego, controlando qué jugador está a la venta y las pujas activas.
+\end{itemize}
+
+\subsection{Diseño de Mecánicas y Economía del Juego}
+Para garantizar una experiencia de usuario atractiva y equilibrada, el núcleo jugable de \textit{Retro Fantasy} se apoya en un sistema económico dinámico. El diseño de este sistema se ha dividido en dos fases: el modelo de inicio y el algoritmo de mercado.
+
+\subsubsection{Modelo Híbrido de Presupuesto Inicial}
+Frente a los modelos tradicionales que otorgan un presupuesto cerrado muy alto (donde el usuario debe formar un equipo desde cero) o un modelo de plantilla aleatoria con saldo residual, se ha diseñado un \textbf{Modelo Híbrido}.
+
+Al registrarse, el sistema asigna automáticamente al usuario:
+\begin{enumerate}
+    \item \textbf{Plantilla Base:} Un equipo generado procedimentalmente compuesto por jugadores de perfil medio-bajo, cuyo valor de mercado conjunto ronda los 200 millones.
+    \item \textbf{Saldo Líquido:} Un capital en efectivo de 300 millones.
+\end{enumerate}
+Este diseño fomenta la profundidad táctica desde la primera sesión, obligando al usuario a decidir si invierte su capital en una única superestrella que desequilibre el juego o si distribuye los fondos para mejorar de forma homogénea su plantilla base.
+
+\subsubsection{Diseño del Mercado de Fichajes y Algoritmo de Precios}
+El mercado actúa como el principal punto de interacción entre los usuarios. Diariamente, el sistema expone una selección aleatoria de jugadores libres. 
+
+Para que los precios de mercado reflejen fielmente la utilidad del jugador en el juego, se ha diseñado la fórmula matemática de tasación que hemos detallado en la fase de análisis:
+\[ \text{Precio} = (\text{Overall}^2 \times \text{FactorPosicion}) + (\text{Potencial} \times 0.5) \]
+Donde el \textit{FactorPosicion} actúa como balanceador multiplicativo (por ejemplo, otorgando un factor mayor a los defensores de alta media para equiparar su coste al de delanteros de impacto similar). Las pujas se realizan a ciegas, asignando el jugador al mayor postor una vez finaliza el ciclo de mercado, fomentando la especulación y la gestión eficiente del presupuesto.
+
+Adicionalmente, el sistema implementa un modelo de \textbf{Fluctuación Dinámica de Precios} que se ejecuta de forma diaria y automática tras cada ciclo de mercado y jornada simulada:
+\begin{itemize}
+    \item \textbf{Fluctuación por Demanda (Mercado)}: Si un jugador es fichado mediante una puja que supera su valor actual, su nuevo valor de mercado absorbe automáticamente el 50\% de la diferencia entre el valor anterior y el importe de la puja ganadora. Por el contrario, si un jugador libre expuesto en el mercado de fichajes completa su ciclo diario de 24 horas sin recibir ninguna oferta, su precio se devalúa un 3\% de forma automática para incentivar su compraventa posterior.
+    \item \textbf{Fluctuación por Rendimiento Deportivo}: Si un futbolista completa una actuación excelente en su partido real obteniendo una puntuación igual o superior a 10 puntos fantasy, su valor de mercado se incrementa un 5\% de forma automática. De igual modo, si su rendimiento es muy deficiente y obtiene puntos negativos (por ejemplo, a causa de expulsiones o goles en propia puerta), su valor disminuye un 5\%.
+\end{itemize}
+
+\subsubsection{Diseño de Venta Inmediata (Despido de Jugadores)}
+Para complementar la liquidez y dinamismo del mercado, se ha diseñado la mecánica de \textbf{Venta Inmediata}. Esto permite a cualquier mánager rescindir unilateralmente el contrato de un futbolista de su propia plantilla. El sistema ejecuta una transacción de base de datos de manera atómica (mediante una función RPC de Supabase) para realizar los siguientes pasos en un único bloque transaccional seguro:
+\begin{enumerate}
+    \item Eliminar al jugador de la alineación titular y de la plantilla del mánager (\texttt{user\_roster}).
+    \item Incrementar el saldo disponible del mánager en el presupuesto relacional añadiendo exactamente el 50\% del valor de mercado actual del jugador de forma líquida (redondeado hacia abajo mediante \texttt{Math.floor}).
+    \item Registrar el movimiento de auditoría en el historial de traspasos (\texttt{league\_transfer\_history}) con el tipo de transferencia \texttt{'dismissal'} y configurando el mánager destino como nulo (\texttt{NULL}), devolviendo simbólicamente al jugador al pozo del mercado libre.
+\end{enumerate}
+
+\subsection{Diseño del Sistema de Puntuación Mixto}
+Tras el exhaustivo análisis del dataset y de los datos estructurados provenientes de los xml de los eventos, se ha determinado que el sistema podrá soportar dos motores de cálculo independientes, uno puramente estadístico en el que únicamente se tomen en cuenta las estadísticas que más adelante se mencionan y que incluyen los xml de las columnas de eventos del dataset y otro mixto creando la figura del cronista virtual y diseñados aplicando el patrón de diseño \textit{Strategy}. En el que separamos la lógica de cálculo de puntos que es común a todos los cronistas, y segregando la lógica inherente a cada uno en sus respectivas clases, así cumplimos el principio de responsabilidad única.
+
+La Tabla~\ref{tab:estadisticas_kaggle} expone el valor asignado a cada evento de las columnas que contienen los xml, diferenciando entre las distintas posiciones, para equiparar el rendimiento de atacantes y defensores (Portero, Defensa, Medio y Delantero). Este diseño permite de manera directa determinar los puntos ya que la única carga de cálculo reside en la multiplicación del número de acciones por su número total. Este motor se basa en un modelo como el de Biwenger Sofascore en que el conjunto de las diferentes acciones suma a la consecución del punto. A diferencia de las picas manuales, este algoritmo realiza una aproximación simple de los decimales de las acciones para obtener la nota final.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|p{2.2cm}|p{3.8cm}|c|c|c|c|}
+        \hline
+        \textbf{Categoría} & \textbf{Acción (Etiqueta XML)} & \textbf{PT} & \textbf{DF} & \textbf{MC} & \textbf{DL} \\
+        \hline
+        Ataque & Gol anotado (\texttt{goal}) & +6 & +5 & +4 & +3 \\ \cline{2-6}
+               & Asistencia (\texttt{goal} $\rightarrow$ \texttt{player2}) & +2 & +2 & +2 & +2 \\ \cline{2-6}
+               & Tiro a puerta (\texttt{shoton}) & +0.5 & +0.5 & +0.5 & +0.5 \\ \cline{2-6}
+               & Tiro al palo (\texttt{crossbar}) & +1 & +1 & +1 & +1 \\ \cline{2-6}
+               & Centro al área (\texttt{cross}) & 0 & +0.5 & +0.5 & 0 \\
+               & Posesión > 60\% & 0 & 0 & +1 & 0 \\
+        \hline
+        Defensa & Falta cometida (\texttt{foulcommit}) & -0.2 & -0.2 & -0.2 & -0.2 \\ \cline{2-6}
+                & Tarjeta Amarilla (\texttt{card}) & -1 & -1 & -1 & -1 \\ \cline{2-6}
+                & Tarjeta Roja (\texttt{card}) & -3 & -3 & -3 & -3 \\
+        \hline
+        Inferencia & Portería a cero & +4 & +3 & 0 & 0 \\ \cline{2-6}
+                   & Parada deducida & +0.5 & 0 & 0 & 0 \\ \cline{2-6}
+                   & Tiro rival bloqueado & 0 & +0.5 & 0 & 0 \\
+        \hline
+        Contexto & Victoria del equipo & +1 & +1 & +1 & +1 \\ \cline{2-6}
+                 & Empate del equipo & 0 & 0 & 0 & 0 \\ \cline{2-6}
+                 & Derrota del equipo & -1 & -1 & -1 & -1 \\
+        \hline
+    \end{tabular}
+    \caption{Matriz estadística de equivalencias segmentado por posiciones (PT: Portero, DF: Defensa, MC: Medio, DL: Delantero).}
+    \label{tab:estadisticas_kaggle}
+\end{table}
+
+\subsection{Diseño de Interfaz y Experiencia de Usuario (UI/UX)}
+La interfaz de la aplicación se ha concebido bajo una dirección artística "Retro-Futurista Neón", que busca diferenciar visualmente este proyecto de las aplicaciones tradicionales de gestión deportiva. El uso de paletas de colores oscuros combinados con acentos brillantes (tonos cian y fucsia) no solo aporta una identidad visual fuerte, sino que también mejora la legibilidad de los datos.
+
+Para la disposición de la información, se ha adoptado el patrón de diseño \textit{Bento Cards}. Este enfoque divide el contenido en una cuadrícula de contenedores modulares con bordes redondeados y una jerarquía visual clara. Frente a las tradicionales listas densas, las \textit{Bento Cards} permiten agrupar métricas clave (goles, asistencias, tarjetas, valor e histórico) en bloques visuales escaneables.
+
+Además, la experiencia de usuario se ha planteado bajo el paradigma \textit{Mobile-First}. Esto asegura que la visualización de los escudos, los retratos y la interacción con el mercado de fichajes se adapte de manera natural y fluida a las pantallas táctiles de los dispositivos móviles.
+
+---
+
+\section{Sección de Implementación}
+\label{sec:seccion_implementacion}
+
+La implementación física de la plataforma traduce la CLEAN Architecture en un árbol estructurado de ficheros del backend en TypeScript y carpetas bien delimitadas, garantizando el aislamiento absoluto de la lógica de dominio.
+
+\subsection{Estructura Física de Capas}
+El proyecto se organiza bajo la siguiente estructura de carpetas en el servidor:
+\begin{itemize}
+    \item \texttt{server/src/domain/}: Contiene las entidades puras (\textit{Player.ts}, \textit{League.ts}) y las interfaces de los repositorios (\textit{ILeagueRepository.ts}) y servicios de infraestructura (\textit{IEmailService.ts}). No depende de ninguna librería externa.
+    \item \texttt{server/src/application/services/}: Contiene los casos de uso principales. Por ejemplo, \textit{LeagueService.ts} coordina la lógica de unión y los códigos de invitación, mientras que \textit{LeagueTransferService.ts} maneja las transacciones financieras del mercado de pujas.
+    \item \texttt{server/src/infrastructure/}: Reúne las implementaciones técnicas. Incluye la carpeta \texttt{database/} para la conexión a Supabase/PostgreSQL y la carpeta \texttt{email/} para el envío de notificaciones asíncronas con fallover secundario.
+    \item \texttt{server/src/presentation/}: Aloja los routers (\textit{league.routes.ts}) y controladores de Express que reciben las peticiones HTTP, validan los parámetros y devuelven respuestas en formato JSON.
+\end{itemize}
+
+\subsection{Inyección de Dependencias y Puntos Clave del Código}
+En el archivo de arranque del servidor, \texttt{server/src/index.ts}, se orquestan e instancian las implementaciones de infraestructura para inyectarlas directamente en el constructor de los servicios de aplicación:
+
+\begin{lstlisting}[language=Octave, caption={Inicialización e inyección de dependencias en \texttt{index.ts}.}, label={lst:dependency_injection}]
+// Instanciación de servicios de infraestructura
+const emailProviders = [new GmailApiProvider(), new NodemailerSmtpProvider()];
+const emailService = new FailoverEmailService(emailProviders);
+
+// Inyección en la capa de aplicación
+const leagueTransferService = new LeagueTransferService(
+    supabaseAdmin, 
+    emailService
+);
+const adminService = new AdminService(supabaseAdmin, emailService);
+\end{lstlisting}
+
+Esta inyección desacopla la lógica de traspasos del transportador de correos concreto. Si decidimos sustituir Nodemailer por otro proveedor de API (como Resend), bastará con añadir su clase a \texttt{emailProviders} sin alterar una sola línea de código de `LeagueTransferService.ts`, cumpliendo fielmente con el principio de Abierto/Cerrado (OCP) de SOLID.
+
+---
+
+\section{Sección de Pruebas}
+\label{sec:seccion_pruebas}
+
+La fase de pruebas de Retro Fantasy se estructura a través de un plan de pruebas sistemático y la ejecución de simulaciones locales para validar la robustez de los algoritmos y la visualización de la interfaz en los clientes de correo.
+
+\subsection{Pruebas de Compilación y Tipado}
+Para asegurar la solidez y estabilidad del backend, el compilador de TypeScript (\texttt{tsc}) se ejecuta de forma integrada antes de desplegar en producción mediante el comando:
+\begin{lstlisting}[language=bash]
+npm run build
+\end{lstlisting}
+Esto valida de forma automatizada que no existan inconsistencias de tipado, parámetros nulos, ni referencias inválidas en ninguno de los contratos de servicio o mapeos de Supabase.
+
+\subsection{Pruebas de Integración y Visualización de Email}
+Para certificar que el rediseño de las plantillas de correo con layouts HTML sólidos y saltos de línea de SMTP (límite de 998 caracteres) renderiza sin cortes ni fallos en Gmail, se cuenta con un script de previsualización local:
+\begin{lstlisting}[language=bash]
+npx tsx server/src/infrastructure/email/previewEmails.ts
+\end{lstlisting}
+Este script exporta los HTML dinámicos a la carpeta local \texttt{email-previews/}. A través de estas pruebas de caja negra, validamos de forma visual que los botones de llamada a la acción (CTAs) y los avisos de saldo negativo son 100\% visibles con su tipografía y color de fondo correctos en el navegador del desarrollador antes de guardarlos en el panel de Supabase Auth.

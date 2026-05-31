@@ -75,6 +75,12 @@ export interface ILeagueTransferRepository {
         contribution: number;
         nextReleaseClause: number;
     }): Promise<void>;
+    dismissPlayer(input: {
+        leagueId: number;
+        userId: string;
+        playerApiId: number;
+        recoveredAmount: number;
+    }): Promise<void>;
     getUserBudget(userId: string, leagueId: number): Promise<number>;
     updateUserBudget(userId: string, leagueId: number, newBudget: number): Promise<void>;
 }
