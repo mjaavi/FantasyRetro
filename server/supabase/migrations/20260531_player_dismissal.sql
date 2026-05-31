@@ -5,6 +5,9 @@ alter table public.league_transfer_history
     add constraint league_transfer_history_transfer_type_check
     check (transfer_type in ('market', 'direct_offer', 'release_clause', 'dismissal'));
 
+alter table public.league_transfer_history
+    alter column to_user_id drop not null;
+
 create or replace function public.dismiss_league_player(
     p_league_id integer,
     p_user_id uuid,

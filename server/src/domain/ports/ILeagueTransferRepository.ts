@@ -23,7 +23,7 @@ export interface LeagueTransferHistoryItem {
     fromUserId: string | null;
     fromTeamName: string;
     fromUsername: string;
-    toUserId: string;
+    toUserId: string | null;
     toTeamName: string;
     toUsername: string;
     amount: number;

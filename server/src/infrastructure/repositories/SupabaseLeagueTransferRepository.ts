@@ -150,9 +150,9 @@ export class SupabaseLeagueTransferRepository implements ILeagueTransferReposito
         return rows.map(row => {
             const playerApiId = Number(row.player_api_id);
             const fromUserId = row.from_user_id as string | null;
-            const toUserId = row.to_user_id as string;
+            const toUserId = row.to_user_id as string | null;
             const fromProfile = fromUserId ? profiles.get(fromUserId) : null;
-            const toProfile = profiles.get(toUserId);
+            const toProfile = toUserId ? profiles.get(toUserId) : null;
 
             return {
                 id: row.id as string,
@@ -163,8 +163,8 @@ export class SupabaseLeagueTransferRepository implements ILeagueTransferReposito
                 fromTeamName: fromProfile?.teamName ?? 'Mercado',
                 fromUsername: fromProfile?.username ?? 'Mercado',
                 toUserId,
-                toTeamName: toProfile?.teamName ?? 'Equipo destino',
-                toUsername: toProfile?.username ?? 'Manager destino',
+                toTeamName: toProfile?.teamName ?? 'Mercado',
+                toUsername: toProfile?.username ?? 'Mercado',
                 amount: Number(row.amount),
                 transferType: row.transfer_type as string,
                 createdAt: row.created_at as string,
