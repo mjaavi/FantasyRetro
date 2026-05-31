@@ -681,11 +681,13 @@ function _setupBidSection(playerApiId, name, marketValue, onBid, currentBid, cla
         if (mode === 'dismiss') {
             if (stepperContainer) {
                 stepperContainer.querySelectorAll('button').forEach(btn => btn.style.display = 'none');
+                stepperContainer.style.gridTemplateColumns = '1fr';
             }
             if (quickActions) quickActions.style.display = 'none';
         } else {
             if (stepperContainer) {
                 stepperContainer.querySelectorAll('button').forEach(btn => btn.style.display = '');
+                stepperContainer.style.gridTemplateColumns = '';
             }
             if (quickActions) quickActions.style.display = '';
         }
