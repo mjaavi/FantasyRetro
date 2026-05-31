@@ -2095,6 +2095,13 @@
                         } else {
                             console.warn('[Guard] initProfileNav no encontrado');
                         }
+
+                        // Inicializar ligas y pre-carga global una vez que todos los módulos y funciones están registrados
+                        if (typeof window.inicializar === 'function') {
+                            window.inicializar();
+                        } else {
+                            console.warn('[Guard] inicializar no encontrado');
+                        }
                     });
                 } catch (moduleError) {
                     console.error('[Guard] Error en módulos:', moduleError.message);

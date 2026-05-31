@@ -489,4 +489,4 @@ window.loadReceivedTransferOffers = loadReceivedTransferOffers;
 window.loadTransferHistory = loadTransferHistory;
 
 // ── Arranque ──────────────────────────────────────────────────────────────────
-loadMarket();
+// loadMarket() is driven by navigation.js and preloadApp() to avoid redundant requests.

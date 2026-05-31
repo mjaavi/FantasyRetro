@@ -434,4 +434,4 @@ document.getElementById('form-onboarding-crear')?.addEventListener('submit', han
 document.getElementById('form-onboarding-unirse')?.addEventListener('submit', handleOnboardingUnirse);
 
 // Arranque
-inicializar();
+window.inicializar = inicializar;
