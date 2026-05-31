@@ -51,7 +51,7 @@ export function buildSupportTicketUserEmail(data: SupportTicketEmailData): strin
 
         emailSpacer(4),
         emailText('Si necesitas añadir información, responde a este correo o abre un nuevo ticket desde la app.', { muted: true, small: true }),
-    ].join('');
+    ].join('\n');
 
     return wrapInBaseLayout({
         body,
@@ -76,7 +76,7 @@ export function buildSupportTicketAdminEmail(data: SupportTicketEmailData): stri
         emailDivider(),
 
         emailBlockquote(data.message),
-    ].join('');
+    ].join('\n');
 
     return wrapInBaseLayout({
         body,

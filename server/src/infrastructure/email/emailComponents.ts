@@ -4,17 +4,17 @@
 // Minimal, no-emoji building blocks with liquid glass aesthetic.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const FONT = "Plus Jakarta Sans, Segoe UI, Roboto, Helvetica, Arial, sans-serif";
+const FONT = "&quot;Plus Jakarta Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Helvetica, Arial, sans-serif";
 
 /**
  * Primary CTA button — matches the web's btn-primary exactly:
- * bg-slate-300/10, border-2 border-blue-500, rounded-2xl, blue glow shadow.
+ * bg-slate-800 (#1e293b), border-2 border-blue-500, rounded-2xl.
  */
 export function emailButton(label: string, href: string): string {
     return `
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:20px auto 0;">
             <tr>
-                <td align="center" style="border-radius:16px; background-color:rgba(203,213,225,0.1); border:2px solid #3b82f6; box-shadow:0 0 15px rgba(59,130,246,0.2);">
+                <td align="center" style="border-radius:16px; background-color:#1e293b; border:2px solid #3b82f6;">
                     <a href="${href}" target="_blank" style="display:inline-block; padding:15px 38px; font-family:${FONT}; font-size:14px; font-weight:700; color:#ffffff; text-decoration:none; border-radius:16px; letter-spacing:-0.01em; line-height:1;">
                         ${label}
                     </a>
@@ -31,7 +31,7 @@ export function emailDivider(): string {
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
             <tr>
                 <td style="padding:20px 0;">
-                    <div style="height:1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);"></div>
+                    <hr style="border:0; height:1px; background-color:#1e293b; margin:0;" />
                 </td>
             </tr>
         </table>`;
@@ -79,10 +79,10 @@ export function emailInfoBadge(label: string, value: string): string {
                 <td style="padding:12px 0;">
                     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border-radius:16px; border-collapse:separate;">
                         <tr>
-                            <td style="padding:1px; border-radius:16px; background: linear-gradient(160deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));">
+                            <td style="padding:1px; border-radius:16px; background-color:#1e293b; background: linear-gradient(160deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));">
                                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border-radius:15px; border-collapse:separate;">
                                     <tr>
-                                        <td align="center" style="padding:18px 20px; background: rgba(15,23,42,0.6); border-radius:15px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);">
+                                        <td align="center" style="padding:18px 20px; background-color:#0f172a; border-radius:15px;">
                                             <p style="margin:0 0 4px; font-family:${FONT}; font-size:10px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:0.12em;">
                                                 ${label}
                                             </p>
@@ -153,19 +153,24 @@ export function emailSpacer(height: number = 16): string {
 }
 
 /**
- * Subtle notice box — liquid glass style.
+ * Subtle notice box — solid color backgrounds matching alerts.
  */
 export function emailNotice(text: string, type: 'info' | 'warning' | 'success' = 'info'): string {
     const border = type === 'warning'
-        ? 'rgba(251,191,36,0.15)'
+        ? '#d97706'
         : type === 'success'
-            ? 'rgba(34,197,94,0.15)'
-            : 'rgba(59,130,246,0.1)';
+            ? '#16a34a'
+            : '#3b82f6';
+    const bgColor = type === 'warning'
+        ? '#24211b'
+        : type === 'success'
+            ? '#16241a'
+            : '#182235';
     const color = type === 'warning'
         ? '#fbbf24'
         : type === 'success'
             ? '#22c55e'
-            : '#64748b';
+            : '#60a5fa';
 
     return `
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
@@ -173,7 +178,7 @@ export function emailNotice(text: string, type: 'info' | 'warning' | 'success' =
                 <td style="padding:8px 0;">
                     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border-radius:12px; border-collapse:separate;">
                         <tr>
-                            <td style="padding:12px 16px; background: rgba(15,23,42,0.4); border:1px solid ${border}; border-radius:12px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);">
+                            <td style="padding:12px 16px; background-color:${bgColor}; border:1px solid ${border}; border-radius:12px;">
                                 <p style="margin:0; font-family:${FONT}; font-size:11px; font-weight:600; color:${color}; line-height:1.5;">
                                     ${text}
                                 </p>

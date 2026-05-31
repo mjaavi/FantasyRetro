@@ -42,7 +42,7 @@ export function buildNegativeBalanceEmail(data: NegativeBalanceEmailData): strin
         emailDivider(),
 
         emailText('Puedes vender jugadores al mercado o aceptar ofertas de otros mánagers para conseguir dinero rápido.', { muted: true, small: true }),
-    ].join('');
+    ].join('\n');
 
     return wrapInBaseLayout({
         body,

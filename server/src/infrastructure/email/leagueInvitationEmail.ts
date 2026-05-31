@@ -38,7 +38,7 @@ export function buildLeagueInvitationEmail(data: LeagueInvitationEmailData): str
         emailDivider(),
 
         emailText('RetroFantasy es el juego manager donde construyes el equipo de tus sueños con leyendas del fútbol. ¡Demuestra quién sabe más de fútbol!', { muted: true, small: true }),
-    ].join('');
+    ].join('\n');
 
     return wrapInBaseLayout({
         body,

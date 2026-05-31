@@ -41,7 +41,7 @@ export function buildPasswordResetEmail(data: PasswordResetEmailData): string {
         emailText('Si no has solicitado este cambio, ignora este correo. Tu contraseña actual no se modificará.', { muted: true, small: true }),
         emailSpacer(4),
         emailText(`<a href="${data.resetLink}" style="color:#3b82f6; word-break:break-all; font-size:11px; text-decoration:none;">${data.resetLink}</a>`, { muted: true }),
-    ].join('');
+    ].join('\n');
 
     return wrapInBaseLayout({
         body,

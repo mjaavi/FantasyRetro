@@ -16,7 +16,7 @@ export interface WelcomeEmailData {
     appUrl: string;
 }
 
-const FONT = `'Plus Jakarta Sans','Segoe UI',Roboto,Helvetica,Arial,sans-serif`;
+const FONT = "&quot;Plus Jakarta Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Helvetica, Arial, sans-serif";
 
 function onboardingStep(number: string, title: string, description: string): string {
     return `
@@ -25,7 +25,7 @@ function onboardingStep(number: string, title: string, description: string): str
                 <td width="36" valign="top" style="padding-right:12px; padding-top:1px;">
                     <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse:separate;">
                         <tr>
-                            <td align="center" style="width:28px; height:28px; border-radius:8px; background: rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.12);">
+                            <td align="center" style="width:28px; height:28px; border-radius:8px; background-color:#1e293b; border:1px solid #3b82f6;">
                                 <span style="font-family:${FONT}; font-size:11px; font-weight:800; color:#3b82f6; line-height:1;">${number}</span>
                             </td>
                         </tr>
@@ -67,7 +67,7 @@ export function buildWelcomeEmail(data: WelcomeEmailData): string {
         emailDivider(),
 
         emailText('Si tienes alguna duda, contacta con nosotros desde la sección de soporte dentro de la app.', { muted: true, small: true }),
-    ].join('');
+    ].join('\n');
 
     return wrapInBaseLayout({
         body,

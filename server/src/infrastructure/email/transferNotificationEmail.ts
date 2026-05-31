@@ -63,7 +63,7 @@ export function buildTransferNotificationEmail(data: TransferNotificationEmailDa
         emailDivider(),
 
         emailText('Las ofertas tienen una duración limitada. Mantente activo para no perder oportunidades clave de mercado.', { muted: true, small: true }),
-    ].join('');
+    ].join('\n');
 
     return wrapInBaseLayout({
         body,

@@ -58,6 +58,9 @@ export function wrapInBaseLayout({ body, year, previewText }: EmailLayoutOptions
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style type="text/css">
+        body, table, td, a, h1, p, span, strong {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+        }
         body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
         table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
         img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
@@ -72,7 +75,7 @@ export function wrapInBaseLayout({ body, year, previewText }: EmailLayoutOptions
         }
     </style>
 </head>
-<body style="margin:0; padding:0; background-color:#0b1120; font-family:Plus Jakarta Sans, Segoe UI, Roboto, Helvetica, Arial, sans-serif;">
+<body style="margin:0; padding:0; background-color:#0b1120; font-family:&quot;Plus Jakarta Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Helvetica, Arial, sans-serif;">
     ${preview}
 
     <!-- Outer wrapper — app background with gradient blobs + pitch lines -->
@@ -97,7 +100,7 @@ export function wrapInBaseLayout({ body, year, previewText }: EmailLayoutOptions
                         <td align="center" style="padding: 0 0 36px;">
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0">
                                 <tr>
-                                    <td style="font-family:Plus Jakarta Sans, Segoe UI, Roboto, Helvetica, Arial, sans-serif; font-size:28px; font-weight:800; letter-spacing:-0.5px; color:#ffffff; text-align:center; line-height:1;">
+                                    <td style="font-family:&quot;Plus Jakarta Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Helvetica, Arial, sans-serif; font-size:28px; font-weight:800; letter-spacing:-0.5px; color:#ffffff; text-align:center; line-height:1;">
                                         RETRO <span style="color:#3b82f6;">FANTASY</span>
                                     </td>
                                 </tr>
@@ -110,10 +113,10 @@ export function wrapInBaseLayout({ body, year, previewText }: EmailLayoutOptions
                         <td>
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border-radius:28px; border-collapse:separate;">
                                 <tr>
-                                    <td style="padding:1px; border-radius:28px; background: linear-gradient(160deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 40%, rgba(59,130,246,0.08) 100%);">
+                                    <td style="padding:1px; border-radius:28px; background-color:#1e293b; background: linear-gradient(160deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 40%, rgba(59,130,246,0.08) 100%);">
                                         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border-radius:27px; border-collapse:separate;">
                                             <tr>
-                                                <td class="content-padding" style="padding:44px 40px; background: linear-gradient(160deg, rgba(15,23,42,0.85) 0%, rgba(15,23,42,0.92) 50%, rgba(11,17,32,0.95) 100%); border-radius:27px; box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);">
+                                                <td class="content-padding" style="padding:44px 40px; background-color:#0f172a; background: linear-gradient(160deg, rgba(15,23,42,0.85) 0%, rgba(15,23,42,0.92) 50%, rgba(11,17,32,0.95) 100%); border-radius:27px; box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);">
                                                     ${body}
                                                 </td>
                                             </tr>
@@ -127,10 +130,10 @@ export function wrapInBaseLayout({ body, year, previewText }: EmailLayoutOptions
                     <!-- ═══ FOOTER ═══ -->
                     <tr>
                         <td style="padding:28px 0 16px; text-align:center;">
-                            <p style="margin:0; font-family:Plus Jakarta Sans, Segoe UI, Roboto, Helvetica, Arial, sans-serif; font-size:11px; color:#334155; line-height:1.5; font-weight:500;">
+                            <p style="margin:0; font-family:&quot;Plus Jakarta Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Helvetica, Arial, sans-serif; font-size:11px; color:#334155; line-height:1.5; font-weight:500;">
                                 &copy; ${currentYear} RetroFantasy
                             </p>
-                            <p style="margin:4px 0 0; font-family:Plus Jakarta Sans, Segoe UI, Roboto, Helvetica, Arial, sans-serif; font-size:10px; color:#1e293b; line-height:1.4; font-weight:500;">
+                            <p style="margin:4px 0 0; font-family:&quot;Plus Jakarta Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Helvetica, Arial, sans-serif; font-size:10px; color:#475569; line-height:1.4; font-weight:500;">
                                 Correo autom&aacute;tico &middot; No respondas directamente
                             </p>
                         </td>
