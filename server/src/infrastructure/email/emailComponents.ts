@@ -4,7 +4,7 @@
 // Minimal, no-emoji building blocks with liquid glass aesthetic.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const FONT = `'Plus Jakarta Sans','Segoe UI',Roboto,Helvetica,Arial,sans-serif`;
+const FONT = "Plus Jakarta Sans, Segoe UI, Roboto, Helvetica, Arial, sans-serif";
 
 /**
  * Primary CTA button — matches the web's btn-primary exactly:
@@ -12,21 +12,12 @@ const FONT = `'Plus Jakarta Sans','Segoe UI',Roboto,Helvetica,Arial,sans-serif`;
  */
 export function emailButton(label: string, href: string): string {
     return `
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:20px auto 0;">
             <tr>
-                <td align="center" style="border-radius:16px;">
-                    <!--[if mso]>
-                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word"
-                        href="${href}" style="height:52px;v-text-anchor:middle;width:260px;" arcsize="31%" strokecolor="#3b82f6" strokeweight="2px" fillcolor="#1a2332">
-                        <w:anchorlock/>
-                        <center style="color:#ffffff;font-family:'Segoe UI',sans-serif;font-size:14px;font-weight:bold;">${label}</center>
-                    </v:roundrect>
-                    <![endif]-->
-                    <!--[if !mso]><!-->
-                    <a href="${href}" target="_blank" style="display:inline-block; padding:16px 40px; font-family:${FONT}; font-size:14px; font-weight:700; color:#ffffff; text-decoration:none; border-radius:16px; border:2px solid #3b82f6; background:rgba(203,213,225,0.1); box-shadow: 0 0 15px rgba(59,130,246,0.2); letter-spacing:-0.01em; line-height:1;">
+                <td align="center" style="border-radius:16px; background-color:rgba(203,213,225,0.1); border:2px solid #3b82f6; box-shadow:0 0 15px rgba(59,130,246,0.2);">
+                    <a href="${href}" target="_blank" style="display:inline-block; padding:15px 38px; font-family:${FONT}; font-size:14px; font-weight:700; color:#ffffff; text-decoration:none; border-radius:16px; letter-spacing:-0.01em; line-height:1;">
                         ${label}
                     </a>
-                    <!--<![endif]-->
                 </td>
             </tr>
         </table>`;

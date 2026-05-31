@@ -72,7 +72,7 @@ export function wrapInBaseLayout({ body, year, previewText }: EmailLayoutOptions
         }
     </style>
 </head>
-<body style="margin:0; padding:0; background-color:#0b1120; font-family:'Plus Jakarta Sans','Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<body style="margin:0; padding:0; background-color:#0b1120; font-family:Plus Jakarta Sans, Segoe UI, Roboto, Helvetica, Arial, sans-serif;">
     ${preview}
 
     <!-- Outer wrapper — app background with gradient blobs + pitch lines -->
@@ -97,7 +97,7 @@ export function wrapInBaseLayout({ body, year, previewText }: EmailLayoutOptions
                         <td align="center" style="padding: 0 0 36px;">
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0">
                                 <tr>
-                                    <td style="font-family:'Plus Jakarta Sans','Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:28px; font-weight:800; letter-spacing:-0.5px; color:#ffffff; text-align:center; line-height:1;">
+                                    <td style="font-family:Plus Jakarta Sans, Segoe UI, Roboto, Helvetica, Arial, sans-serif; font-size:28px; font-weight:800; letter-spacing:-0.5px; color:#ffffff; text-align:center; line-height:1;">
                                         RETRO <span style="color:#3b82f6;">FANTASY</span>
                                     </td>
                                 </tr>
@@ -127,10 +127,10 @@ export function wrapInBaseLayout({ body, year, previewText }: EmailLayoutOptions
                     <!-- ═══ FOOTER ═══ -->
                     <tr>
                         <td style="padding:28px 0 16px; text-align:center;">
-                            <p style="margin:0; font-family:'Plus Jakarta Sans','Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:11px; color:#334155; line-height:1.5; font-weight:500;">
+                            <p style="margin:0; font-family:Plus Jakarta Sans, Segoe UI, Roboto, Helvetica, Arial, sans-serif; font-size:11px; color:#334155; line-height:1.5; font-weight:500;">
                                 &copy; ${currentYear} RetroFantasy
                             </p>
-                            <p style="margin:4px 0 0; font-family:'Plus Jakarta Sans','Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:10px; color:#1e293b; line-height:1.4; font-weight:500;">
+                            <p style="margin:4px 0 0; font-family:Plus Jakarta Sans, Segoe UI, Roboto, Helvetica, Arial, sans-serif; font-size:10px; color:#1e293b; line-height:1.4; font-weight:500;">
                                 Correo autom&aacute;tico &middot; No respondas directamente
                             </p>
                         </td>
