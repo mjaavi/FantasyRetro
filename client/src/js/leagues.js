@@ -1,4 +1,4 @@
-import { fetchLeagueCreationOptions, fetchMisLigas, crearLiga, unirseALiga } from './api.js';
+import { fetchLeagueCreationOptions, fetchMisLigas, crearLiga, unirseALiga, fetchMarketPlayers, fetchRoster, fetchRosterScores, fetchRosterLineups } from './api.js';
 import { refreshNavbarBudget } from './navbar-budget.js';
 
 // Estado
@@ -170,6 +170,10 @@ function warmUpAccessControls(liga) {
             await Promise.allSettled([
                 adminModule.actualizarBotonAdmin?.(liga),
                 catalogModule.actualizarBotonCatalogo?.(),
+                fetchMarketPlayers(liga.id).catch(() => []),
+                fetchRoster(liga.id).catch(() => []),
+                fetchRosterScores(liga.id).catch(() => null),
+                fetchRosterLineups(liga.id).catch(() => null),
             ]);
         } catch (error) {
             console.warn('[Leagues] No se pudieron preparar accesos avanzados:', error.message ?? error);

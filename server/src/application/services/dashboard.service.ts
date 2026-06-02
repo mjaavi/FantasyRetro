@@ -56,6 +56,7 @@ export class DashboardService {
             }
         }
 
+
         const misRosterIds = new Set(
             rosterEntries
                 .filter(entry => entry.user_id === userId)
@@ -63,26 +64,29 @@ export class DashboardService {
         );
 
         const ultimaJornada = misScores.filter(score => score.jornada === jornada);
-        const mvpVisuals = await this.repo.getPlayerVisuals(
-            leagueId,
-            [...new Set(ultimaJornada.map(score => score.player_api_id))],
-        );
-        const mvpVisualMap = new Map(mvpVisuals.map(player => [player.player_api_id, player]));
-        const mvp = [...ultimaJornada]
+        const top3MvpScores = [...ultimaJornada]
             .sort((a, b) => Number(b.puntos_total) - Number(a.puntos_total))
-            .slice(0, 3)
-            .map(score => ({
-                player_api_id: score.player_api_id,
-                player_name: mvpVisualMap.get(score.player_api_id)?.player_name ?? `#${score.player_api_id}`,
-                position: mvpVisualMap.get(score.player_api_id)?.position ?? 'MC',
-                playerFifaApiId: mvpVisualMap.get(score.player_api_id)?.playerFifaApiId ?? null,
-                faceUrl: mvpVisualMap.get(score.player_api_id)?.faceUrl ?? null,
-                clubLogoUrl: mvpVisualMap.get(score.player_api_id)?.clubLogoUrl ?? null,
-                puntos_total: Number(score.puntos_total),
-                picas: score.picas,
-                cronista_type: score.cronista_type,
-                en_roster: misRosterIds.has(score.player_api_id),
-            }));
+            .slice(0, 3);
+
+        const mvpVisuals = top3MvpScores.length > 0
+            ? await this.repo.getPlayerVisuals(
+                leagueId,
+                top3MvpScores.map(score => score.player_api_id),
+              )
+            : [];
+        const mvpVisualMap = new Map(mvpVisuals.map(player => [player.player_api_id, player]));
+        const mvp = top3MvpScores.map(score => ({
+            player_api_id: score.player_api_id,
+            player_name: mvpVisualMap.get(score.player_api_id)?.player_name ?? `#${score.player_api_id}`,
+            position: mvpVisualMap.get(score.player_api_id)?.position ?? 'MC',
+            playerFifaApiId: mvpVisualMap.get(score.player_api_id)?.playerFifaApiId ?? null,
+            faceUrl: mvpVisualMap.get(score.player_api_id)?.faceUrl ?? null,
+            clubLogoUrl: mvpVisualMap.get(score.player_api_id)?.clubLogoUrl ?? null,
+            puntos_total: Number(score.puntos_total),
+            picas: score.picas,
+            cronista_type: score.cronista_type,
+            en_roster: misRosterIds.has(score.player_api_id),
+        }));
 
         const jornadas = Array.from({ length: Math.min(jornada, 5) }, (_, i) => jornada - 4 + i).filter(j => j > 0);
         const chartYo = jornadas.map(j => puntosPorUsuarioJornada.get(userId)?.get(j) ?? 0);
