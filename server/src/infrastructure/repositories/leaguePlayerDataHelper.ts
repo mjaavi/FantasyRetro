@@ -65,6 +65,11 @@ const playerCache = new Map<number, PlayerRow | null>();
 const playerAttributeCache = new Map<string, PlayerAttributeRow | null>();
 const seasonalClubCache = new Map<string, Map<number, SeasonalClubData>>();
 
+// Cachés de promesas en curso para evitar Cache Stampede (consultas duplicadas concurrentes)
+const ongoingPlayerFetches = new Map<number, Promise<PlayerRow | null>>();
+const ongoingAttributeFetches = new Map<string, Promise<PlayerAttributeRow | null>>();
+const ongoingSeasonalClubFetches = new Map<string, Promise<Map<number, SeasonalClubData>>>();
+
 export async function loadLeaguePlayerData(
     leagueId: number,
     rawPlayerIds: number[],
@@ -106,9 +111,11 @@ export async function loadLeaguePlayerData(
 
 async function fetchPlayers(playerIds: number[]): Promise<Map<number, PlayerRow>> {
     const result = new Map<number, PlayerRow>();
+    const promisesToAwait: { playerId: number; promise: Promise<PlayerRow | null> }[] = [];
     const missingIds: number[] = [];
 
     for (const playerId of playerIds) {
+        // 1. Verificar si ya está en la caché
         const cachedPlayer = playerCache.get(playerId);
         if (cachedPlayer !== undefined) {
             if (cachedPlayer) {
@@ -117,38 +124,69 @@ async function fetchPlayers(playerIds: number[]): Promise<Map<number, PlayerRow>
             continue;
         }
 
+        // 2. Verificar si ya hay una petición en curso
+        const ongoing = ongoingPlayerFetches.get(playerId);
+        if (ongoing) {
+            promisesToAwait.push({ playerId, promise: ongoing });
+            continue;
+        }
+
         missingIds.push(playerId);
     }
 
-    const CHUNK_SIZE = 100;
-    for (let i = 0; i < missingIds.length; i += CHUNK_SIZE) {
-        const chunk = missingIds.slice(i, i + CHUNK_SIZE);
-        const { data, error } = await supabaseAdmin
-            .from('Player')
-            .select('player_api_id, player_name, player_fifa_api_id, player_face_url')
-            .in('player_api_id', chunk);
+    if (missingIds.length > 0) {
+        // Crear una promesa compartida para el lote de peticiones
+        const batchPromise = (async () => {
+            const mappedResults = new Map<number, PlayerRow | null>();
+            const CHUNK_SIZE = 100;
+            for (let i = 0; i < missingIds.length; i += CHUNK_SIZE) {
+                const chunk = missingIds.slice(i, i + CHUNK_SIZE);
+                const { data, error } = await supabaseAdmin
+                    .from('Player')
+                    .select('player_api_id, player_name, player_fifa_api_id, player_face_url')
+                    .in('player_api_id', chunk);
 
-        if (error) {
-            throw new AppError(`Error al obtener jugadores: ${error.message}`, 500);
+                if (error) {
+                    throw new AppError(`Error al obtener jugadores: ${error.message}`, 500);
+                }
+
+                for (const row of data ?? []) {
+                    const normalizedRow: PlayerRow = {
+                        player_api_id: Number(row.player_api_id),
+                        player_name: row.player_name as string | null,
+                        player_fifa_api_id: row.player_fifa_api_id === null ? null : Number(row.player_fifa_api_id),
+                        player_face_url: row.player_face_url as string | null,
+                    };
+                    mappedResults.set(normalizedRow.player_api_id, normalizedRow);
+                }
+            }
+            return mappedResults;
+        })();
+
+        // Registrar las promesas individuales derivadas en ongoingPlayerFetches
+        for (const playerId of missingIds) {
+            const playerPromise = batchPromise.then(mapped => {
+                const val = mapped.get(playerId) ?? null;
+                playerCache.set(playerId, val);
+                ongoingPlayerFetches.delete(playerId);
+                return val;
+            }).catch(err => {
+                ongoingPlayerFetches.delete(playerId);
+                throw err;
+            });
+
+            ongoingPlayerFetches.set(playerId, playerPromise);
+            promisesToAwait.push({ playerId, promise: playerPromise });
         }
+    }
 
-        const chunkMap = new Map<number, PlayerRow>();
-        for (const row of data ?? []) {
-            const normalizedRow: PlayerRow = {
-                player_api_id: Number(row.player_api_id),
-                player_name: row.player_name as string | null,
-                player_fifa_api_id: row.player_fifa_api_id === null ? null : Number(row.player_fifa_api_id),
-                player_face_url: row.player_face_url as string | null,
-            };
-
-            chunkMap.set(normalizedRow.player_api_id, normalizedRow);
-            playerCache.set(normalizedRow.player_api_id, normalizedRow);
-            result.set(normalizedRow.player_api_id, normalizedRow);
-        }
-
-        for (const playerId of chunk) {
-            if (!chunkMap.has(playerId)) {
-                playerCache.set(playerId, null);
+    // Esperar a que se completen todas las promesas correspondientes
+    if (promisesToAwait.length > 0) {
+        const resolved = await Promise.all(promisesToAwait.map(x => x.promise));
+        for (let i = 0; i < promisesToAwait.length; i++) {
+            const val = resolved[i];
+            if (val) {
+                result.set(promisesToAwait[i].playerId, val);
             }
         }
     }
@@ -161,11 +199,14 @@ async function fetchAttributes(
     leagueContext: LeagueContext | null,
 ): Promise<Map<number, PlayerAttributeRow>> {
     const result = new Map<number, PlayerAttributeRow>();
+    const promisesToAwait: { playerId: number; promise: Promise<PlayerAttributeRow | null> }[] = [];
     const missingIds: number[] = [];
     const seasonKey = leagueContext?.season ?? 'unknown';
 
     for (const playerId of playerIds) {
         const cacheKey = `${seasonKey}:${playerId}`;
+        
+        // 1. Verificar si ya está en la caché
         const cachedAttribute = playerAttributeCache.get(cacheKey);
         if (cachedAttribute !== undefined) {
             if (cachedAttribute) {
@@ -174,52 +215,89 @@ async function fetchAttributes(
             continue;
         }
 
+        // 2. Verificar si ya hay una petición en curso
+        const ongoing = ongoingAttributeFetches.get(cacheKey);
+        if (ongoing) {
+            promisesToAwait.push({ playerId, promise: ongoing });
+            continue;
+        }
+
         missingIds.push(playerId);
     }
 
-    const targetTimestamp = getSeasonReferenceTimestamp(leagueContext?.season ?? null);
-    const CHUNK_SIZE = 30;
+    if (missingIds.length > 0) {
+        const targetTimestamp = getSeasonReferenceTimestamp(leagueContext?.season ?? null);
 
-    for (let i = 0; i < missingIds.length; i += CHUNK_SIZE) {
-        const chunk = missingIds.slice(i, i + CHUNK_SIZE);
-        const { data, error } = await supabaseAdmin
-            .from('Player_Attributes')
-            .select('player_api_id, overall_rating, date')
-            .in('player_api_id', chunk);
+        // Crear una promesa compartida para el lote de peticiones
+        const batchPromise = (async () => {
+            const mappedResults = new Map<number, PlayerAttributeRow | null>();
+            const CHUNK_SIZE = 100; // Incrementado a 100 para optimizar el número de roundtrips
 
-        if (error) {
-            throw new AppError(`Error al obtener atributos de jugador: ${error.message}`, 500);
-        }
+            for (let i = 0; i < missingIds.length; i += CHUNK_SIZE) {
+                const chunk = missingIds.slice(i, i + CHUNK_SIZE);
+                const { data, error } = await supabaseAdmin
+                    .from('Player_Attributes')
+                    .select('player_api_id, overall_rating, date')
+                    .in('player_api_id', chunk);
 
-        const selectedAttributes = new Map<number, { row: PlayerAttributeRow; distance: number; timestamp: number }>();
+                if (error) {
+                    throw new AppError(`Error al obtener atributos de jugador: ${error.message}`, 500);
+                }
 
-        for (const row of data ?? []) {
-            const normalizedRow: PlayerAttributeRow = {
-                player_api_id: Number(row.player_api_id),
-                overall_rating: row.overall_rating === null ? null : Number(row.overall_rating),
-                date: row.date as string | null,
-            };
+                const selectedAttributes = new Map<number, { row: PlayerAttributeRow; distance: number; timestamp: number }>();
 
-            const timestamp = getAttributeTimestamp(normalizedRow.date);
-            const distance = getAttributeDistance(timestamp, targetTimestamp);
-            const current = selectedAttributes.get(normalizedRow.player_api_id);
+                for (const row of data ?? []) {
+                    const normalizedRow: PlayerAttributeRow = {
+                        player_api_id: Number(row.player_api_id),
+                        overall_rating: row.overall_rating === null ? null : Number(row.overall_rating),
+                        date: row.date as string | null,
+                    };
 
-            if (!current || distance < current.distance || (distance === current.distance && timestamp > current.timestamp)) {
-                selectedAttributes.set(normalizedRow.player_api_id, {
-                    row: normalizedRow,
-                    distance,
-                    timestamp,
-                });
+                    const timestamp = getAttributeTimestamp(normalizedRow.date);
+                    const distance = getAttributeDistance(timestamp, targetTimestamp);
+                    const current = selectedAttributes.get(normalizedRow.player_api_id);
+
+                    if (!current || distance < current.distance || (distance === current.distance && timestamp > current.timestamp)) {
+                        selectedAttributes.set(normalizedRow.player_api_id, {
+                            row: normalizedRow,
+                            distance,
+                            timestamp,
+                        });
+                    }
+                }
+
+                for (const playerId of chunk) {
+                    mappedResults.set(playerId, selectedAttributes.get(playerId)?.row ?? null);
+                }
             }
-        }
+            return mappedResults;
+        })();
 
-        for (const playerId of chunk) {
+        // Registrar las promesas individuales derivadas en ongoingAttributeFetches
+        for (const playerId of missingIds) {
             const cacheKey = `${seasonKey}:${playerId}`;
-            const selected = selectedAttributes.get(playerId)?.row ?? null;
-            playerAttributeCache.set(cacheKey, selected);
+            const attributePromise = batchPromise.then(mapped => {
+                const val = mapped.get(playerId) ?? null;
+                playerAttributeCache.set(cacheKey, val);
+                ongoingAttributeFetches.delete(cacheKey);
+                return val;
+            }).catch(err => {
+                ongoingAttributeFetches.delete(cacheKey);
+                throw err;
+            });
 
-            if (selected) {
-                result.set(playerId, selected);
+            ongoingAttributeFetches.set(cacheKey, attributePromise);
+            promisesToAwait.push({ playerId, promise: attributePromise });
+        }
+    }
+
+    // Esperar a que se completen todas las promesas correspondientes
+    if (promisesToAwait.length > 0) {
+        const resolved = await Promise.all(promisesToAwait.map(x => x.promise));
+        for (let i = 0; i < promisesToAwait.length; i++) {
+            const val = resolved[i];
+            if (val) {
+                result.set(promisesToAwait[i].playerId, val);
             }
         }
     }
@@ -236,11 +314,24 @@ async function resolveSeasonalClubs(
     }
 
     const cacheKey = `${leagueContext.season}:${leagueContext.kaggle_league_id}`;
+    
+    // 1. Verificar si ya está en caché resuelto
     let cachedSeasonalClubs = seasonalClubCache.get(cacheKey);
-
     if (!cachedSeasonalClubs) {
-        cachedSeasonalClubs = await buildSeasonalClubCache(leagueContext);
-        seasonalClubCache.set(cacheKey, cachedSeasonalClubs);
+        // 2. Verificar si ya se está cargando (para evitar múltiples consultas pesadas de Match)
+        let ongoing = ongoingSeasonalClubFetches.get(cacheKey);
+        if (!ongoing) {
+            ongoing = buildSeasonalClubCache(leagueContext).then(data => {
+                seasonalClubCache.set(cacheKey, data);
+                ongoingSeasonalClubFetches.delete(cacheKey);
+                return data;
+            }).catch(err => {
+                ongoingSeasonalClubFetches.delete(cacheKey);
+                throw err;
+            });
+            ongoingSeasonalClubFetches.set(cacheKey, ongoing);
+        }
+        cachedSeasonalClubs = await ongoing;
     }
 
     const result = new Map<number, SeasonalClubData>();
