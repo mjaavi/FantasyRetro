@@ -17,7 +17,7 @@ SECURITY DEFINER
 AS $$
 BEGIN
   RETURN QUERY
-  SELECT temp.player_id, AVG(temp.y)::numeric
+  SELECT temp.player_id::integer AS player_api_id, AVG(temp.y)::numeric AS avg_y
   FROM (
     SELECT home_player_1 AS player_id, "home_player_Y1" AS y FROM "Match" WHERE home_player_1 = ANY(p_player_ids)
     UNION ALL SELECT home_player_2, "home_player_Y2" FROM "Match" WHERE home_player_2 = ANY(p_player_ids)
