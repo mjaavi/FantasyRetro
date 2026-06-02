@@ -1,4 +1,4 @@
-import { fetchLeagueCreationOptions, fetchMisLigas, crearLiga, unirseALiga, fetchRoster } from './api.js';
+import { fetchLeagueCreationOptions, fetchMisLigas, crearLiga, unirseALiga } from './api.js';
 import { refreshNavbarBudget } from './navbar-budget.js';
 
 // Estado
@@ -141,62 +141,40 @@ async function activarLiga(liga) {
     }
 
     setDashboardPanel('active');
-    
-    // Iniciar pre-carga global (bloquea la UI hasta que el equipo está listo)
-    await preloadApp(liga);
+
+    await openInitialDashboard();
+    warmUpAccessControls(liga);
 }
 
-// Pre-carga global: Espera a que se asigne el equipo y precarga todas las pestañas
-async function preloadApp(liga) {
-    const splash = document.getElementById('global-splash-screen');
-    const splashText = document.getElementById('global-splash-text');
-    
-    if (splash) {
-        splash.classList.remove('hidden');
-        // Pequeño timeout para que la transición CSS funcione
-        setTimeout(() => splash.classList.remove('opacity-0'), 10);
+async function openInitialDashboard() {
+    if (typeof window.switchView === 'function') {
+        await window.switchView('view-dashboard', document.getElementById('btn-dashboard'));
+        return;
     }
 
-    try {
-        if (splashText) splashText.textContent = 'Asignando jugadores...';
-        
-        // POLLING: Esperar hasta que el Roster tenga jugadores (onboarding finalizado)
-        // Hacemos polling cada 1.5s. Si ya existe, sale instantaneo.
-        let isTeamReady = false;
-        let attempts = 0;
-        
-        while (!isTeamReady && attempts < 15) { // Max ~22s de polling
-            const roster = await fetchRoster(liga.id).catch(() => []);
-            if (roster && roster.length >= 11) {
-                isTeamReady = true;
-                break;
-            }
-            // Esperar 1.5s antes del siguiente intento
-            await new Promise(r => setTimeout(r, 1500));
-            attempts++;
-        }
-
-        if (splashText) splashText.textContent = 'Cargando datos...';
-
-        // Pre-cargar todas las pestañas en paralelo para que el cambio de vista sea instantáneo
-        await Promise.allSettled([
-            typeof window.loadRoster === 'function' ? window.loadRoster() : Promise.resolve(),
-            typeof window.loadDashboard === 'function' ? window.loadDashboard() : Promise.resolve(),
-            typeof window.loadMarket === 'function' ? window.loadMarket() : Promise.resolve(),
-            typeof window.loadClasificacion === 'function' ? window.loadClasificacion() : Promise.resolve()
-        ]);
-
-    } catch (e) {
-        console.error('[Preload] Error:', e);
-    } finally {
-        if (splash) {
-            splash.classList.add('opacity-0');
-            setTimeout(() => {
-                splash.classList.add('hidden');
-            }, 500);
-        }
-        irADashboard();
+    await window.ensureViewModule?.('view-dashboard');
+    irADashboard();
+    if (typeof window.loadDashboard === 'function') {
+        await window.loadDashboard();
     }
+}
+
+function warmUpAccessControls(liga) {
+    setTimeout(async () => {
+        try {
+            const [adminModule, catalogModule] = await Promise.all([
+                import('./admin.js'),
+                import('./catalog.js'),
+            ]);
+
+            await Promise.allSettled([
+                adminModule.actualizarBotonAdmin?.(liga),
+                catalogModule.actualizarBotonCatalogo?.(),
+            ]);
+        } catch (error) {
+            console.warn('[Leagues] No se pudieron preparar accesos avanzados:', error.message ?? error);
+        }
+    }, 0);
 }
 
 function setDashboardPanel(panel) {

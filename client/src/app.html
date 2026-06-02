@@ -2074,35 +2074,12 @@
             } else {
                 document.body.style.visibility = 'visible';
                 try {
-                    await Promise.all([
-                        import('./js/market.js'),
+                    const [leaguesModule, profileModule] = await Promise.all([
                         import('./js/leagues.js'),
-                        import('./js/clasificacion.js'),
-                        import('./js/roster.js'),
                         import('./js/profile.js'),
-                        import('./js/admin.js'),
-                        import('./js/catalog.js'),
-                        import('./js/player-drawer.js'),
-                        import('./js/dashboard.js'),
-                        import('./js/player-search.js'),
-                        import('./js/rival-roster-renderer.js'),
-                    ]).then((modules) => {
-                        const profileModule = modules[4]; // profile.js es el índice 4
-                        if (profileModule && typeof profileModule.initProfileNav === 'function') {
-                            profileModule.initProfileNav();
-                        } else if (typeof window.initProfileNav === 'function') {
-                            window.initProfileNav();
-                        } else {
-                            console.warn('[Guard] initProfileNav no encontrado');
-                        }
-
-                        // Inicializar ligas y pre-carga global una vez que todos los módulos y funciones están registrados
-                        if (typeof window.inicializar === 'function') {
-                            window.inicializar();
-                        } else {
-                            console.warn('[Guard] inicializar no encontrado');
-                        }
-                    });
+                    ]);
+                    await profileModule.initProfileNav?.();
+                    await leaguesModule.inicializar?.();
                 } catch (moduleError) {
                     console.error('[Guard] Error en módulos:', moduleError.message);
                 }

@@ -105,10 +105,16 @@ function crearFilaRanking(entry) {
 
     if (!esPropio) {
         tr.title = 'Ver equipo de ' + (entry.username ?? 'rival');
-        tr.addEventListener('click', () => {
+        tr.addEventListener('click', async () => {
             const jornada = _jornadaSeleccionada ? Number(_jornadaSeleccionada) : undefined;
-            if (window.abrirRivalDrawer) {
-                window.abrirRivalDrawer(entry.userId, jornada);
+            try {
+                const module = window.abrirRivalDrawer
+                    ? null
+                    : await import('./rival-roster-renderer.js');
+                const abrirRivalDrawer = window.abrirRivalDrawer ?? module?.abrirRivalDrawer;
+                await abrirRivalDrawer?.(entry.userId, jornada);
+            } catch (error) {
+                console.error('[Clasificacion] Error cargando equipo rival:', error.message ?? error);
             }
         });
     }

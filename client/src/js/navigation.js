@@ -1,5 +1,34 @@
 // --- ANIMACIÓN DE CARGA ---
 
+const viewModuleLoaders = {
+    'view-dashboard': () => import('./dashboard.js'),
+    'view-liga': () => import('./clasificacion.js'),
+    'view-mercado': () => Promise.all([
+        import('./market.js'),
+        import('./player-search.js'),
+    ]),
+    'view-equipo': () => import('./roster.js'),
+    'view-perfil': () => import('./profile.js'),
+    'view-admin': () => import('./admin.js'),
+    'view-catalogo': () => import('./catalog.js'),
+};
+
+const loadedViews = new Map();
+
+function ensureViewModule(viewId) {
+    const loader = viewModuleLoaders[viewId];
+    if (!loader) return Promise.resolve();
+
+    if (!loadedViews.has(viewId)) {
+        loadedViews.set(viewId, loader().catch((error) => {
+            loadedViews.delete(viewId);
+            throw error;
+        }));
+    }
+
+    return loadedViews.get(viewId);
+}
+
 function mostrarCarga() {
     const overlay = document.getElementById('loading-overlay');
     if (overlay) overlay.classList.remove('hidden');
@@ -16,10 +45,17 @@ function ocultarCarga() {
 }
 
 // --- NAVEGACIÓN ENTRE PANTALLAS (SPA) ---
-function switchView(viewId, clickedButton) {
+async function switchView(viewId, clickedButton) {
     const views = ['view-dashboard', 'view-liga', 'view-mercado', 'view-equipo', 'view-perfil', 'view-admin', 'view-catalogo'];
 
     mostrarCarga();
+    try {
+        await ensureViewModule(viewId);
+    } catch (error) {
+        console.error('[Navigation] Error cargando modulo de vista:', viewId, error);
+        ocultarCarga();
+        return;
+    }
     
     // 1. Ocultamos TODAS las pantallas forzando el estilo en línea (A prueba de fallos)
     views.forEach(id => {
@@ -145,3 +181,6 @@ document.addEventListener('click', (event) => {
         }, 200);
     }
 });
+
+window.switchView = switchView;
+window.ensureViewModule = ensureViewModule;

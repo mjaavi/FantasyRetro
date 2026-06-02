@@ -1,5 +1,5 @@
 import { AppError } from '../../domain/errors/AppError';
-import { IDashboardRepository } from '../../domain/ports/IDashboardRepository';
+import { DashboardScoreRow, IDashboardRepository } from '../../domain/ports/IDashboardRepository';
 import { IFixturesRepository } from '../../domain/ports/IFixturesRepository';
 import { ILeagueRepository } from '../../domain/ports/ILeagueRepository';
 import { IRankingRepository } from '../../domain/ports/IRankingRepository';
@@ -7,6 +7,7 @@ import { SupabaseFixturesRepository } from '../../infrastructure/repositories/Su
 import { SupabaseDashboardRepository } from '../../infrastructure/repositories/SupabaseDashboardRepository';
 import { SupabaseLeagueRepository } from '../../infrastructure/repositories/SupabaseLeagueRepository';
 import { SupabaseRankingRepository } from '../../infrastructure/repositories/SupabaseRankingRepository';
+import { SupabasePlayerMarketValueRepository } from '../../infrastructure/repositories/SupabasePlayerMarketValueRepository';
 
 export class DashboardService {
     constructor(
@@ -14,7 +15,7 @@ export class DashboardService {
         private readonly rankingRepo: IRankingRepository = new SupabaseRankingRepository(),
         private readonly leagueRepo: ILeagueRepository = new SupabaseLeagueRepository(),
         private readonly fixturesRepo: IFixturesRepository = new SupabaseFixturesRepository(),
-        private readonly marketValueRepo = new (require('../../infrastructure/repositories/SupabasePlayerMarketValueRepository').SupabasePlayerMarketValueRepository)(),
+        private readonly marketValueRepo = new SupabasePlayerMarketValueRepository(),
     ) {}
 
     async getDashboardData(leagueId: number, userId: string) {
@@ -33,8 +34,27 @@ export class DashboardService {
             this.marketValueRepo.getTopMarketVariations(leagueId, 5),
         ]);
 
-        const misScores = scores.filter(score => score.user_id === userId);
-        const totalPts = misScores.reduce((sum, score) => sum + Number(score.puntos_total), 0);
+        const misScores: DashboardScoreRow[] = [];
+        const puntosPorUsuario = new Map<string, number>();
+        const puntosPorUsuarioJornada = new Map<string, Map<number, number>>();
+        let totalPts = 0;
+
+        for (const score of scores) {
+            const puntos = Number(score.puntos_total);
+            puntosPorUsuario.set(
+                score.user_id,
+                (puntosPorUsuario.get(score.user_id) ?? 0) + puntos,
+            );
+
+            const porJornada = puntosPorUsuarioJornada.get(score.user_id) ?? new Map<number, number>();
+            porJornada.set(score.jornada, (porJornada.get(score.jornada) ?? 0) + puntos);
+            puntosPorUsuarioJornada.set(score.user_id, porJornada);
+
+            if (score.user_id === userId) {
+                misScores.push(score);
+                totalPts += puntos;
+            }
+        }
 
         const misRosterIds = new Set(
             rosterEntries
@@ -65,19 +85,7 @@ export class DashboardService {
             }));
 
         const jornadas = Array.from({ length: Math.min(jornada, 5) }, (_, i) => jornada - 4 + i).filter(j => j > 0);
-        const chartYo = jornadas.map(j =>
-            misScores
-                .filter(score => score.jornada === j)
-                .reduce((sum, score) => sum + Number(score.puntos_total), 0),
-        );
-
-        const puntosPorUsuario = new Map<string, number>();
-        for (const score of scores) {
-            puntosPorUsuario.set(
-                score.user_id,
-                (puntosPorUsuario.get(score.user_id) ?? 0) + Number(score.puntos_total),
-            );
-        }
+        const chartYo = jornadas.map(j => puntosPorUsuarioJornada.get(userId)?.get(j) ?? 0);
 
         const rankingOrdenado = [...puntosPorUsuario.entries()].sort((a, b) => b[1] - a[1]);
         const myRankIdx = rankingOrdenado.findIndex(([uid]) => uid === userId);
@@ -85,11 +93,7 @@ export class DashboardService {
         const rivalId = rivalEntry?.[0];
 
         const chartRival = rivalId
-            ? jornadas.map(j =>
-                scores
-                    .filter(score => score.user_id === rivalId && score.jornada === j)
-                    .reduce((sum, score) => sum + Number(score.puntos_total), 0),
-            )
+            ? jornadas.map(j => puntosPorUsuarioJornada.get(rivalId)?.get(j) ?? 0)
             : [];
 
         const rival = rivalId
