@@ -63,12 +63,12 @@ export interface LeaguePlayerData {
 const leagueContextCache = new Map<number, LeagueContext | null>();
 const playerCache = new Map<number, PlayerRow | null>();
 const playerAttributeCache = new Map<string, PlayerAttributeRow | null>();
-const seasonalClubCache = new Map<string, Map<number, SeasonalClubData>>();
+const seasonalClubCache = new Map<string, SeasonalClubData>();
 
 // Cachés de promesas en curso para evitar Cache Stampede (consultas duplicadas concurrentes)
 const ongoingPlayerFetches = new Map<number, Promise<PlayerRow | null>>();
 const ongoingAttributeFetches = new Map<string, Promise<PlayerAttributeRow | null>>();
-const ongoingSeasonalClubFetches = new Map<string, Promise<Map<number, SeasonalClubData>>>();
+const ongoingSeasonalClubFetches = new Map<string, Promise<SeasonalClubData | null>>();
 
 export async function loadLeaguePlayerData(
     leagueId: number,
@@ -313,32 +313,111 @@ async function resolveSeasonalClubs(
         return new Map();
     }
 
-    const cacheKey = `${leagueContext.season}:${leagueContext.kaggle_league_id}`;
-    
-    // 1. Verificar si ya está en caché resuelto
-    let cachedSeasonalClubs = seasonalClubCache.get(cacheKey);
-    if (!cachedSeasonalClubs) {
-        // 2. Verificar si ya se está cargando (para evitar múltiples consultas pesadas de Match)
-        let ongoing = ongoingSeasonalClubFetches.get(cacheKey);
-        if (!ongoing) {
-            ongoing = buildSeasonalClubCache(leagueContext).then(data => {
-                seasonalClubCache.set(cacheKey, data);
+    const season = leagueContext.season;
+    const kaggleLeagueId = leagueContext.kaggle_league_id;
+    const result = new Map<number, SeasonalClubData>();
+    const promisesToAwait: { playerId: number; promise: Promise<SeasonalClubData | null> }[] = [];
+    const uncachedIds: number[] = [];
+
+    for (const playerId of playerIds) {
+        const cacheKey = `${kaggleLeagueId}:${season}:${playerId}`;
+        
+        // 1. Verificar si ya está en caché resuelto
+        const cachedClub = seasonalClubCache.get(cacheKey);
+        if (cachedClub) {
+            result.set(playerId, cachedClub);
+            continue;
+        }
+
+        // 2. Verificar si ya hay una petición en curso para este jugador en esta temporada
+        const ongoing = ongoingSeasonalClubFetches.get(cacheKey);
+        if (ongoing) {
+            promisesToAwait.push({ playerId, promise: ongoing });
+            continue;
+        }
+
+        uncachedIds.push(playerId);
+    }
+
+    if (uncachedIds.length > 0) {
+        // Crear una promesa compartida para el lote de peticiones
+        const batchPromise = (async () => {
+            try {
+                // Intentamos consultar los clubs de temporada en lote usando la nueva función SQL
+                const { data, error } = await supabaseAdmin.rpc('get_players_seasonal_teams', {
+                    p_league_id: kaggleLeagueId,
+                    p_season: season,
+                    p_player_ids: uncachedIds,
+                });
+
+                if (error) {
+                    throw error;
+                }
+
+                const mapped = new Map<number, SeasonalClubData>();
+                if (data && Array.isArray(data)) {
+                    for (const row of data) {
+                        const pid = Number(row.player_id);
+                        mapped.set(pid, {
+                            realTeam: row.team_long_name ?? 'Sin equipo',
+                            clubLogoUrl: buildClubLogoUrl(row.team_fifa_api_id ?? null),
+                        });
+                    }
+                }
+                return mapped;
+            } catch (err: any) {
+                console.warn(`[Club] Falló get_players_seasonal_teams en lote (usando fallback de escaneo completo): ${err.message}`);
+                
+                // Fallback clásico: escanea todos los partidos de la temporada en el servidor
+                const fullCache = await buildSeasonalClubCache(leagueContext);
+                
+                // Mapear los resultados para los IDs que necesitamos
+                const mapped = new Map<number, SeasonalClubData>();
+                for (const pid of uncachedIds) {
+                    const club = fullCache.get(pid);
+                    if (club) {
+                        mapped.set(pid, club);
+                    }
+                }
+                
+                // Además, guardamos TODOS los resultados en la caché para evitar volver a escanear partidos en el futuro
+                for (const [pid, club] of fullCache.entries()) {
+                    const fullCacheKey = `${kaggleLeagueId}:${season}:${pid}`;
+                    if (!seasonalClubCache.has(fullCacheKey)) {
+                        seasonalClubCache.set(fullCacheKey, club);
+                    }
+                }
+                
+                return mapped;
+            }
+        })();
+
+        // Registrar las promesas individuales derivadas en ongoingSeasonalClubFetches
+        for (const playerId of uncachedIds) {
+            const cacheKey = `${kaggleLeagueId}:${season}:${playerId}`;
+            const playerPromise = batchPromise.then(mapped => {
+                const club = mapped.get(playerId) ?? { realTeam: 'Sin equipo', clubLogoUrl: null };
+                seasonalClubCache.set(cacheKey, club);
                 ongoingSeasonalClubFetches.delete(cacheKey);
-                return data;
+                return club;
             }).catch(err => {
                 ongoingSeasonalClubFetches.delete(cacheKey);
                 throw err;
             });
-            ongoingSeasonalClubFetches.set(cacheKey, ongoing);
+
+            ongoingSeasonalClubFetches.set(cacheKey, playerPromise);
+            promisesToAwait.push({ playerId, promise: playerPromise });
         }
-        cachedSeasonalClubs = await ongoing;
     }
 
-    const result = new Map<number, SeasonalClubData>();
-    for (const playerId of playerIds) {
-        const club = cachedSeasonalClubs.get(playerId);
-        if (club) {
-            result.set(playerId, club);
+    // Esperar a que se completen todas las promesas correspondientes
+    if (promisesToAwait.length > 0) {
+        const resolved = await Promise.all(promisesToAwait.map(x => x.promise));
+        for (let i = 0; i < promisesToAwait.length; i++) {
+            const val = resolved[i];
+            if (val) {
+                result.set(promisesToAwait[i].playerId, val);
+            }
         }
     }
 
