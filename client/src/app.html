@@ -1075,19 +1075,11 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                     <span class="nav-btn-label">Equipo</span>
                 </button>
-                <button onclick="switchView('view-catalogo', this)" id="btn-catalogo" class="nav-btn hidden">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M4 12h16M4 17h10"></path></svg>
-                    <span class="nav-btn-label">Catalogo</span>
-                </button>
-                <button onclick="switchView('view-platform-admin', this)" id="btn-platform-admin" class="nav-btn hidden">
+                <button onclick="switchView('view-ajustes', this)" id="btn-ajustes" class="nav-btn hidden">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                     </svg>
-                    <span class="nav-btn-label">P. Admin</span>
-                </button>
-                <button onclick="switchView('view-admin', this)" id="btn-admin" class="nav-btn hidden">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                    <span class="nav-btn-label">Admin</span>
+                    <span class="nav-btn-label">Ajustes</span>
                 </button>
             </div>
             <div class="flex items-center gap-2 md:gap-4 border-l border-white/10 ml-2 pl-2.5 md:pl-4 pr-1 min-w-0">
@@ -1678,8 +1670,33 @@
                 </div>
             </div>
         </section>
-        <section id="view-catalogo" style="display:none;" class="transition-all duration-300 opacity-0 z-10 relative">
-            <div class="flex items-end justify-between mb-8">
+        <section id="view-ajustes" style="display:none;" class="transition-all duration-300 opacity-0 z-10 relative">
+            <!-- Header de Ajustes -->
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+                <div>
+                    <h2 class="section-title">Administración y Ajustes</h2>
+                    <p class="section-subtitle">Gestiona tu liga, el catálogo y la plataforma desde un solo lugar</p>
+                </div>
+                <!-- Menú de pestañas internas (Liquid Glass) -->
+                <div class="flex bg-slate-400/5 backdrop-blur-md border border-white/10 rounded-xl p-1 gap-1 self-start md:self-auto">
+                    <button id="ajustes-tab-liga" onclick="switchAjustesTab('liga')" class="flex items-center gap-2 text-xs font-bold py-2 px-3 rounded-lg transition-all duration-200 text-slate-400 hover:text-slate-200 border border-transparent hidden">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+                        Mi Liga
+                    </button>
+                    <button id="ajustes-tab-catalogo" onclick="switchAjustesTab('catalogo')" class="flex items-center gap-2 text-xs font-bold py-2 px-3 rounded-lg transition-all duration-200 text-slate-400 hover:text-slate-200 border border-transparent hidden">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M4 12h16M4 17h10"></path></svg>
+                        Catálogo
+                    </button>
+                    <button id="ajustes-tab-platform" onclick="switchAjustesTab('platform')" class="flex items-center gap-2 text-xs font-bold py-2 px-3 rounded-lg transition-all duration-200 text-slate-400 hover:text-slate-200 border border-transparent hidden">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                        Plataforma
+                    </button>
+                </div>
+            </div>
+
+            <!-- Contenedor del panel de Catálogo -->
+            <div id="view-catalogo" class="ajustes-panel hidden">
+            <div class="flex items-end justify-between mb-8 hidden">
                 <div>
                     <h2 class="section-title">Catalogo e Imports</h2>
                     <p class="section-subtitle">Centro global para competiciones, temporadas e historial de cargas</p>
@@ -1781,10 +1798,10 @@
                     </div>
                 </div>
             </div>
-        </section>
-        <!-- ── Vista Admin ── -->
-        <section id="view-admin" style="display:none;" class="transition-all duration-300 opacity-0 z-10 relative">
-            <div class="flex items-end justify-between mb-8">
+        </div>
+            <!-- Contenedor del panel de Mi Liga -->
+            <div id="view-admin" class="ajustes-panel hidden">
+            <div class="flex items-end justify-between mb-8 hidden">
                 <div>
                     <h2 class="section-title">Panel de Administración</h2>
                     <p class="section-subtitle">Gestiona las jornadas de tu liga</p>
@@ -1872,11 +1889,10 @@
                     <button onclick="document.getElementById('admin-log').innerHTML=''" class="mt-3 text-xs text-slate-500 hover:text-white transition-colors text-left">Limpiar log</button>
                 </div>
             </div>
-        </section>
-
-        <!-- ── Vista Platform Admin ── -->
-        <section id="view-platform-admin" style="display:none;" class="transition-all duration-300 opacity-0 z-10 relative">
-            <div class="flex items-end justify-between mb-8">
+        </div>
+            <!-- Contenedor del panel de Plataforma -->
+            <div id="view-platform-admin" class="ajustes-panel hidden">
+            <div class="flex items-end justify-between mb-8 hidden">
                 <div>
                     <h2 class="section-title">Administración Global</h2>
                     <p class="section-subtitle">Centro de control y gestión de la plataforma</p>
@@ -1965,6 +1981,7 @@
                     <p id="padmin-stat-budget" class="text-4xl font-black text-blue-400">- €</p>
                 </div>
             </div>
+        </div>
         </section>
     </main>
 

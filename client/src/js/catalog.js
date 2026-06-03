@@ -26,27 +26,10 @@ const catalogState = {
 };
 
 export async function actualizarBotonCatalogo() {
-    const btn = document.getElementById('btn-catalogo');
-    if (!btn) {
-        return;
-    }
-
     try {
-        const me = await fetchCatalogMe();
-        if (me.isCatalogAdmin) {
-            btn.classList.remove('hidden');
-            return;
-        }
-    } catch (_err) {
-        // Si falla, ocultamos el acceso y no rompemos el resto de la app.
-    }
-
-    btn.classList.add('hidden');
-
-    const view = document.getElementById('view-catalogo');
-    if (view && view.style.display !== 'none') {
-        window.switchView?.('view-dashboard', document.getElementById('btn-dashboard'));
-    }
+        const { actualizarAjustesAccess } = await import('./ajustes.js');
+        await actualizarAjustesAccess();
+    } catch (_) {}
 }
 
 export async function loadCatalog(options = {}) {

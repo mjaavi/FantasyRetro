@@ -5,33 +5,10 @@ import { supabase } from './supabase.js';
 const NUMBER_FORMATTER = new Intl.NumberFormat('es-ES');
 
 export async function actualizarBotonAdmin(liga) {
-    const btn = document.getElementById('btn-admin');
-    if (!btn) {
-        return;
-    }
-
-    if (!liga) {
-        btn.classList.add('hidden');
-        return;
-    }
-
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-        btn.classList.add('hidden');
-        return;
-    }
-
-    if (liga.admin_id === session.user.id) {
-        btn.classList.remove('hidden');
-        return;
-    }
-
-    btn.classList.add('hidden');
-
-    const viewAdmin = document.getElementById('view-admin');
-    if (viewAdmin && viewAdmin.style.display !== 'none') {
-        window.switchView?.('view-dashboard', null);
-    }
+    try {
+        const { actualizarAjustesAccess } = await import('./ajustes.js');
+        await actualizarAjustesAccess();
+    } catch (_) {}
 }
 
 export async function loadAdmin() {

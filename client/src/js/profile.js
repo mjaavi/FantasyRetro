@@ -151,26 +151,16 @@ export async function initProfileNav() {
                 navBtn.style.backgroundImage = 'none';
             }
         }
-        await actualizarBotonPlatformAdmin();
+        const { actualizarAjustesAccess } = await import('./ajustes.js');
+        await actualizarAjustesAccess();
     } catch (err) {
         console.error('[Profile Nav]', err.message);
     }
 }
 
 export async function actualizarBotonPlatformAdmin() {
-    const btn = document.getElementById('btn-platform-admin');
-    if (!btn) return;
-
-    try {
-        const res = await apiFetch('/platform-admin/status');
-        if (res.status === 'ok' && res.data?.isAdmin) {
-            btn.classList.remove('hidden');
-            return;
-        }
-    } catch (_) {
-        // Silencioso
-    }
-    btn.classList.add('hidden');
+    const { actualizarAjustesAccess } = await import('./ajustes.js');
+    await actualizarAjustesAccess();
 }
 
 // ── Guardar nombre y equipo ───────────────────────────────────────────────────
