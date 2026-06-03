@@ -11,6 +11,7 @@ const viewModuleLoaders = {
     'view-perfil': () => import('./profile.js'),
     'view-admin': () => import('./admin.js'),
     'view-catalogo': () => import('./catalog.js'),
+    'view-platform-admin': () => import('./platformAdmin.js'),
 };
 
 const loadedViews = new Map();
@@ -46,7 +47,7 @@ function ocultarCarga() {
 
 // --- NAVEGACIÓN ENTRE PANTALLAS (SPA) ---
 async function switchView(viewId, clickedButton) {
-    const views = ['view-dashboard', 'view-liga', 'view-mercado', 'view-equipo', 'view-perfil', 'view-admin', 'view-catalogo'];
+    const views = ['view-dashboard', 'view-liga', 'view-mercado', 'view-equipo', 'view-perfil', 'view-admin', 'view-catalogo', 'view-platform-admin'];
 
     mostrarCarga();
     try {
@@ -100,6 +101,8 @@ async function switchView(viewId, clickedButton) {
             Promise.resolve(window.loadAdmin()).finally(ocultarCarga);
         } else if (viewId === 'view-catalogo' && typeof window.loadCatalog === 'function') {
             Promise.resolve(window.loadCatalog()).finally(ocultarCarga);
+        } else if (viewId === 'view-platform-admin' && typeof window.loadPlatformAdmin === 'function') {
+            Promise.resolve(window.loadPlatformAdmin()).finally(ocultarCarga);
         } else {
             setTimeout(ocultarCarga, 250);
         }
@@ -114,6 +117,7 @@ async function switchView(viewId, clickedButton) {
             'view-equipo': 'btn-equipo',
             'view-catalogo': 'btn-catalogo',
             'view-admin': 'btn-admin',
+            'view-platform-admin': 'btn-platform-admin',
             'view-perfil': 'btn-perfil'
         };
         const idMap = viewToBtn[viewId];

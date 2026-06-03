@@ -151,9 +151,26 @@ export async function initProfileNav() {
                 navBtn.style.backgroundImage = 'none';
             }
         }
+        await actualizarBotonPlatformAdmin();
     } catch (err) {
         console.error('[Profile Nav]', err.message);
     }
+}
+
+export async function actualizarBotonPlatformAdmin() {
+    const btn = document.getElementById('btn-platform-admin');
+    if (!btn) return;
+
+    try {
+        const res = await apiFetch('/platform-admin/status');
+        if (res.status === 'ok' && res.data?.isAdmin) {
+            btn.classList.remove('hidden');
+            return;
+        }
+    } catch (_) {
+        // Silencioso
+    }
+    btn.classList.add('hidden');
 }
 
 // ── Guardar nombre y equipo ───────────────────────────────────────────────────
@@ -466,6 +483,7 @@ window.uploadAvatar         = uploadAvatar;
 window.sendSupport          = sendSupport;
 window.confirmarBorrarCuenta = confirmarBorrarCuenta;
 window.initProfileNav       = initProfileNav;
+window.actualizarBotonPlatformAdmin = actualizarBotonPlatformAdmin;
 
 // Sobrescribir confirmarBorrarCuenta para usar el modal
 window.confirmarBorrarCuenta = function() {

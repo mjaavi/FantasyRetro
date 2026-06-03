@@ -1867,11 +1867,105 @@
                 </div>
             </div>
         </section>
+
+        <!-- ── Vista Platform Admin ── -->
+        <section id="view-platform-admin" style="display:none;" class="transition-all duration-300 opacity-0 z-10 relative">
+            <div class="flex items-end justify-between mb-8">
+                <div>
+                    <h2 class="section-title">Administración Global</h2>
+                    <p class="section-subtitle">Centro de control y gestión de la plataforma</p>
+                </div>
+                <span class="px-3 py-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-indigo-400 text-xs font-black uppercase tracking-wider">Super Admin</span>
+            </div>
+
+            <!-- Tab bar interna del panel: Usuarios / Ligas / Stats -->
+            <div class="mb-6">
+                <div class="flex bg-white/5 rounded-xl p-1 border border-white/10 gap-1 max-w-md overflow-x-auto">
+                    <button id="padmin-tab-users" class="flex-1 text-xs font-bold py-2.5 px-3 rounded-lg transition-all duration-200 bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                        Usuarios
+                    </button>
+                    <button id="padmin-tab-leagues" class="flex-1 text-xs font-bold py-2.5 px-3 rounded-lg transition-all duration-200 text-slate-500 hover:text-slate-300 border border-transparent">
+                        Ligas
+                    </button>
+                    <button id="padmin-tab-stats" class="flex-1 text-xs font-bold py-2.5 px-3 rounded-lg transition-all duration-200 text-slate-500 hover:text-slate-300 border border-transparent">
+                        Estadísticas
+                    </button>
+                </div>
+            </div>
+
+            <!-- PANEL 1: Usuarios -->
+            <div id="padmin-panel-users" class="space-y-6">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-extrabold text-white">Gestión de Usuarios</h3>
+                    <button onclick="padminAbrirModalCrearUsuario()" class="btn-primary px-4 py-2 text-xs">
+                        + Crear Usuario
+                    </button>
+                </div>
+                <div class="bento-panel overflow-hidden p-0 border border-white/10">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse min-w-[640px]">
+                            <thead>
+                                <tr class="table-header-row">
+                                    <th class="p-4">Email</th>
+                                    <th class="p-4">Mánager</th>
+                                    <th class="p-4">Equipo</th>
+                                    <th class="p-4 text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="padmin-users-tbody" class="text-sm font-bold text-white">
+                                <tr><td colspan="4" class="p-4 text-center text-slate-500">Cargando usuarios...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL 2: Ligas -->
+            <div id="padmin-panel-leagues" class="space-y-6 hidden">
+                <h3 class="text-xl font-extrabold text-white">Gestión de Ligas</h3>
+                <div class="bento-panel overflow-hidden p-0 border border-white/10">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse min-w-[640px]">
+                            <thead>
+                                <tr class="table-header-row">
+                                    <th class="p-4">Liga</th>
+                                    <th class="p-4">Temporada</th>
+                                    <th class="p-4">Jornada</th>
+                                    <th class="p-4">Creador</th>
+                                    <th class="p-4 text-center">Mánagers</th>
+                                    <th class="p-4 text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="padmin-leagues-tbody" class="text-sm font-bold text-white">
+                                <tr><td colspan="6" class="p-4 text-center text-slate-500">Cargando ligas...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL 3: Estadísticas -->
+            <div id="padmin-panel-stats" class="grid grid-cols-1 md:grid-cols-3 gap-6 hidden">
+                <div class="bento-card">
+                    <p class="stat-label mb-1">Usuarios Totales</p>
+                    <p id="padmin-stat-users" class="text-4xl font-black text-white">-</p>
+                </div>
+                <div class="bento-card">
+                    <p class="stat-label mb-1">Ligas Creadas</p>
+                    <p id="padmin-stat-leagues" class="text-4xl font-black text-white">-</p>
+                </div>
+                <div class="bento-card">
+                    <p class="stat-label mb-1">Dinero Total en Juego</p>
+                    <p id="padmin-stat-budget" class="text-4xl font-black text-blue-400">- €</p>
+                </div>
+            </div>
+        </section>
     </main>
 
     <div id="player-drawer-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-md z-[150] hidden opacity-0 transition-opacity duration-300" onclick="cerrarPlayerDrawer()"></div>
 
     <aside id="player-drawer" class="fixed top-0 right-0 h-full w-full max-w-sm bg-[#0b1120] shadow-2xl z-[160] transform translate-x-full transition-transform duration-300 flex flex-col border-l border-white/10">
+
 
         <!-- Header fijo -->
         <div class="p-5 border-b border-white/10 bg-white/[0.02] shrink-0">
@@ -2015,6 +2109,87 @@
     </div>
 
     </div><!-- /main-app -->
+
+    <!-- ── Modales de Administración Global (Platform Admin) ── -->
+    <!-- Modal: Platform Admin Crear Usuario -->
+    <div id="modal-padmin-crear-usuario" class="hidden fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
+        <div class="bento-card w-full max-w-md">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-extrabold text-white">Crear Nuevo Usuario</h3>
+                <button onclick="padminCerrarModal('modal-padmin-crear-usuario')" class="text-slate-400 hover:text-white text-2xl font-bold leading-none">×</button>
+            </div>
+            <form id="form-padmin-crear-usuario" class="space-y-4">
+                <div>
+                    <label class="form-label">Email</label>
+                    <input id="padmin-create-email" type="email" required placeholder="correo@ejemplo.com" class="form-input">
+                </div>
+                <div>
+                    <label class="form-label">Contraseña (Mín. 8 caracteres)</label>
+                    <input id="padmin-create-pass" type="password" required placeholder="••••••••" class="form-input">
+                </div>
+                <div>
+                    <label class="form-label">Nombre de Mánager (Username)</label>
+                    <input id="padmin-create-username" type="text" required placeholder="Ej: Maradona86" class="form-input">
+                </div>
+                <div>
+                    <label class="form-label">Nombre de Equipo</label>
+                    <input id="padmin-create-teamname" type="text" required placeholder="Ej: Rayo Celestial FC" class="form-input">
+                </div>
+                <p id="padmin-create-error" class="text-sm font-bold text-red-400 hidden"></p>
+                <p id="padmin-create-ok" class="text-sm font-bold text-green-400 hidden">✓ Usuario creado correctamente</p>
+                <button type="submit" class="btn-primary w-full py-3.5 text-sm">Crear Usuario</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Platform Admin Cambiar Contraseña -->
+    <div id="modal-padmin-cambiar-pass" class="hidden fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
+        <div class="bento-card w-full max-w-sm">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-extrabold text-white">Cambiar Contraseña</h3>
+                <button onclick="padminCerrarModal('modal-padmin-cambiar-pass')" class="text-slate-400 hover:text-white text-2xl font-bold leading-none">×</button>
+            </div>
+            <form id="form-padmin-cambiar-pass" class="space-y-4">
+                <input type="hidden" id="padmin-pass-userid">
+                <div>
+                    <p class="text-sm text-slate-400 mb-2">Usuario: <span id="padmin-pass-username" class="text-white font-bold">-</span></p>
+                    <label class="form-label">Nueva Contraseña (Mín. 8 caracteres)</label>
+                    <input id="padmin-pass-new" type="password" required placeholder="••••••••" class="form-input">
+                </div>
+                <p id="padmin-pass-error" class="text-sm font-bold text-red-400 hidden"></p>
+                <p id="padmin-pass-ok" class="text-sm font-bold text-green-400 hidden">✓ Contraseña actualizada correctamente</p>
+                <button type="submit" class="btn-primary w-full py-3.5 text-sm">Actualizar Contraseña</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Platform Admin Participantes Liga -->
+    <div id="modal-padmin-liga-participantes" class="hidden fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">
+        <div class="bento-card w-full max-w-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 class="text-2xl font-extrabold text-white">Participantes de la Liga</h3>
+                    <p class="text-xs text-slate-400">Liga: <span id="padmin-part-leaguename" class="text-white font-bold">-</span></p>
+                </div>
+                <button onclick="padminCerrarModal('modal-padmin-liga-participantes')" class="text-slate-400 hover:text-white text-2xl font-bold leading-none">×</button>
+            </div>
+            <div class="overflow-x-auto max-h-96">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="table-header-row">
+                            <th class="p-3">Mánager</th>
+                            <th class="p-3">Equipo</th>
+                            <th class="p-3 text-right">Presupuesto</th>
+                            <th class="p-3 text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="padmin-part-tbody" class="text-sm font-bold text-white">
+                        <tr><td colspan="4" class="p-3 text-center text-slate-500">Cargando participantes...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
     <!-- ── Modales globales: accesibles desde el selector y desde la app ── -->
     <div id="modal-crear-liga" class="hidden fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex items-center justify-center p-4 opacity-0 transition-opacity duration-200">

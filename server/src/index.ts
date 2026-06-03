@@ -47,6 +47,7 @@ import { SupabasePlayerMarketValueRepository } from './infrastructure/repositori
 import { SupabasePlayerSearchRepository }  from './infrastructure/repositories/SupabasePlayerSearchRepository';
 import { SupabaseLeagueTransferRepository } from './infrastructure/repositories/SupabaseLeagueTransferRepository';
 import { SupabaseSupportRepository } from './infrastructure/repositories/SupabaseSupportRepository';
+import { SupabasePlatformAdminRepository } from './infrastructure/repositories/SupabasePlatformAdminRepository';
 
 const leagueRepo       = new SupabaseLeagueRepository();
 const leagueMarketRepo = new SupabaseLeagueMarketRepository();
@@ -64,6 +65,7 @@ const playerMarketValueRepo = new SupabasePlayerMarketValueRepository(supabaseAd
 const playerSearchRepo      = new SupabasePlayerSearchRepository();
 const leagueTransferRepo    = new SupabaseLeagueTransferRepository();
 const supportRepo           = new SupabaseSupportRepository();
+const platformAdminRepo     = new SupabasePlatformAdminRepository(supabaseAdmin);
 
 // ── 2. Application: Servicios puros (sin I/O) ─────────────────────────────────
 import { ScoringEngine }             from './application/services/scoring/ScoringEngine';
@@ -90,6 +92,7 @@ import { PlayerSearchService }  from './application/services/playerSearch.servic
 import { RivalRosterService }   from './application/services/rivalRoster.service';
 import { LeagueTransferService } from './application/services/leagueTransfer.service';
 import { SupportService }       from './application/services/support.service';
+import { PlatformAdminService } from './application/services/platformAdmin.service';
 import { IEmailService }        from './domain/services/IEmailService';
 import { FailoverEmailService } from './infrastructure/services/FailoverEmailService';
 import { GmailApiEmailService } from './infrastructure/services/GmailApiEmailService';
@@ -141,6 +144,7 @@ const leagueTransferService = new LeagueTransferService(
     emailService,
 );
 const supportService = new SupportService(emailService, supportRepo);
+const platformAdminService = new PlatformAdminService(platformAdminRepo, leagueMarketService);
 
 // ── 4. Infrastructure: Controllers ───────────────────────────────────────────
 import { LeagueController }       from './presentation/controllers/league.controller';
@@ -159,6 +163,7 @@ import { PlayerSearchController }     from './presentation/controllers/playerSea
 import { RivalRosterController }      from './presentation/controllers/rivalRoster.controller';
 import { LeagueTransferController }   from './presentation/controllers/leagueTransfer.controller';
 import { SupportController }          from './presentation/controllers/support.controller';
+import { PlatformAdminController }    from './presentation/controllers/platformAdmin.controller';
 
 const leagueCtrl       = new LeagueController(leagueService, catalogService);
 const leagueMarketCtrl = new LeagueMarketController(leagueMarketService);
@@ -176,6 +181,7 @@ const playerSearchCtrl = new PlayerSearchController(playerSearchService);
 const rivalRosterCtrl  = new RivalRosterController(rivalRosterService);
 const leagueTransferCtrl = new LeagueTransferController(leagueTransferService);
 const supportCtrl      = new SupportController(supportService);
+const platformAdminCtrl = new PlatformAdminController(platformAdminService);
 
 // ── 5. Infrastructure: Routers ────────────────────────────────────────────────
 import { createLeagueRouter }       from './presentation/routes/league.routes';
@@ -195,6 +201,7 @@ import { createPlayerSearchRouter }    from './presentation/routes/playerSearch.
 import { createRivalRosterRouter }     from './presentation/routes/rivalRoster.routes';
 import { createLeagueTransferRouter }  from './presentation/routes/leagueTransfer.routes';
 import { createSupportRouter }         from './presentation/routes/support.routes';
+import { createPlatformAdminRouter }   from './presentation/routes/platformAdmin.routes';
 import { errorHandler }             from './presentation/middleware/errorHandler.middleware';
 
 // ── 6. Infrastructure: Cron ───────────────────────────────────────────────────
@@ -284,6 +291,7 @@ app.use('/api', createPlayerSearchRouter(playerSearchCtrl));
 app.use('/api', createRivalRosterRouter(rivalRosterCtrl));
 app.use('/api', createLeagueTransferRouter(leagueTransferCtrl));
 app.use('/api/support', createSupportRouter(supportCtrl));
+app.use('/api', createPlatformAdminRouter(platformAdminCtrl));
 
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
