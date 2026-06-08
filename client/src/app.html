@@ -1655,14 +1655,248 @@
                             </div>
                         </div>
 
-                        <div class="bento-card space-y-3">
-                            <h4 class="font-extrabold text-white text-lg">FAQ</h4>
-                            <div class="space-y-4 text-sm text-slate-400">
-                                <p><span class="text-white font-bold">¿Cuándo se renueva el mercado?</span><br>El mercado se renueva cada 24 horas automáticamente. Las pujas se resuelven en ese momento.</p>
-                                <p><span class="text-white font-bold">¿Cómo se calculan los puntos?</span><br>Los puntos están basados en estadísticas reales del partido: goles, asistencias, tarjetas y rendimiento general (picas).</p>
-                                <p><span class="text-white font-bold">¿Puedo participar en varias ligas?</span><br>Sí, puedes participar en tantas ligas como quieras, gestionando un equipo distinto en cada una.</p>
-                                <p><span class="text-white font-bold">¿Por qué mi jugador no sumó puntos?</span><br>Si un jugador no fue titular en el partido real o no jugó, no sumará puntos en esa jornada.</p>
-                                <p><span class="text-white font-bold">¿Cómo funciona el catálogo histórico?</span><br>Las ligas se basan en temporadas históricas predefinidas. Si deseas acceder a herramientas de administración de catálogo, envía una solicitud.</p>
+                        <!-- TAB: Guía de Juego (Manual de Usuario) -->
+                        <div class="bento-card space-y-4">
+                            <div class="flex items-center gap-3 mb-2">
+                                <div class="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                                </div>
+                                <h4 class="font-extrabold text-white text-lg tracking-tight">Manual de Usuario & Guía de Juego</h4>
+                            </div>
+                            <p class="text-sm text-slate-400 mb-4">Aprende a jugar, gestionar tu plantilla y dominar el mercado económico de tu liga.</p>
+                            
+                            <div class="space-y-3">
+                                <!-- Acordeón 1: Concepto de Juego -->
+                                <details class="group bg-white/[0.02] border border-white/5 rounded-2xl p-4 transition-all duration-300 hover:border-white/10">
+                                    <summary class="flex justify-between items-center font-bold text-white cursor-pointer select-none list-none">
+                                        <span class="flex items-center gap-2">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                                            1. Concepto y Onboarding
+                                        </span>
+                                        <svg class="w-4 h-4 text-slate-500 transition-transform duration-300 group-open:rotate-180 group-open:text-blue-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                                    </summary>
+                                    <div class="mt-3 text-slate-400 text-sm leading-relaxed space-y-2 pl-3.5 border-l border-blue-500/20">
+                                        <p><strong class="text-white">¿Qué es Retro Fantasy?</strong> Es un simulador deportivo asíncrono basado en datos reales históricos del fútbol europeo (temporadas de 2008 a 2016). Compites con tus amigos en ligas privadas donde la velocidad la marcáis vosotros.</p>
+                                        <p><strong class="text-white">El inicio (Modelo Híbrido):</strong> Al unirte a una liga, recibes instantáneamente una plantilla generada de forma aleatoria de <strong class="text-white">15 jugadores</strong> de valor medio (~180M-200M total) y un saldo líquido de <strong class="text-white">300 Millones de euros</strong> en efectivo para realizar fichajes.</p>
+                                    </div>
+                                </details>
+
+                                <!-- Acordeón 2: Gestión de Alineaciones -->
+                                <details class="group bg-white/[0.02] border border-white/5 rounded-2xl p-4 transition-all duration-300 hover:border-white/10">
+                                    <summary class="flex justify-between items-center font-bold text-white cursor-pointer select-none list-none">
+                                        <span class="flex items-center gap-2">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                                            2. Alineación y Táctica
+                                        </span>
+                                        <svg class="w-4 h-4 text-slate-500 transition-transform duration-300 group-open:rotate-180 group-open:text-blue-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                                    </summary>
+                                    <div class="mt-3 text-slate-400 text-sm leading-relaxed space-y-2 pl-3.5 border-l border-blue-500/20">
+                                        <p><strong class="text-white">Formación:</strong> Selecciona tu esquema táctico en la barra superior del césped en la pestaña <strong class="text-white">Alineación</strong>. Hay 7 tácticas válidas (ej. 4-4-2, 3-5-2, 4-3-3). El sistema validará que los slots de posición (Portero, Defensa, Centrocampista, Delantero) coincidan con el esquema.</p>
+                                        <p><strong class="text-white">Alinear:</strong> Para colocar titulares, pulsa en un slot vacío del césped y elige un jugador disponible en el banquillo. Los suplentes no sumarán puntos.</p>
+                                        <p><strong class="text-white">Límite de Plantilla:</strong> Puedes tener un máximo de <strong class="text-white">25 jugadores</strong> en propiedad. Si estás al límite, deberás vender o despedir a un jugador antes de comprar otro.</p>
+                                    </div>
+                                </details>
+
+                                <!-- Acordeón 3: Mercado Diario -->
+                                <details class="group bg-white/[0.02] border border-white/5 rounded-2xl p-4 transition-all duration-300 hover:border-white/10">
+                                    <summary class="flex justify-between items-center font-bold text-white cursor-pointer select-none list-none">
+                                        <span class="flex items-center gap-2">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                                            3. Mercado Diario y Pujas
+                                        </span>
+                                        <svg class="w-4 h-4 text-slate-500 transition-transform duration-300 group-open:rotate-180 group-open:text-blue-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                                    </summary>
+                                    <div class="mt-3 text-slate-400 text-sm leading-relaxed space-y-2 pl-3.5 border-l border-blue-500/20">
+                                        <p><strong class="text-white">Funcionamiento:</strong> Cada 24 horas la computadora publica una selección aleatoria de jugadores libres. Los mánagers pueden realizar una oferta económica secreta (puja ciega).</p>
+                                        <p><strong class="text-white">Resolución:</strong> Transcurridas las 24 horas, el jugador se asigna al mánager con la puja más alta. Si hay empates, el sistema prioriza a quien registró la puja antes en la base de datos por orden cronológico.</p>
+                                        <p><strong class="text-white">Cancelación:</strong> Puedes modificar o anular tus pujas activas en cualquier momento antes del cierre del ciclo diario.</p>
+                                    </div>
+                                </details>
+
+                                <!-- Acordeón 4: Compraventa, Clausulazos y Despidos -->
+                                <details class="group bg-white/[0.02] border border-white/5 rounded-2xl p-4 transition-all duration-300 hover:border-white/10">
+                                    <summary class="flex justify-between items-center font-bold text-white cursor-pointer select-none list-none">
+                                        <span class="flex items-center gap-2">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                                            4. Compraventa Directa, Clausulazos y Despidos
+                                        </span>
+                                        <svg class="w-4 h-4 text-slate-500 transition-transform duration-300 group-open:rotate-180 group-open:text-blue-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                                    </summary>
+                                    <div class="mt-3 text-slate-400 text-sm leading-relaxed space-y-2 pl-3.5 border-l border-blue-500/20">
+                                        <p><strong class="text-white">Negociación Directa:</strong> Puedes poner a tus jugadores transferibles con un precio sugerido o enviar ofertas directas en efectivo a otros mánagers por sus futbolistas. Las ofertas pueden ser aceptadas (ejecución inmediata) o rechazadas.</p>
+                                        <p><strong class="text-white">Clausulazos (Robos):</strong> Si tienes suficiente efectivo, puedes pagar la cláusula de rescisión completa de un jugador propiedad de un rival para incorporarlo a tu equipo al instante, sin que el otro mánager pueda oponerse.</p>
+                                        <p><strong class="text-white">Venta Inmediata (Despido):</strong> Puedes rescindir unilateralmente el contrato de cualquier futbolista de tu plantilla en cualquier momento. El club recibe el <strong class="text-white">50% de su valor de mercado actual</strong> al instante y el jugador vuelve al pool de agentes libres.</p>
+                                    </div>
+                                </details>
+
+                                <!-- Acordeón 5: Motor de Puntuación -->
+                                <details class="group bg-white/[0.02] border border-white/5 rounded-2xl p-4 transition-all duration-300 hover:border-white/10">
+                                    <summary class="flex justify-between items-center font-bold text-white cursor-pointer select-none list-none">
+                                        <span class="flex items-center gap-2">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                                            5. Motor de Puntuación y Números Rojos
+                                        </span>
+                                        <svg class="w-4 h-4 text-slate-500 transition-transform duration-300 group-open:rotate-180 group-open:text-blue-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                                    </summary>
+                                    <div class="mt-3 text-slate-400 text-sm leading-relaxed space-y-2 pl-3.5 border-l border-blue-500/20">
+                                        <p><strong class="text-white">Cálculo Mixto:</strong> Cuando el administrador simula una jornada, tus jugadores titulares puntúan basándose en:</p>
+                                        <ul class="list-disc pl-4 space-y-1">
+                                            <li><strong class="text-white">Puntos Estadísticos:</strong> Parseo de eventos reales del partido (goles, asistencias, disparos, faltas) ponderados según la posición (PT, DF, MC, DL).</li>
+                                            <li><strong class="text-white">Picas del Cronista:</strong> Modificadores de puntos subjetivos otorgados por perfiles virtuales de cronistas deportivos (Analítico, Exigente, Pasional) mediante probabilidad basada en la nota base.</li>
+                                        </ul>
+                                        <p><strong class="text-white">Números Rojos:</strong> Si al procesarse la jornada estás en <strong class="text-red-400">saldo negativo (menos de 0 €)</strong>, tu equipo obtendrá exactamente <strong class="text-red-400">0 puntos</strong> en esa jornada, sin importar el rendimiento de tus futbolistas.</p>
+                                    </div>
+                                </details>
+                            </div>
+                        </div>
+
+                        <!-- TAB: FAQ (Preguntas Frecuentes Ampliadas) -->
+                        <div class="bento-card space-y-4">
+                            <div class="flex items-center gap-3 mb-2">
+                                <div class="w-8 h-8 rounded-xl bg-fuchsia-500/10 border border-fuchsia-500/20 flex items-center justify-center text-fuchsia-400">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5h.01" /></svg>
+                                </div>
+                                <h4 class="font-extrabold text-white text-lg tracking-tight">Preguntas Frecuentes (FAQ)</h4>
+                            </div>
+                            <p class="text-sm text-slate-400 mb-4">Encuentra respuestas rápidas a las dudas habituales de los mánagers.</p>
+                            
+                            <div class="space-y-3">
+                                <!-- FAQ 1 -->
+                                <details class="group bg-white/[0.02] border border-white/5 rounded-2xl p-4 transition-all duration-300 hover:border-white/10">
+                                    <summary class="flex justify-between items-center font-bold text-white cursor-pointer select-none list-none text-sm">
+                                        ¿Cómo empiezo a jugar en una nueva liga?
+                                        <svg class="w-4 h-4 text-slate-500 transition-transform duration-300 group-open:rotate-180 group-open:text-fuchsia-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                                    </summary>
+                                    <div class="mt-3 text-slate-400 text-sm leading-relaxed pl-3.5 border-l border-fuchsia-500/20">
+                                        Debes estar registrado y haber iniciado sesión. Después, puedes crear una liga privada eligiendo una temporada y competición del catálogo o unirte a una liga ya existente introduciendo el código de invitación que te comparta su administrador.
+                                    </div>
+                                </details>
+
+                                <!-- FAQ 2 -->
+                                <details class="group bg-white/[0.02] border border-white/5 rounded-2xl p-4 transition-all duration-300 hover:border-white/10">
+                                    <summary class="flex justify-between items-center font-bold text-white cursor-pointer select-none list-none text-sm">
+                                        ¿Con qué presupuesto y plantilla se empieza?
+                                        <svg class="w-4 h-4 text-slate-500 transition-transform duration-300 group-open:rotate-180 group-open:text-fuchsia-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                                    </summary>
+                                    <div class="mt-3 text-slate-400 text-sm leading-relaxed pl-3.5 border-l border-fuchsia-500/20">
+                                        Para garantizar igualdad competitiva, el sistema asigna de forma procedimental 15 jugadores aleatorios (1 portero, 5 defensas, 6 medios y 3 delanteros) con un valor conjunto cercano a los 200 millones, y te otorga 300 millones en efectivo para fichar en el mercado de la liga.
+                                    </div>
+                                </details>
+
+                                <!-- FAQ 3 -->
+                                <details class="group bg-white/[0.02] border border-white/5 rounded-2xl p-4 transition-all duration-300 hover:border-white/10">
+                                    <summary class="flex justify-between items-center font-bold text-white cursor-pointer select-none list-none text-sm">
+                                        ¿Cuándo se renueva el mercado de fichajes?
+                                        <svg class="w-4 h-4 text-slate-500 transition-transform duration-300 group-open:rotate-180 group-open:text-fuchsia-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                                    </summary>
+                                    <div class="mt-3 text-slate-400 text-sm leading-relaxed pl-3.5 border-l border-fuchsia-500/20">
+                                        El mercado se renueva automáticamente cada 24 horas. Los jugadores libres del día expiran, las ofertas en puja ciega se resuelven adjudicándose los jugadores a los máximos ofertantes, y se publica una nueva lista aleatoria de jugadores libres.
+                                    </div>
+                                </details>
+
+                                <!-- FAQ 4 -->
+                                <details class="group bg-white/[0.02] border border-white/5 rounded-2xl p-4 transition-all duration-300 hover:border-white/10">
+                                    <summary class="flex justify-between items-center font-bold text-white cursor-pointer select-none list-none text-sm">
+                                        ¿Qué pasa si dos mánagers pujan lo mismo por un jugador?
+                                        <svg class="w-4 h-4 text-slate-500 transition-transform duration-300 group-open:rotate-180 group-open:text-fuchsia-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                                    </summary>
+                                    <div class="mt-3 text-slate-400 text-sm leading-relaxed pl-3.5 border-l border-fuchsia-500/20">
+                                        En caso de empate exacto en las pujas ciegas de mercado, el sistema utiliza el orden cronológico. El jugador será adjudicado a aquel mánager cuya oferta fuera registrada primero en los servidores de la base de datos.
+                                    </div>
+                                </details>
+
+                                <!-- FAQ 5 -->
+                                <details class="group bg-white/[0.02] border border-white/5 rounded-2xl p-4 transition-all duration-300 hover:border-white/10">
+                                    <summary class="flex justify-between items-center font-bold text-white cursor-pointer select-none list-none text-sm">
+                                        ¿Cómo fluctúan los valores de mercado?
+                                        <svg class="w-4 h-4 text-slate-500 transition-transform duration-300 group-open:rotate-180 group-open:text-fuchsia-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                                    </summary>
+                                    <div class="mt-3 text-slate-400 text-sm leading-relaxed pl-3.5 border-l border-fuchsia-500/20">
+                                        Los valores cambian tras cada ciclo de mercado y jornada simulada. Suben si un jugador recibe una puja alta (absorbe el 50% de la diferencia) o si obtiene una puntuación excelente de $\geq$ 10 puntos (+5% de valor). Bajan un 3% diario si no reciben pujas en el mercado o un 5% si el jugador obtiene una puntuación negativa en el partido.
+                                    </div>
+                                </details>
+
+                                <!-- FAQ 6 -->
+                                <details class="group bg-white/[0.02] border border-white/5 rounded-2xl p-4 transition-all duration-300 hover:border-white/10">
+                                    <summary class="flex justify-between items-center font-bold text-white cursor-pointer select-none list-none text-sm">
+                                        ¿Qué es un "Clausulazo" y cómo puedo protegerme?
+                                        <svg class="w-4 h-4 text-slate-500 transition-transform duration-300 group-open:rotate-180 group-open:text-fuchsia-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                                    </summary>
+                                    <div class="mt-3 text-slate-400 text-sm leading-relaxed pl-3.5 border-l border-fuchsia-500/20">
+                                        Un clausulazo es la compra directa de un jugador propiedad de otro mánager sin negociación, abonando su cláusula de rescisión. Para evitar perder estrellas de tu equipo, debes mantener altas sus cláusulas de rescisión ajustándolas en tu panel de plantilla, aunque recuerda que una cláusula alta influye proporcionalmente en el valor que perciben tus rivales del mercado.
+                                    </div>
+                                </details>
+
+                                <!-- FAQ 7 -->
+                                <details class="group bg-white/[0.02] border border-white/5 rounded-2xl p-4 transition-all duration-300 hover:border-white/10">
+                                    <summary class="flex justify-between items-center font-bold text-white cursor-pointer select-none list-none text-sm">
+                                        ¿Qué es la "Venta Inmediata" y cuánto saldo recupero?
+                                        <svg class="w-4 h-4 text-slate-500 transition-transform duration-300 group-open:rotate-180 group-open:text-fuchsia-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                                    </summary>
+                                    <div class="mt-3 text-slate-400 text-sm leading-relaxed pl-3.5 border-l border-fuchsia-500/20">
+                                        Es la rescisión de contrato para despedir a un jugador de forma unilateral e instantánea. A cambio del despido, el club recupera de inmediato exactamente el 50% del valor de mercado del jugador, perdiendo el otro 50% como penalización por finalización unilateral.
+                                    </div>
+                                </details>
+
+                                <!-- FAQ 8 -->
+                                <details class="group bg-white/[0.02] border border-white/5 rounded-2xl p-4 transition-all duration-300 hover:border-white/10">
+                                    <summary class="flex justify-between items-center font-bold text-white cursor-pointer select-none list-none text-sm">
+                                        ¿Puedo negociar y transferir jugadores directamente?
+                                        <svg class="w-4 h-4 text-slate-500 transition-transform duration-300 group-open:rotate-180 group-open:text-fuchsia-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                                    </summary>
+                                    <div class="mt-3 text-slate-400 text-sm leading-relaxed pl-3.5 border-l border-fuchsia-500/20">
+                                        Sí. Si colocas un jugador como transferible, otros mánagers verán tu interés de venta. Puedes buscar la plantilla de cualquier mánager y pulsar en enviar oferta directa en efectivo. Si el propietario la acepta, la transferencia se liquida automáticamente.
+                                    </div>
+                                </details>
+
+                                <!-- FAQ 9 -->
+                                <details class="group bg-white/[0.02] border border-white/5 rounded-2xl p-4 transition-all duration-300 hover:border-white/10">
+                                    <summary class="flex justify-between items-center font-bold text-white cursor-pointer select-none list-none text-sm">
+                                        ¿Cómo se calculan los puntos de los partidos?
+                                        <svg class="w-4 h-4 text-slate-500 transition-transform duration-300 group-open:rotate-180 group-open:text-fuchsia-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                                    </summary>
+                                    <div class="mt-3 text-slate-400 text-sm leading-relaxed pl-3.5 border-l border-fuchsia-500/20">
+                                        Las puntuaciones de los jugadores en el once titular se calculan en base al rendimiento real histórico de los futbolistas: sumando o restando puntos según sus estadísticas objetivas del XML (goles, asistencias, tarjetas, etc.) ponderados según su demarcación, más los puntos adicionales asignados por el cronista virtual a través de las picas.
+                                    </div>
+                                </details>
+
+                                <!-- FAQ 10 -->
+                                <details class="group bg-white/[0.02] border border-white/5 rounded-2xl p-4 transition-all duration-300 hover:border-white/10">
+                                    <summary class="flex justify-between items-center font-bold text-white cursor-pointer select-none list-none text-sm">
+                                        ¿Qué diferencia hay entre los tres cronistas virtuales?
+                                        <svg class="w-4 h-4 text-slate-500 transition-transform duration-300 group-open:rotate-180 group-open:text-fuchsia-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                                    </summary>
+                                    <div class="mt-3 text-slate-400 text-sm leading-relaxed pl-3.5 border-l border-fuchsia-500/20">
+                                        Cada partido histórico simula la cobertura de prensa con un perfil de cronista aleatorio:
+                                        <ul class="list-disc pl-4 space-y-1 mt-1">
+                                            <li><strong class="text-white">Analítico:</strong> Es objetivo. Sus picas corresponden de forma exacta a los rangos de puntos estadísticos.</li>
+                                            <li><strong class="text-white">Exigente:</strong> Es muy estricto. Suele dejar a jugadores sin calificar (0 pts) o bajar picas ante notas estadísticas medias.</li>
+                                            <li><strong class="text-white">Pasional:</strong> Es volátil. Es propenso a otorgar calificaciones muy altas (4 picas) si el rendimiento destaca, pero también negativos.</li>
+                                        </ul>
+                                    </div>
+                                </details>
+
+                                <!-- FAQ 11 -->
+                                <details class="group bg-white/[0.02] border border-white/5 rounded-2xl p-4 transition-all duration-300 hover:border-white/10">
+                                    <summary class="flex justify-between items-center font-bold text-white cursor-pointer select-none list-none text-sm">
+                                        ¿Qué ocurre si tengo saldo negativo?
+                                        <svg class="w-4 h-4 text-slate-500 transition-transform duration-300 group-open:rotate-180 group-open:text-fuchsia-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                                    </summary>
+                                    <div class="mt-3 text-slate-400 text-sm leading-relaxed pl-3.5 border-l border-fuchsia-500/20">
+                                        Si estás en números rojos en el momento exacto en el que el administrador procesa los puntos de la jornada, quedarás penalizado sumando exactamente <strong class="text-red-400">0 puntos en la jornada</strong>, perdiendo todo el rendimiento deportivo de tu alineación en la clasificación general.
+                                    </div>
+                                </details>
+
+                                <!-- FAQ 12 -->
+                                <details class="group bg-white/[0.02] border border-white/5 rounded-2xl p-4 transition-all duration-300 hover:border-white/10">
+                                    <summary class="flex justify-between items-center font-bold text-white cursor-pointer select-none list-none text-sm">
+                                        ¿Cómo se procesan las jornadas de la liga?
+                                        <svg class="w-4 h-4 text-slate-500 transition-transform duration-300 group-open:rotate-180 group-open:text-fuchsia-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                                    </summary>
+                                    <div class="mt-3 text-slate-400 text-sm leading-relaxed pl-3.5 border-l border-fuchsia-500/20">
+                                        El administrador de la liga puede procesar la siguiente jornada desde la pestaña de "Administración y Ajustes", introduciendo el número de jornada a procesar. Esto desencadena el cálculo de puntos y la resolución correspondiente.
+                                    </div>
+                                </details>
                             </div>
                         </div>
                     </div>

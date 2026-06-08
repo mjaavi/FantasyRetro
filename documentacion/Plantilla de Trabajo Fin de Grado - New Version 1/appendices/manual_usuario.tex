@@ -1,0 +1,159 @@
+\chapter{Manual de Usuario}
+\label{app:manual_usuario}
+
+Este apéndice contiene el manual de usuario completo de la plataforma \textit{Retro Fantasy}. Su propósito es guiar tanto a los nuevos mánagers como a los administradores de ligas en el funcionamiento de la aplicación, detallando los pasos para registrarse, gestionar plantillas, operar en el mercado de fichajes y comprender el motor de puntuaciones de las jornadas.
+
+---
+
+\section{Introducción y Concepto de Juego}
+\textit{Retro Fantasy} es un simulador de gestión deportiva (\textit{Mánager Fantasy}) asíncrono. A diferencia de las plataformas tradicionales que dependen del calendario de partidos del año en curso, este juego permite a los usuarios competir en temporadas de fútbol históricas (por ejemplo, LaLiga 2011/2012 o la Premier League 2008/2009). 
+
+Los usuarios asumen el rol de un director deportivo o mánager, compitiendo entre sí en ligas privadas. El objetivo es acumular la mayor cantidad de puntos a lo largo de las 38 jornadas de la liga, gestionando de forma eficiente un presupuesto limitado para fichar estrellas del pasado y alinear una formación competitiva.
+
+---
+
+\section{Primeros Pasos y Registro}
+
+El flujo inicial del usuario desde que accede a la plataforma web por primera vez se desglosa en los siguientes pasos:
+
+\subsection{Registro y Acceso}
+\begin{enumerate}
+    \item Acceda a la página de bienvenida de la aplicación.
+    \item Si es un usuario nuevo, pulse en \textbf{Regístrate} e introduzca su dirección de correo electrónico y una contraseña segura (mínimo 6 caracteres).
+    \item Recibirá un correo de confirmación de Supabase para validar su cuenta.
+    \item Tras confirmar, inicie sesión con sus credenciales en el formulario de acceso.
+\end{enumerate}
+
+\subsection{Unirse o Crear una Liga}
+Una vez dentro del panel principal, el mánager debe tener al menos una liga activa para poder jugar. Dispone de dos opciones:
+\begin{itemize}
+    \item \textbf{Crear una Liga:} Introduzca un nombre personalizado para su liga, seleccione la competición (ej. \textit{Spain LIGA BBVA}) y elija una de las temporadas históricas disponibles en el catálogo (desde 2008/2009 hasta 2015/2016). Al crearla, usted se convertirá en el \textbf{Administrador} de esa liga.
+    \item \textbf{Unirse a una Liga:} Introduzca el código único de invitación (proporcionado por otro mánager administrador, con el formato \texttt{RF-XXXXXX}).
+\end{itemize}
+
+\subsection{Asignación Inicial (Modelo Híbrido)}
+Al unirse a una liga, el sistema ejecuta de manera automática y transaccional el algoritmo de asignación inicial para asegurar el equilibrio de la competición:
+\begin{itemize}
+    \item \textbf{Plantilla Base:} Se le asignan procedimentalmente \textbf{15 futbolistas} de perfil medio-bajo pertenecientes a la liga y temporada elegidas (1 portero, 5 defensas, 6 centrocampistas y 3 delanteros). El valor de mercado conjunto de estos jugadores suma aproximadamente 180-200 millones de euros.
+    \item \textbf{Saldo Líquido:} Se le otorgan \textbf{300 millones de euros} en efectivo para realizar fichajes.
+\end{itemize}
+
+---
+
+\section{Gestión del Equipo y Alineación}
+
+La pantalla principal de gestión de la plantilla (\textbf{Alineación}) permite al mánager configurar su estrategia táctica para la próxima jornada.
+
+\subsection{Configurar la Formación}
+El mánager puede seleccionar su esquema táctico preferido desde el desplegable de formaciones en la parte superior del campo de juego. Las formaciones permitidas por el reglamento son:
+\begin{itemize}
+    \item \textbf{4-4-2} (1 Portero, 4 Defensas, 4 Centrocampistas, 2 Delanteros)
+    \item \textbf{3-5-2} (1 Portero, 3 Defensas, 5 Centrocampistas, 2 Delanteros)
+    \item \textbf{3-4-3} (1 Portero, 3 Defensas, 4 Centrocampistas, 3 Delanteros)
+    \item \textbf{4-5-1} (1 Portero, 4 Defensas, 5 Centrocampistas, 1 Delantero)
+    \item \textbf{4-3-3} (1 Portero, 4 Defensas, 3 Centrocampistas, 3 Delanteros)
+    \item \textbf{5-3-2} (1 Portero, 5 Defensas, 3 Centrocampistas, 2 Delanteros)
+    \item \textbf{5-2-3} (1 Portero, 5 Defensas, 2 Centrocampistas, 3 Delanteros)
+\end{itemize}
+
+\subsection{Alinear Jugadores (Titulares y Suplentes)}
+El campo de juego muestra de forma visual la disposición táctica de los 11 slots titulares.
+\begin{enumerate}
+    \item Los futbolistas asignados en la alineación titular aparecen sobre el césped verde.
+    \item Los futbolistas en el banquillo aparecen en la sección inferior derecha (\textbf{Banquillo}).
+    \item Para intercambiar un jugador del banquillo por un titular, pulse sobre el slot vacío de la posición correspondiente en el campo y seleccione el sustituto deseado de la lista flotante, o pulse en el botón de intercambio rápido de su ficha.
+\end{enumerate}
+
+\subsection{Gestión de la Cláusula de Rescisión}
+Cada jugador de su propiedad tiene una cláusula de rescisión que actúa como precio de compra automático para otros rivales.
+\begin{itemize}
+    \item Al inicio, la cláusula se fija por defecto en un \textbf{50\% más} del valor de mercado del jugador.
+    \item El mánager puede modificar esta cláusula libremente en la pestaña del jugador dentro de la plantilla.
+    \item \textbf{Regla del ajuste de cláusula:} Ajustar la cláusula no tiene un coste directo en saldo, pero fijar cláusulas excesivamente bajas facilitará que los rivales le "roben" al futbolista de forma inmediata mediante un clausulazo.
+\end{itemize}
+
+\subsection{Venta Inmediata (Despido)}
+Si un mánager necesita liberar espacio en su plantilla (límite máximo de 25 jugadores) u obtener dinero rápido de forma urgente para acometer un fichaje en el mercado:
+\begin{enumerate}
+    \item Abra la ficha del jugador en la pantalla de plantilla.
+    \item Pulse el botón \textbf{Venta Inmediata (Despido)}.
+    \item El sistema procesará el despido al instante: el jugador desaparece de su equipo y su saldo líquido se incrementa inmediatamente en exactamente el \textbf{50\% del valor de mercado actual} del futbolista.
+    \item El jugador se convierte en agente libre y volverá a aparecer en futuros ciclos del mercado.
+\end{enumerate}
+
+---
+
+\section{El Mercado de Fichajes y Traspasos}
+
+El mercado de fichajes es el núcleo interactivo y económico de la liga. Se subdivide en cuatro mecánicas operativas principales:
+
+\subsection{Mercado Diario (Pujas Ciegas)}
+\begin{itemize}
+    \item Cada 24 horas, el sistema publica una lista aleatoria de jugadores libres (agentes de la computadora) disponibles para su compra.
+    \item Los mánagers pueden realizar una \textbf{puja ciega} por cualquier jugador del mercado, ofreciendo una cantidad igual o superior a su valor de salida.
+    \item Ningún mánager puede ver las cantidades ofertadas por sus rivales, pero sí se muestra el número total de pujas recibidas por cada jugador.
+    \item Al finalizar el ciclo de 24 horas (indicado por la cuenta atrás en la interfaz), el mercado se resuelve: el jugador es adjudicado al mánager que haya realizado la puja más alta.
+    \item \textbf{Resolución de empates:} En caso de que dos mánagers realicen exactamente la misma oferta máxima, el sistema adjudica el jugador al usuario que registró la puja en primer lugar en la base de datos (por orden cronológico de \textit{timestamp}).
+\end{itemize}
+
+\subsection{Compraventa Directa entre Mánagers}
+Los usuarios pueden comerciar directamente entre ellos sin mediación de la computadora:
+\begin{itemize}
+    \item \textbf{Poner Transferible:} Un mánager puede colgar a un jugador de su plantilla en el mercado directo, estableciendo un precio mínimo de venta para indicar que está abierto a ofertas.
+    \item \textbf{Enviar Oferta Directa:} Cualquier usuario de la liga puede abrir la plantilla de un rival, seleccionar un futbolista y enviarle una oferta económica directa en efectivo. El saldo de la oferta se retiene de forma virtual para garantizar la transacción.
+    \item \textbf{Aceptar o Rechazar:} El propietario del jugador recibirá una notificación por email y una alerta en su panel de ofertas entrantes. Puede aceptar la oferta (el traspaso se ejecuta al instante) o rechazarla (el saldo bloqueado se devuelve al comprador).
+\end{itemize}
+
+\subsection{Clausulazos (Robo Automático)}
+Si un mánager dispone de saldo líquido suficiente, puede arrebatarle un futbolista a un rival de manera unilateral:
+\begin{enumerate}
+    \item Acceda a la plantilla de un rival desde la tabla de clasificación.
+    \item Seleccione al jugador que desea fichar.
+    \item Si su saldo en efectivo es igual o superior a la \textbf{cláusula de rescisión} del jugador, se habilitará el botón \textbf{Ejecutar Clausulazo}.
+    \item Al pulsar, la transacción se procesa inmediatamente: el saldo se deduce de su cuenta y se transfiere al mánager vendedor, y el jugador pasa a formar parte de su plantilla al instante sin requerir aprobación. El sistema envía una alerta por email al mánager robado.
+\end{enumerate}
+
+---
+
+\section{Simulación de Jornadas y Puntuación}
+
+El desarrollo deportivo y económico de la liga avanza a través del procesamiento de las jornadas.
+
+\subsection{El Bucle de Jornada}
+Cuando el administrador de la liga pulsa en \textbf{Procesar Jornada} en el panel de control, el sistema simula los partidos históricos reales del dataset correspondientes a esa fecha y calcula los puntos obtenidos por los jugadores alineados en el once titular de cada mánager.
+
+\subsection{Motor de Puntos Mixto (Estadísticas + Picas)}
+La puntuación final de un jugador en una jornada es la suma de dos bloques:
+\begin{enumerate}
+    \item \textbf{Puntos Estadísticos (Objetivos):} El sistema parsea los eventos en formato XML del partido real. Acciones como goles anotados, asistencias, tarjetas amarillas o rojas, faltas, disparos a puerta, tiros al palo y mantener la portería a cero suman o restan puntos según la matriz por posición (ver Tabla~\ref{tab:estadisticas_kaggle} en el capítulo anterior). Por ejemplo, un gol anotado otorga +6 puntos a un portero, +5 a un defensa, +4 a un centrocampista y +3 a un delantero.
+    \item \textbf{Puntos del Cronista (Subjetivos):} Para emular a la prensa deportiva, un cronista virtual evalúa el rendimiento del jugador y le otorga picas (Negativo, Sin Calificar, 1, 2, 3 o 4 picas) aplicando matrices probabilísticas según su perfil (\textit{Analítico, Exigente o Pasional}). Estas picas se convierten en modificadores de puntos directos (ej. 3 picas equivalen a +8 puntos).
+\end{enumerate}
+
+\subsection{Efectos de los Saldos Negativos (Números Rojos)}
+Un pilar fundamental de la gestión económica es evitar el endeudamiento antes del inicio de los partidos:
+\begin{itemize}
+    \item Un mánager puede realizar pujas que le dejen temporalmente en saldo negativo durante el día.
+    \item \textbf{La Regla de Oro:} En el momento exacto en que el administrador procesa la jornada, cualquier mánager cuyo saldo sea inferior a 0 euros quedará penalizado de forma automática.
+    \item \textbf{Penalización:} El equipo en números rojos sumará exactamente \textbf{0 puntos} en la clasificación para esa jornada simulada, independientemente de los goles o picas que hayan obtenido sus futbolistas alineados.
+\end{itemize}
+
+---
+
+\section{Manual del Administrador de Ligas y Plataforma}
+
+Los usuarios con roles elevados disponen de herramientas avanzadas de gestión en la pestaña de \textbf{Administración y Ajustes}.
+
+\subsection{Administración de Ligas Privadas}
+El creador y administrador de una liga puede realizar las siguientes acciones en su panel:
+\begin{itemize}
+    \item \textbf{Procesar Jornada:} Introduce el número de jornada a jugar (de 1 a 38) y procesa las puntuaciones de todos los equipos.
+    \item \textbf{Reiniciar Liga:} Restablece la liga a la jornada 0. Elimina todas las plantillas, devuelve los saldos a 300 millones de euros y genera una nueva asignación híbrida aleatoria de jugadores base para todos los participantes.
+\end{itemize}
+
+\subsection{Administración de Catálogos (Catalog Admin)}
+Los mánagers con el rol \texttt{catalog\_admin} tienen acceso al panel global de carga de datos:
+\begin{enumerate}
+    \item \textbf{Validación de Archivos CSV:} Permite subir nuevos archivos de partidos o jugadores en formato CSV, validándolos contra las plantillas estructurales del sistema.
+    \item \textbf{Auditoría de Errores:} Muestra un informe detallado con las filas, columnas y campos que no cumplen con los formatos del parser de Kaggle.
+    \item \textbf{Publicación Global:} Si el CSV pasa los filtros de validación sin errores, el administrador de catálogos puede pulsar en \textbf{Publicar} para incorporar permanentemente los nuevos datos al pool de competiciones del servidor.
+\end{enumerate}

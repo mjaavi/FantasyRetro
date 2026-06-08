@@ -54,15 +54,228 @@ Los atributos de calidad de Retro Fantasy garantizan que la aplicación sea esca
 La fase de análisis traduce los requisitos en modelos abstractos de datos, algoritmos y flujos de información del negocio.
 
 \subsection{Diagrama de Clases de Análisis}
-El modelado conceptual de Retro Fantasy gira en torno al usuario (Manager) y a su interacción con el mercado y las ligas. A continuación, se detalla la especificación de las entidades de análisis con sus atributos clave y cardinalidades:
+El modelado conceptual de \textit{Retro Fantasy} se estructura en torno a las entidades que componen el dominio de negocio, definiendo cómo interactúan los mánagers con la liga, el mercado de fichajes y las plantillas. Para facilitar su representación y modelado en herramientas como StarUML, a continuación se detalla la especificación formal de las clases conceptuales, incluyendo sus atributos tipados, operaciones de negocio y sus relaciones de cardinalidad.
 
+\subsubsection{Especificación de Clases y Atributos}
+
+\begin{enumerate}
+    \item \textbf{Manager (Mánager / Usuario Global)}
+    \begin{itemize}
+        \item \textbf{Atributos:}
+            \begin{itemize}
+                \item \texttt{id}: \textit{UUID} [PK] - Identificador único de autenticación de Supabase.
+                \item \texttt{email}: \textit{String} - Correo electrónico de acceso.
+                \item \texttt{username}: \textit{String} - Nombre de usuario público.
+                \item \texttt{teamName}: \textit{String} - Nombre personalizado de su club de fútbol.
+                \item \texttt{avatarUrl}: \textit{String} [Opcional] - Ruta al recurso multimedia en el bucket de almacenamiento.
+                \item \texttt{createdAt}: \textit{Timestamp} - Fecha de registro.
+            \end{itemize}
+        \item \textbf{Operaciones:}
+            \begin{itemize}
+                \item \texttt{actualizarPerfil(username: String, teamName: String): Void}
+                \item \texttt{cambiarEmail(nuevoEmail: String): Void}
+            \end{itemize}
+    \end{itemize}
+
+    \item \textbf{League (Liga Fantasy)}
+    \begin{itemize}
+        \item \textbf{Atributos:}
+            \begin{itemize}
+                \item \texttt{id}: \textit{BigInt} [PK] - ID único auto-incremental.
+                \item \texttt{name}: \textit{String} - Nombre de la liga privada.
+                \item \texttt{inviteCode}: \textit{String} [Unique] - Código único para unirse (ej. "RF-X9A2").
+                \item \texttt{season}: \textit{String} - Temporada histórica elegida (ej. "2011/2012").
+                \item \texttt{jornadaActual}: \textit{Integer} - Jornada en juego (entre 0 y 38).
+                \item \texttt{adminId}: \textit{UUID} [FK] - Enlace al Manager que ejerce de administrador de la liga.
+                \item \texttt{kaggleLeagueId}: \textit{Integer} - ID de la competición en el dataset (LaLiga, Premier League, etc.).
+                \item \texttt{createdAt}: \textit{Timestamp} - Fecha de creación.
+            \end{itemize}
+        \item \textbf{Operaciones:}
+            \begin{itemize}
+                \item \texttt{avanzarJornada(): Void}
+                \item \texttt{reiniciarLiga(): Void}
+                \item \texttt{generarCodigoInvitacion(): String}
+            \end{itemize}
+    \end{itemize}
+
+    \item \textbf{LeagueParticipant (Mánager dentro de una liga específica)}
+    \begin{itemize}
+        \item \textbf{Atributos:}
+            \begin{itemize}
+                \item \texttt{userId}: \textit{UUID} [PK, FK] - Mánager participante.
+                \item \texttt{leagueId}: \textit{BigInt} [PK, FK] - Liga en la que participa.
+                \item \texttt{budget}: \textit{Float} - Saldo líquido disponible para operar (inicialmente 300.000.000 €).
+                \item \texttt{joinedAt}: \textit{Timestamp} - Fecha de ingreso.
+            \end{itemize}
+        \item \textbf{Operaciones:}
+            \begin{itemize}
+                \item \texttt{sumarPresupuesto(cantidad: Float): Void}
+                \item \texttt{restarPresupuesto(cantidad: Float): Void}
+                \item \texttt{tieneSaldoNegativo(): Boolean}
+            \end{itemize}
+    \end{itemize}
+
+    \item \textbf{Roster (Plantilla activa del mánager en una liga)}
+    \begin{itemize}
+        \item \textbf{Atributos:}
+            \begin{itemize}
+                \item \texttt{userId}: \textit{UUID} [PK, FK] - Propietario.
+                \item \texttt{leagueId}: \textit{BigInt} [PK, FK] - Liga asociada.
+                \item \texttt{formation}: \textit{String} - Táctica seleccionada (ej. "4-4-2", "3-5-2").
+            \end{itemize}
+        \item \textbf{Operaciones:}
+            \begin{itemize}
+                \item \texttt{cambiarFormacion(nuevaFormacion: String): Void}
+                \item \texttt{obtenerValorTotalPlantilla(): Float}
+                \item \texttt{validarOnceTitular(): Boolean}
+            \end{itemize}
+    \end{itemize}
+
+    \item \textbf{Player (Jugador base en el Catálogo Global)}
+    \begin{itemize}
+        \item \textbf{Atributos:}
+            \begin{itemize}
+                \item \texttt{id}: \textit{Integer} [PK] - Identificador estático proveniente de Kaggle.
+                \item \texttt{name}: \textit{String} - Nombre completo del futbolista.
+                \item \texttt{position}: \textit{Enum} [PT, DF, MC, DL] - Demarcación en el campo.
+                \item \texttt{overallRating}: \textit{Integer} - Valoración general media base de la temporada.
+                \item \texttt{potential}: \textit{Integer} - Potencial del futbolista en el dataset.
+                \item \texttt{photoUrl}: \textit{String} - Enlace a la imagen del rostro.
+            \end{itemize}
+    \end{itemize}
+
+    \item \textbf{RosterPlayer (Jugador dentro de la plantilla de un mánager)}
+    \begin{itemize}
+        \item \textbf{Atributos:}
+            \begin{itemize}
+                \item \texttt{playerId}: \textit{Integer} [PK, FK] - ID del futbolista.
+                \item \texttt{userId}: \textit{UUID} [FK] - ID del mánager propietario.
+                \item \texttt{leagueId}: \textit{BigInt} [FK] - ID de la liga.
+                \item \texttt{releaseClause}: \textit{Float} - Cláusula de rescisión personalizada para evitar robos directos.
+                \item \texttt{isStarter}: \textit{Boolean} - Indica si está colocado en la alineación titular.
+                \item \texttt{purchasePrice}: \textit{Float} - Precio de compra histórico de la instancia.
+            \end{itemize}
+        \item \textbf{Operaciones:}
+            \begin{itemize}
+                \item \texttt{actualizarClausula(nuevaClausula: Float): Void}
+                \item \texttt{cambiarAlineacion(titular: Boolean): Void}
+            \end{itemize}
+    \end{itemize}
+
+    \item \textbf{Market (Mercado de Fichajes de la Liga)}
+    \begin{itemize}
+        \item \textbf{Atributos:}
+            \begin{itemize}
+                \item \texttt{leagueId}: \textit{BigInt} [PK, FK] - Liga asociada.
+                \item \texttt{expiresAt}: \textit{Timestamp} - Momento de finalización del ciclo de mercado diario.
+            \end{itemize}
+        \item \textbf{Operaciones:}
+            \begin{itemize}
+                \item \texttt{limpiarMercado(): Void}
+                \item \texttt{popularMercado(): Void}
+            \end{itemize}
+    \end{itemize}
+
+    \item \textbf{MarketPlayer (Jugador en venta en el Mercado de Fichajes)}
+    \begin{itemize}
+        \item \textbf{Atributos:}
+            \begin{itemize}
+                \item \texttt{playerId}: \textit{Integer} [PK, FK] - Enlace al jugador.
+                \item \texttt{leagueId}: \textit{BigInt} [PK, FK] - Enlace a la liga.
+                \item \texttt{marketValue}: \textit{Float} - Precio de salida base actual (calculado procedimentalmente).
+                \item \texttt{listedAt}: \textit{Timestamp} - Fecha de publicación en el mercado.
+            \end{itemize}
+    \end{itemize}
+
+    \item \textbf{Bid (Puja ciega realizada por un participante)}
+    \begin{itemize}
+        \item \textbf{Atributos:}
+            \begin{itemize}
+                \item \texttt{id}: \textit{BigInt} [PK] - Identificador único de puja.
+                \item \texttt{leagueId}: \textit{BigInt} [FK] - Liga asociada.
+                \item \texttt{playerId}: \textit{Integer} [FK] - Jugador pujado.
+                \item \texttt{userId}: \textit{UUID} [FK] - Participante oferente.
+                \item \texttt{bidPrice}: \textit{Float} - Importe ofertado.
+                \item \texttt{createdAt}: \textit{Timestamp} - Fecha y hora del registro.
+            \end{itemize}
+        \item \textbf{Operaciones:}
+            \begin{itemize}
+                \item \texttt{modificarOferta(nuevoImporte: Float): Void}
+                \item \texttt{cancelarPuja(): Void}
+            \end{itemize}
+    \end{itemize}
+
+    \item \textbf{DirectOffer (Propuesta de traspaso directa entre mánagers)}
+    \begin{itemize}
+        \item \textbf{Atributos:}
+            \begin{itemize}
+                \item \texttt{id}: \textit{BigInt} [PK] - ID de la oferta.
+                \item \texttt{leagueId}: \textit{BigInt} [FK] - Liga asociada.
+                \item \texttt{playerId}: \textit{Integer} [FK] - Jugador implicado.
+                \item \texttt{buyerId}: \textit{UUID} [FK] - Mánager que desea comprar.
+                \item \texttt{sellerId}: \textit{UUID} [FK] - Mánager que posee el jugador.
+                \item \texttt{offerPrice}: \textit{Float} - Cantidad económica propuesta.
+                \item \texttt{status}: \textit{Enum} [pending, accepted, rejected, cancelled] - Estado.
+                \item \texttt{createdAt}: \textit{Timestamp} - Fecha de creación de la oferta.
+                \item \texttt{resolvedAt}: \textit{Timestamp} [Opcional] - Fecha de resolución.
+            \end{itemize}
+        \item \textbf{Operaciones:}
+            \begin{itemize}
+                \item \texttt{aceptar(): Void}
+                \item \texttt{rechazar(): Void}
+                \item \texttt{cancelar(): Void}
+            \end{itemize}
+    \end{itemize}
+
+    \item \textbf{TransferHistory (Historial / Auditoría de Traspasos)}
+    \begin{itemize}
+        \item \textbf{Atributos:}
+            \begin{itemize}
+                \item \texttt{id}: \textit{BigInt} [PK] - ID único.
+                \item \texttt{leagueId}: \textit{BigInt} [FK] - Liga asociada.
+                \item \texttt{playerId}: \textit{Integer} [FK] - Jugador traspasado.
+                \item \texttt{sellerId}: \textit{UUID} [FK, Nullable] - Mánager vendedor (es nulo en caso de mercado libre o despidos).
+                \item \texttt{buyerId}: \textit{UUID} [FK, Nullable] - Mánager comprador (es nulo en caso de ventas inmediatas).
+                \item \texttt{price}: \textit{Float} - Coste de la transacción.
+                \item \texttt{transferType}: \textit{Enum} [bidding, direct\_offer, clause, dismissal] - Tipo de operación realizada.
+                \item \texttt{createdAt}: \textit{Timestamp} - Fecha de ejecución.
+            \end{itemize}
+    \end{itemize}
+
+    \item \textbf{SupportTicket (Ticket de Soporte e Incidencias)}
+    \begin{itemize}
+        \item \textbf{Atributos:}
+            \begin{itemize}
+                \item \texttt{id}: \textit{BigInt} [PK] - ID único del ticket.
+                \item \texttt{userId}: \textit{UUID} [FK] - Mánager que reporta la incidencia.
+                \item \texttt{subject}: \textit{Enum} [bug, account, market, catalog, other] - Categoría del ticket.
+                \item \texttt{message}: \textit{String} - Descripción del problema o solicitud.
+                \item \texttt{status}: \textit{Enum} [open, in\_progress, resolved, closed] - Estado operativo.
+                \item \texttt{createdAt}: \textit{Timestamp} - Fecha de envío.
+            \end{itemize}
+        \item \textbf{Operaciones:}
+            \begin{itemize}
+                \item \texttt{cerrarTicket(): Void}
+                \item \texttt{actualizarEstado(nuevoEstado: String): Void}
+            \end{itemize}
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{Relaciones y Cardinalidades conceptuales}
+Las conexiones del modelo conceptual describen el bucle y la estructura relacional del juego:
 \begin{itemize}
-    \item \textbf{Manager (Mánager):} Identificador único, email, nombre de usuario, saldo actual y rol. Se relaciona de uno a muchos ($1 \rightarrow *$) con sus plantillas en las distintas ligas.
-    \item \textbf{League (Liga):} Código de invitación, nombre, temporada histórica y estado. Se relaciona de muchos a muchos ($* \rightarrow *$) con los Managers que participan en ella.
-    \item \textbf{Player (Jugador Real):} ID estático, nombre completo, demarcación, equipo de origen y valor. Vinculado a sus atributos históricos a través de la tabla relacional de evolución.
-    \item \textbf{Roster (Plantilla de Liga):} Relación intermedia ($* \rightarrow *$) que asigna qué Manager de qué liga es dueño de qué Player, guardando además su cláusula de rescisión personalizada.
-    \item \textbf{Bid (Puja de Mercado):} Relación entre Manager, Player y Mercado, registrando el importe ofertado y el \textit{timestamp} exacto de creación.
-    \item \textbf{Transfer (Historial de Traspaso):} Registro de auditoría que guarda el traspaso, indicando el jugador, el importe, el mánager origen y el de destino, sirviendo además para disparar notificaciones asíncronas.
+    \item \textbf{Manager - League ($1 \rightarrow *$):} Un mánager actúa como administrador de las ligas que ha creado, aunque puede participar en ellas o en ligas creadas por otros rivales.
+    \item \textbf{Manager - SupportTicket ($1 \rightarrow *$):} Un mánager global puede abrir múltiples tickets de soporte e incidencias técnicas.
+    \item \textbf{League - LeagueParticipant ($1 \rightarrow *$):} Una liga fantasy se compone de múltiples participantes que compiten de manera asíncrona. Un mánager se asocia a una liga mediante esta entidad para inicializar su saldo.
+    \item \textbf{LeagueParticipant - Roster ($1 \rightarrow 1$):} Cada participante posee una única plantilla y once táctico dentro de esa liga específica para puntuar.
+    \item \textbf{Roster - RosterPlayer ($1 \rightarrow *$):} La plantilla se compone de una colección de hasta 25 futbolistas reales asignados en propiedad.
+    \item \textbf{Player - RosterPlayer ($1 \rightarrow *$):} Un futbolista real del catálogo sirve como definición base para las múltiples instancias de propiedad individuales que puedan existir a lo largo de las distintas ligas.
+    \item \textbf{League - Market ($1 \rightarrow 1$):} Cada liga fantasy posee su propio mercado de fichajes con sus ciclos independientes de renovación y puja.
+    \item \textbf{Market - MarketPlayer ($1 \rightarrow *$):} El mercado dinámico expone una selección aleatoria de jugadores libres diarios para que los participantes realicen sus pujas.
+    \item \textbf{LeagueParticipant - Bid ($1 \rightarrow *$):} Un mánager participante puede registrar pujas ciegas por múltiples jugadores libres expuestos en el mercado en cada ciclo.
+    \item \textbf{MarketPlayer - Bid ($1 \rightarrow *$):} Un jugador en el mercado puede recibir ofertas y pujas simultáneas de diferentes mánagers, resolviéndose al final del ciclo.
+    \item \textbf{LeagueParticipant - DirectOffer ($1 \rightarrow *$):} Un mánager puede proponer ofertas comerciales directas por los jugadores de las plantillas de sus rivales de liga.
+    \item \textbf{LeagueParticipant - TransferHistory ($1 \rightarrow *$):} Todas las transacciones económicas quedan registradas auditando al mánager de origen y de destino (comprador y vendedor).
 \end{itemize}
 
 \subsection{Análisis de Datos}
