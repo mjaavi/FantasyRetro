@@ -1,0 +1,98 @@
+\chapter{Metodología de desarrollo}
+\label{chap:metodologia}
+
+En este capítulo se describe la metodología empleada en el desarrollo de la plataforma \textit{Retro Fantasy}. A diferencia de los enfoques metodológicos tradicionales, en este proyecto se ha adoptado un paradigma de desarrollo asistido por Inteligencia Artificial (IA Generativa), trabajando en un formato de programación en pareja (\textit{Pair Programming}) con el asistente de código avanzado \textit{Antigravity}. A continuación, se detalla el flujo de trabajo conjunto, las técnicas de estructuración de instrucciones (\textit{prompts}), ejemplos prácticos de estas interacciones y un análisis crítico de las ventajas y desafíos derivados de este enfoque.
+
+\section{Desarrollo asistido por Inteligencia Artificial}
+El proceso de ingeniería de software clásico (análisis de requisitos, diseño arquitectónico, codificación, pruebas e integración) se ha visto optimizado mediante el uso del asistente inteligente de desarrollo. Bajo este modelo de colaboración:
+\begin{itemize}
+    \item \textbf{Rol del Desarrollador (Humano):} Actúa como el arquitecto principal del sistema, especificando las reglas de negocio conceptuales (como el sistema económico híbrido o las picas de puntuación), supervisando la integración de los componentes, analizando la viabilidad del diseño y verificando los resultados finales a través de pruebas funcionales y de compilación.
+    \item \textbf{Rol del Asistente de IA (Antigravity):} Actúa como el motor ejecutor y validador de código de bajo nivel, sugiriendo implementaciones físicas que respeten estrictamente los principios \textit{Clean Architecture} y \textit{SOLID}, automatizando la creación de esquemas y de consultas complejas para la base de datos de Supabase, y detectando discrepancias de tipado estático en TypeScript antes de compilar.
+\end{itemize}
+
+Este flujo cooperativo permite mantener un ciclo de desarrollo ágil e iterativo, donde la lógica de negocio se refina de forma incremental a través de conversaciones estructuradas.
+
+\section{Ingeniería de Prompts y Técnicas de Interacción}
+Para obtener resultados óptimos y evitar alucinaciones en el código generado por el asistente, se han estructurado cuidadosamente las directrices de comunicación. Las técnicas clave empleadas en la ingeniería de instrucciones (\textit{Prompt Engineering}) han sido:
+
+\begin{enumerate}
+    \item \textbf{Asignación de Rol (Role Prompting):} Se contextualiza la respuesta del asistente asignándole un perfil técnico experto en áreas específicas del desarrollo web. Esto acota el vocabulario del modelo y dirige su lógica de estructuración.
+    \item \textbf{Inyección de Contexto Estructurado (Context Injection):} Antes de solicitar cualquier cambio, se inyectan en el prompt las partes relevantes de la base de datos relacional (esquemas de tablas en SQL) o los contratos en TypeScript (interfaces y tipos del dominio). Esto asegura que el código generado se conecte con las entidades existentes sin inventar campos o dependencias ficticios.
+    \item \textbf{Razonamiento en Cadena (Chain-of-Thought - CoT):} Se instruye al asistente a realizar una descomposición analítica previa de la solución propuesta antes de escribir la primera línea de código. Esto resulta fundamental para algoritmos complejos como el sistema de fluctuación de precios de mercado.
+    \item \textbf{Guía por Ejemplos (Few-Shot Prompting):} Se proporcionan ejemplos puntuales de implementaciones previas ya aceptadas en el repositorio (como un controlador de Express existente o un caso de uso particular) para unificar el estilo de programación, la captura de excepciones y el formato de respuesta de la API.
+\end{enumerate}
+
+\section{Ejemplos prácticos de interacción}
+A continuación, se exponen tres ejemplos altamente representativos y detallados de cómo se han estructurado los prompts de interacción con el asistente inteligente para resolver mecánicas y políticas críticas de la plataforma, detallando sus flujos de datos y casos límite (\textit{edge cases}).
+
+\subsection{Caso de Uso 1: Diseño del Algoritmo de Fluctuación de Precios}
+Para la implementación de la fluctuación automática de precios de los jugadores basada en el mercado y su rendimiento real, se utilizó una técnica mixta de \textit{Context Injection} y \textit{Chain-of-Thought}, incorporando la gestión estricta de límites económicos.
+
+\begin{lstlisting}[language=tex, caption={Prompt estructurado para la fluctuación de precios de mercado.}]
+[ROL] Eres un ingeniero de software especializado en economia de juegos y bases de datos relacionales en Node.js.
+[CONTEXTO] Contamos con la tabla `league_market` (league_id, player_api_id, expires_at) y el historico `league_transfer_history` (amount, transfer_type).
+[INSTRUCCION] Diseña la logica del algoritmo de fluctuacion diaria de precios en TypeScript detallando las siguientes reglas de negocio y sus casos limite (edge cases):
+1. Si un jugador libre finalizo el dia en el mercado sin ninguna puja valida, devalua su precio un 3% respecto a su valor anterior.
+2. Si un jugador fue vendido mediante adjudicacion de pujas superando su valor de mercado previo, su nuevo precio de mercado debe absorber exactamente el 50% de la diferencia positiva entre la puja ganadora y su valor de mercado anterior.
+3. [EDGE CASE: Limite de Devaluacion] Define un suelo minimo del 10% del valor de mercado original del jugador para evitar que devaluaciones sucesivas lleven el precio a cero o valores negativos.
+4. [EDGE CASE: Control de Inflacion] Limita el incremento maximo diario de precio a un 30% del valor anterior para mitigar burbujas especulativas en la liga.
+5. Explica detalladamente el analisis matematico antes de generar el codigo transaccional en Supabase.
+\end{lstlisting}
+
+El asistente inteligente comenzó desglosando la lógica matemática detrás del algoritmo (estableciendo las fórmulas de devaluación y absorción con acotaciones superiores e inferiores) y posteriormente estructuró el servicio en la capa de aplicación. El código generado utiliza transacciones de Supabase que actualizan de forma masiva y segura la tabla de mercado, asegurando que los redondeos decimales no corrompan las cuentas financieras del juego.
+
+\subsection{Caso de Uso 2: Configuración de Políticas Row Level Security (RLS) en Supabase}
+Con el objetivo de blindar las operaciones de datos directamente desde el cliente sin comprometer la base de datos de Supabase, se empleó un prompt de seguridad avanzada enfocado a prevenir la inyección y fuga de información relacional.
+
+\begin{lstlisting}[language=tex, caption={Prompt para la generación de políticas de seguridad RLS en PostgreSQL.}]
+[ROL] Eres administrador de bases de datos PostgreSQL experto en seguridad.
+[CONTEXTO] Esquema relacional con las tablas `user_roster` (user_id, league_id, player_api_id, is_starter) y `league_participants` (league_id, user_id, budget).
+[INSTRUCCION] Escribe las sentencias SQL de Row Level Security (RLS) de modo que se prevengan los siguientes casos limite de seguridad:
+1. Lectura Cruzada: Cualquier usuario autenticado puede leer las plantillas de otros managers de su misma liga para permitir el scouting, pero se debe denegar por completo el acceso a datos de ligas ajenas en las que no participa.
+2. Escritura No Autorizada: Solo el usuario propietario (coincidencia de user_id con auth.uid()) puede alterar la alineacion (is_starter) o el roster.
+3. [EDGE CASE: Alteracion de Saldo] Evita que un manager pueda actualizar su presupuesto (`budget`) mediante consultas directas al cliente REST de Supabase, restringiendo la escritura a triggers o funciones RPC firmadas con `security definer` que validen transacciones reales de mercado.
+\end{lstlisting}
+
+El asistente respondió generando las políticas SQL nativas (`CREATE POLICY`) y empleando cláusulas `USING (exists (...))` para interceptar de manera dinámica el token JWT del usuario emisor (`auth.uid()`), validando su pertenencia en la tabla intermedia `league_participants` antes de permitir la visualización de los datos.
+
+\subsection{Caso de Uso 3: Gestión e Incremento de la Cláusula de Rescisión}
+Para resolver el blindaje y subida de cláusulas, se solicitó al asistente de IA diseñar una solución orientada a objetos (aplicando SRP y DRY) que garantizara que las reglas matemáticas estuviesen en el dominio y los cambios de saldo fuesen transaccionales en base de datos.
+
+\begin{lstlisting}[language=tex, caption={Prompt estructurado para la subida de cláusulas de rescisión.}]
+[ROL] Eres un arquitecto de software especializado en diseño de software y Clean Architecture.
+[CONTEXTO] Contamos con la tabla `user_roster` (user_id, league_id, player_api_id, purchase_price, release_clause) y `league_participants` (budget).
+[INSTRUCCION] Necesito implementar una funcionalidad para subir o blindar la clausula de rescision de los jugadores en RetroFantasy. Procesa los siguientes modulos respetando Clean Architecture:
+1. Politica Economica (Dominio): Crea una clase pura `ReleaseClausePolicy.ts` en la capa de dominio. Define que la clausula inicial por defecto es de 1.25x (25% extra) del valor de compra del jugador, y que por cada 1 euro invertido por el manager de su presupuesto, la clausula del jugador se incrementa en el doble (factor multiplicador de 2x).
+2. Caso de Uso (Aplicacion): Implementa `raiseReleaseClause` en `leagueTransfer.service.ts`.
+3. [EDGE CASES]: Detalla e implementa las siguientes validaciones criticas:
+   - Saldo insuficiente: El manager no dispone de presupuesto liquido suficiente.
+   - Aportaciones no validas: Rechazar contribuciones negativas o cero.
+   - Propiedad del jugador: Validar que el jugador realmente pertenezca al roster del manager.
+   - Limite de Blindaje Maximo: Limita la clausula maxima de un jugador al 500% de su valor de mercado para evitar blindajes infinitos indestructibles.
+   - Transaccionalidad Atomica: Emplea bloqueos explicitos en base de datos para evitar condiciones de carrera si otro manager intenta pagar la clausula (clausulazo) simultaneamente.
+\end{lstlisting}
+
+El asistente resolvió de manera brillante este requerimiento:
+\begin{itemize}
+    \item \textbf{Capa de Dominio}: Escribió una política pura de dominio (`ReleaseClausePolicy.ts`) desacoplada de cualquier librería externa, facilitando pruebas unitarias rápidas.
+    \item \textbf{Capa de Aplicación}: Creó la lógica del servicio realizando un bloqueo preventivo (`FOR UPDATE`) sobre el roster y el saldo del participante. De este modo, si ocurre un intento de compra simultáneo ("clausulazo"), el motor relacional de Supabase encola las peticiones secuencialmente, evitando la duplicación de saldo o la inconsistencia de los datos.
+\end{itemize}
+
+\section{Análisis crítico: ventajas y desafíos}
+La incorporación del desarrollo asistido por Inteligencia Artificial en este Trabajo de Fin de Grado ha arrojado conclusiones valiosas respecto a la productividad de la ingeniería del software moderna:
+
+\begin{itemize}
+    \item \textbf{Ventajas y ganancia de eficiencia:}
+    \begin{itemize}
+        \item \textit{Aceleración del desarrollo:} Reducción drástica del tiempo necesario para tareas repetitivas (creación de tipos, maquetación de modelos, enrutadores de Express estándar).
+        \item \textit{Robustez arquitectónica:} Al tener directrices claras sobre Clean Architecture, el asistente obligó a desacoplar firmemente las dependencias externas (inyección de Nodemailer o Supabase) del núcleo del dominio, logrando un código más desacoplado y comprobable.
+        \item \textit{Corrección proactiva de errores:} Detección temprana de incompatibilidades de tipos en TypeScript, previniendo fallos en tiempo de ejecución.
+    \end{itemize}
+    
+    \item \textbf{Desafíos y limitaciones encontradas:}
+    \begin{itemize}
+        \item \textit{Riesgo de alucinación:} Ante prompts ambiguos o faltos de contexto, la IA puede inventar métodos de librerías externas o proponer campos que no existen en las tablas. Esto requiere que el desarrollador posea un entendimiento profundo del sistema para auditar cada línea de código.
+        \item \textit{Mantenimiento del contexto:} En conversaciones largas, el asistente puede perder de vista decisiones arquitectónicas acordadas previamente, requiriendo re-inyectar el contexto de manera constante.
+        \item \textit{Dependencia de la validación manual:} El código generado es una sugerencia; la responsabilidad del compilado sin errores y del comportamiento de negocio final sigue recayendo enteramente sobre el factor humano.
+    \end{itemize}
+\end{itemize}
