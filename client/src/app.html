@@ -590,6 +590,61 @@
                     width: 6.65rem;
                 }
             }
+
+            @media (max-width: 767px) {
+                .relative.z-10.flex {
+                    gap: 0.35rem !important; /* reduce gap for all rows on mobile */
+                }
+                
+                /* Detect when a row has 5 or more slots and scale them down */
+                .relative.z-10.flex > .player-slot:nth-last-child(n+5),
+                .relative.z-10.flex > .player-slot:nth-last-child(n+5) ~ .player-slot {
+                    width: 3.8rem !important;
+                }
+                .relative.z-10.flex > .player-slot:nth-last-child(n+5) .lineup-player-card,
+                .relative.z-10.flex > .player-slot:nth-last-child(n+5) ~ .player-slot .lineup-player-card {
+                    min-height: 6.8rem !important;
+                    padding: 0.4rem 0.2rem 0.3rem !important;
+                    border-radius: 0.8rem !important;
+                }
+                .relative.z-10.flex > .player-slot:nth-last-child(n+5) .lineup-player-name,
+                .relative.z-10.flex > .player-slot:nth-last-child(n+5) ~ .player-slot .lineup-player-name {
+                    font-size: 0.58rem !important;
+                    line-height: 1.0;
+                }
+                .relative.z-10.flex > .player-slot:nth-last-child(n+5) .lineup-player-logo-clip,
+                .relative.z-10.flex > .player-slot:nth-last-child(n+5) ~ .player-slot .lineup-player-logo-clip {
+                    top: 1.55rem !important;
+                    right: -0.65rem !important;
+                    width: 2.4rem !important;
+                    height: 3.2rem !important;
+                    clip-path: inset(-100% 0.65rem -100% -100%) !important;
+                }
+                .relative.z-10.flex > .player-slot:nth-last-child(n+5) .lineup-player-portrait-frame,
+                .relative.z-10.flex > .player-slot:nth-last-child(n+5) ~ .player-slot .lineup-player-portrait-frame {
+                    height: 3.8rem !important;
+                }
+                .relative.z-10.flex > .player-slot:nth-last-child(n+5) .lineup-player-score,
+                .relative.z-10.flex > .player-slot:nth-last-child(n+5) ~ .player-slot .lineup-player-score {
+                    min-width: 1.7rem !important;
+                    height: 1.5rem !important;
+                    font-size: 0.78rem !important;
+                    padding: 0 0.25rem !important;
+                }
+            }
+            
+            /* Even smaller on extremely narrow viewports (e.g. under 360px) */
+            @media (max-width: 360px) {
+                .relative.z-10.flex > .player-slot:nth-last-child(n+5),
+                .relative.z-10.flex > .player-slot:nth-last-child(n+5) ~ .player-slot {
+                    width: 3.4rem !important;
+                }
+                .relative.z-10.flex > .player-slot:nth-last-child(n+5) .lineup-player-card,
+                .relative.z-10.flex > .player-slot:nth-last-child(n+5) ~ .player-slot .lineup-player-card {
+                    min-height: 6.2rem !important;
+                    padding: 0.35rem 0.15rem 0.25rem !important;
+                }
+            }
             .lineup-player-card {
                 min-height: 7.8rem;
                 padding: 0.5rem 0.4rem 0.35rem;
