@@ -591,6 +591,27 @@
                 #pitch-field > div {
                     gap: 0.35rem !important; /* reduce gap for all rows on mobile */
                 }
+
+                /* Empty slot cards scaling on mobile */
+                #pitch-main .player-slot-card,
+                #pitch-field .player-slot-card {
+                    min-height: 6.8rem !important;
+                    border-radius: 0.8rem !important;
+                }
+                #pitch-main .player-slot-top,
+                #pitch-field .player-slot-top {
+                    height: 3.8rem !important;
+                    font-size: 1.5rem !important;
+                }
+                #pitch-main .player-slot-bottom,
+                #pitch-field .player-slot-bottom {
+                    padding: 0.2rem 0.2rem 0.4rem !important;
+                }
+                #pitch-main .player-slot-name,
+                #pitch-field .player-slot-name {
+                    font-size: 0.58rem !important;
+                    letter-spacing: 0.05em !important;
+                }
             }
 
             /* Even smaller on extremely narrow viewports (e.g. under 360px) */
@@ -598,6 +619,14 @@
                 #pitch-main > div > .player-slot,
                 #pitch-field > div > .player-slot {
                     width: 3.4rem !important;
+                }
+                #pitch-main .player-slot-card,
+                #pitch-field .player-slot-card {
+                    min-height: 6.2rem !important;
+                }
+                #pitch-main .player-slot-top,
+                #pitch-field .player-slot-top {
+                    height: 3.4rem !important;
                 }
             }
 
