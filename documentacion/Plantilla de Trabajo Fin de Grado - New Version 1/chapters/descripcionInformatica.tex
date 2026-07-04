@@ -422,6 +422,8 @@ El sistema implementa tres núcleos algorítmicos fundamentales:
     Esto garantiza un valor de salida equilibrado basado en la demarcación.
     \item \textbf{Algoritmo del Motor de Puntuación (Patrón Strategy)}:
     El backend procesa asíncronamente los XML de los partidos de la base de datos histórica. Mediante el patrón \textit{Strategy} \cite{gof_patterns}, separamos la lógica pura del motor estadístico y la de los cronistas virtuales que simulan a los periodistas de la prensa.
+    \item \textbf{Algoritmo de Fluctuación de Precios y Generación de Pujas del Bot (Cierre de Mercado)}:
+    Al finalizar cada ciclo de mercado de fichajes de la liga, el sistema ejecuta de forma automática el cálculo de la fluctuación de los precios de mercado de los jugadores basándose en su rendimiento (puntos obtenidos en la última jornada) y su demanda de compra. Además, el algoritmo simula el comportamiento de pujas ciegas por parte de la máquina para los futbolistas que los mánagers hayan puesto en venta, generando una oferta simulada en el rango de \textbf{[-10\%, +10\%]} de su valor actual. Finalmente, este proceso convierte de forma atómica todas las pujas activas en ofertas directas pendientes, quedando la resolución del traspaso de forma manual en manos del mánager vendedor.
 \end{enumerate}
 
 \subsection{Análisis de Tecnologías}
@@ -687,3 +689,10 @@ Para certificar que el rediseño de las plantillas de correo con layouts HTML s�
 npx tsx server/src/infrastructure/email/previewEmails.ts
 \end{lstlisting}
 Este script exporta los HTML dinámicos a la carpeta local \texttt{email-previews/}. A través de estas pruebas de caja negra, validamos de forma visual que los botones de llamada a la acción (CTAs) y los avisos de saldo negativo son 100\% visibles con su tipografía y color de fondo correctos en el navegador del desarrollador antes de guardarlos en el panel de Supabase Auth.
+
+\subsection{Pruebas de Lógica de Negocio y Simulación Local}
+Para verificar de forma proactiva la correcta lógica de los algoritmos de tasación inicial y el flujo del registro de usuarios con asignación de plantilla, se ejecutan scripts de simulación en el entorno local:
+\begin{itemize}
+    \item \textbf{Simulación de Tasación Económica}: Ejecutando el script \texttt{npx tsx server/test\_econ.ts}, se valida el comportamiento del algoritmo de asignación de precios base de acuerdo a la demarcación del jugador y su media (OVR). Esto nos permite inspeccionar de forma rápida los precios calculados para jugadores muestra antes de insertarlos en la base de datos de Supabase.
+    \item \textbf{Simulación del Proceso de Onboarding}: Ejecutando \texttt{npx tsx server/test\_onboarding.ts}, se realiza un test completo de extremo a extremo de la asignación transaccional de un equipo de 15 futbolistas a una nueva liga, comprobando la consistencia e integridad referencial de los registros insertados en la base de datos local y remota.
+\end{itemize}
