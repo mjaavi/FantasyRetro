@@ -5,9 +5,9 @@ Este apéndice contiene el manual de usuario completo de la plataforma \textit{R
 
 
 \section{Introducción y Concepto de Juego}
-\textit{Retro Fantasy} es un simulador de gestión deportiva (\textit{Mánager Fantasy}) asíncrono. A diferencia de las plataformas tradicionales que dependen del calendario de partidos del año en curso, este juego permite a los usuarios competir en temporadas de fútbol históricas (por ejemplo, LaLiga 2011/2012 o la Premier League 2008/2009). 
+\textit{Retro Fantasy} es un simulador de gestión deportiva (\textit{Mánager Fantasy}). A diferencia de las plataformas tradicionales que dependen del calendario de partidos del año en curso, este juego permite a los usuarios competir en temporadas de fútbol históricas (por ejemplo, LaLiga 2011/2012 o la Premier League 2008/2009). 
 
-Los usuarios asumen el rol de un director deportivo o mánager, compitiendo entre sí en ligas privadas. El objetivo es acumular la mayor cantidad de puntos a lo largo de las 38 jornadas de la liga, gestionando de forma eficiente un presupuesto limitado para fichar estrellas del pasado y alinear una formación competitiva.
+Los usuarios asumen el rol de un director deportivo o mánager, compitiendo entre sí en ligas privadas. El objetivo es acumular la mayor cantidad de puntos a lo largo de las jornadas que componen la liga, gestionando de forma eficiente un presupuesto limitado para fichar estrellas del pasado y alinear una formación competitiva.
 
 
 \section{Primeros Pasos y Registro}
@@ -22,15 +22,22 @@ El flujo inicial del usuario desde que accede a la plataforma web por primera ve
     \item Tras confirmar, inicie sesión con sus credenciales en el formulario de acceso.
 \end{enumerate}
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Plantilla de Trabajo Fin de Grado - New Version 1/figures/Registro.png}
+    \caption{Vista del formulario de Registro de Retro Fantasy.}
+    \label{fig:res_registro}
+\end{figure}
+
 \subsection{Unirse o Crear una Liga}
 Una vez dentro del panel principal, el mánager debe tener al menos una liga activa para poder jugar. Dispone de dos opciones:
 \begin{itemize}
     \item \textbf{Crear una Liga:} Introduzca un nombre personalizado para su liga, seleccione la competición (ej. \textit{Spain LIGA BBVA}) y elija una de las temporadas históricas disponibles en el catálogo (desde 2008/2009 hasta 2015/2016). Al crearla, usted se convertirá en el \textbf{Administrador} de esa liga.
-    \item \textbf{Unirse a una Liga:} Introduzca el código único de invitación (proporcionado por otro mánager administrador).
+    \item \textbf{Unirse a una Liga:} Introduzca el código único de invitación proporcionado por otro mánager.
 \end{itemize}
 
-\subsection{Asignación Inicial (Modelo Híbrido)}
-Al unirse a una liga, el sistema ejecuta de manera automática y transaccional el algoritmo de asignación inicial para asegurar el equilibrio de la competición:
+\subsection{Asignación Inicial}
+Al unirse a una liga, el sistema ejecuta de manera automática el algoritmo de asignación inicial para asegurar que cada jugador dispone de 11 jugadores para poder iniciar la competición:
 \begin{itemize}
     \item \textbf{Plantilla Base:} Se le asignan \textbf{11 futbolistas} pertenecientes a la liga y temporada elegidas (1 portero, 4 defensas, 4 centrocampistas y 2 delanteros). El valor de mercado conjunto de estos jugadores suma aproximadamente 180-200 millones de euros.
     \item \textbf{Saldo Líquido:} Se le otorgan \textbf{300 millones de euros} en efectivo para realizar fichajes.
@@ -53,6 +60,13 @@ El mánager puede seleccionar su esquema táctico preferido desde el desplegable
     \item \textbf{5-2-3} (1 Portero, 5 Defensas, 2 Centrocampistas, 3 Delanteros)
 \end{itemize}
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Plantilla de Trabajo Fin de Grado - New Version 1/figures/Formaciones.png}
+    \caption{Vista del desplegable con las distintas formaciones disponibles.}
+    \label{fig:res_formaciones}
+\end{figure}
+
 \subsection{Alinear Jugadores (Titulares y Suplentes)}
 El campo de juego muestra de forma visual la disposición táctica de los 11 slots titulares.
 \begin{enumerate}
@@ -69,8 +83,22 @@ Cada jugador de su propiedad tiene una cláusula de rescisión que actúa como p
     \item \textbf{Regla del ajuste de cláusula:} Ajustar la cláusula tiene un coste de la mitad del valor añadido a la misma, facilitando en parte el uso de las mismas, pero sin favorecerlas.
 \end{itemize}
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Plantilla de Trabajo Fin de Grado - New Version 1/figures/SubirClausula.png}
+    \caption{Panel lateral desplegable para gestionar la subida de clausulas.}
+    \label{fig:res_subirClausulas}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Plantilla de Trabajo Fin de Grado - New Version 1/figures/Formaciones.png}
+    \caption{Vista del desplegable con las distintas formaciones disponibles.}
+    \label{fig:res_formaciones}
+\end{figure}
+
 \subsection{Venta Inmediata (Despido)}
-Si un mánager necesita liberar espacio en su plantilla (límite máximo de 25 jugadores) u obtener dinero rápido de forma urgente para acometer un fichaje en el mercado:
+Si un mánager necesita urgentemente liberar espacio en su plantilla debido al límite máximo de 25 jugadores u obtener dinero rápido de forma urgente para acometer un fichaje en el mercado:
 \begin{enumerate}
     \item Abra la ficha del jugador en la pantalla de plantilla.
     \item Pulse el botón \textbf{Venta Inmediata (Despido)}.
@@ -78,14 +106,20 @@ Si un mánager necesita liberar espacio en su plantilla (límite máximo de 25 j
     \item El jugador se convierte en agente libre y volverá a aparecer en futuros ciclos del mercado.
 \end{enumerate}
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Plantilla de Trabajo Fin de Grado - New Version 1/figures/Despido.png}
+    \caption{Panel lateral desplegable para gestionar el despido de los jugadores.}
+    \label{fig:res_despido}
+\end{figure}
 
 \section{El Mercado de Fichajes y Traspasos}
 
 El mercado de fichajes es el núcleo interactivo y económico de la liga. Se subdivide en cuatro mecánicas operativas principales:
 
-\subsection{Mercado Diario (Pujas Ciegas)}
+\subsection{Mercado Diario}
 \begin{itemize}
-    \item Cada 24 horas, el sistema publica una lista aleatoria de jugadores libres (agentes de la computadora) disponibles para su compra.
+    \item Cada 24 horas, el sistema publica una lista aleatoria de jugadores libres disponibles para su compra.
     \item Los mánagers pueden realizar una \textbf{puja ciega} por cualquier jugador del mercado, ofreciendo una cantidad igual o superior a su valor de salida.
     \item Ningún mánager puede ver las cantidades ofertadas por sus rivales, pero sí se muestra el número total de pujas recibidas por cada jugador.
     \item Al finalizar el ciclo de 24 horas (indicado por la cuenta atrás en la interfaz), el mercado se resuelve: el jugador es adjudicado al mánager que haya realizado la puja más alta.
@@ -95,12 +129,19 @@ El mercado de fichajes es el núcleo interactivo y económico de la liga. Se sub
 \subsection{Compraventa Directa entre Mánagers}
 Los usuarios pueden comerciar directamente entre ellos sin mediación de la computadora:
 \begin{itemize}
-    \item \textbf{Poner Transferible:} Un mánager puede ofrecer dinero a otros managers por sus jugadores mientras esta oferta se igual o superior al valorde mercado del jugador.
-    \item \textbf{Enviar Oferta Directa:} Cualquier usuario de la liga puede abrir la plantilla de un rival, seleccionar un futbolista y enviarle una oferta económica directa en efectivo. El saldo de la oferta se retiene de forma virtual para garantizar la transacción.
-    \item \textbf{Aceptar o Rechazar:} El propietario del jugador recibirá una notificación por email y una alerta en su panel de ofertas entrantes. Puede aceptar la oferta (el traspaso se ejecuta al instante) o rechazarla (el saldo bloqueado se devuelve al comprador).
+    \item \textbf{Poner Transferible:} Un mánager puede ofrecer dinero a otros managers por sus jugadores mientras esta oferta sea igual o superior al valor de mercado del jugador.
+    \item \textbf{Enviar Oferta Directa:} Cualquier usuario de la liga puede abrir la plantilla de un rival, seleccionar un futbolista y enviarle una oferta desde la pantalla de la clasificación. El saldo de la oferta se retiene para garantizar la transacción.
+    \item \textbf{Aceptar o Rechazar:} El propietario del jugador recibirá una notificación por email y una alerta en su panel de ofertas entrantes. Puede aceptar la oferta, en ese caso, el traspaso se ejecuta al instante o rechazarla, entonces, el saldo bloqueado se devuelve al ofertante.
 \end{itemize}
 
-\subsection{Clausulazos (Robo Automático)}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Plantilla de Trabajo Fin de Grado - New Version 1/figures/Oferta.png}
+    \caption{Desde esta vista se pueden realizar ofertas a rivales de tu misma liga.}
+    \label{fig:res_oferta}
+\end{figure}
+
+\subsection{Clausulazos}
 Si un mánager dispone de saldo líquido suficiente, puede arrebatarle un futbolista a un rival de manera unilateral:
 \begin{enumerate}
     \item Acceda a la plantilla de un rival desde la tabla de clasificación.
@@ -109,6 +150,12 @@ Si un mánager dispone de saldo líquido suficiente, puede arrebatarle un futbol
     \item Al pulsar, la transacción se procesa inmediatamente: el saldo se deduce de su cuenta y se transfiere al mánager vendedor, y el jugador pasa a formar parte de su plantilla al instante sin requerir aprobación. El sistema envía una alerta por email al mánager robado.
 \end{enumerate}
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Plantilla de Trabajo Fin de Grado - New Version 1/figures/Clausula.png}
+    \caption{Vista para realizar clausulazos a managers rivales.}
+    \label{fig:res_clausula}
+\end{figure}
 
 \section{Simulación de Jornadas y Puntuación}
 
@@ -135,14 +182,21 @@ Un pilar fundamental de la gestión económica es evitar el endeudamiento antes 
 
 \section{Manual del Administrador de Ligas y Plataforma}
 
-Los usuarios con roles elevados disponen de herramientas avanzadas de gestión en la pestaña de \textbf{Administración y Ajustes}.
+Los usuarios con roles especiales disponen de herramientas avanzadas de gestión en la pestaña de \textbf{Administración y Ajustes}.
 
 \subsection{Administración de Ligas Privadas}
 El creador y administrador de una liga puede realizar las siguientes acciones en su panel:
 \begin{itemize}
-    \item \textbf{Procesar Jornada:} Introduce el número de jornada a jugar (de 1 a 38) y procesa las puntuaciones de todos los equipos.
-    \item \textbf{Reiniciar Liga:} Restablece la liga a la jornada 0. Elimina todas las plantillas, devuelve los saldos a 300 millones de euros y genera una nueva asignación híbrida aleatoria de jugadores base para todos los participantes.
+    \item \textbf{Procesar Jornada:} Introduce el número de jornada a jugar  y procesa las puntuaciones de todos los equipos.
+    \item \textbf{Reiniciar Liga:} Restablece la liga a la jornada 0. Elimina todas las plantillas, devuelve los saldos a 300 millones de euros y genera una nueva asignación aleatoria de jugadores base para todos los participantes.
 \end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Plantilla de Trabajo Fin de Grado - New Version 1/figures/Administracion.png}
+    \caption{Vista para administradores desde la cual se puede administrar la liga.}
+    \label{fig:res_administracion}
+\end{figure}
 
 \subsection{Administración de Catálogos (Catalog Admin)}
 Los mánagers con el rol \texttt{catalog\_admin} tienen acceso al panel global de carga de datos:
@@ -151,3 +205,10 @@ Los mánagers con el rol \texttt{catalog\_admin} tienen acceso al panel global d
     \item \textbf{Auditoría de Errores:} Muestra un informe detallado con las filas, columnas y campos que no cumplen con los formatos del parser de Kaggle.
     \item \textbf{Publicación Global:} Si el CSV pasa los filtros de validación sin errores, el administrador de catálogos puede pulsar en \textbf{Publicar} para incorporar permanentemente los nuevos datos al pool de competiciones del servidor.
 \end{enumerate}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Plantilla de Trabajo Fin de Grado - New Version 1/figures/Catalogo.png}
+    \caption{Vista del catalogo para importar CSV para añadir nuevas ligas a la web.}
+    \label{fig:res_catalogo}
+\end{figure}

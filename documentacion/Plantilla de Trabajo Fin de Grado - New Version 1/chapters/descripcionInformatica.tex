@@ -1,7 +1,8 @@
 \chapter{Descripción informática}
 \label{chap:descripcion_informatica}
 
-En este capítulo se va a detallar la descripción informática de la plataforma \textit{Retro Fantasy}. Por lo que se va a hablar de los siguientes temas: el listado de requisitos funcionales y no funcionales, el análisis de clases, el diseño arquitectónico y de datos, los detalles de implementación de la Clean Architecture y la estrategia de verificación y pruebas.
+En este capítulo se detalla la concepción técnica, la estructuración y el desarrollo del sistema de software que da soporte a Retro Fantasy. El contenido avanza siguiendo el ciclo lógico de la ingeniería de software: comienza estableciendo el catálogo de requisitos funcionales y no funcionales, seguido del análisis conceptual de clases y los requerimientos de datos. A continuación, se presenta el diseño integral del sistema, abarcando tanto la estructura de la base de datos relacional como la arquitectura base fundamentada en los principios de \textit{Clean Architecture}. Adicionalmente, se documenta la metodología técnica aplicada en el desarrollo asistido por Inteligencia Artificial y la ingeniería de \textit{prompts}. El capítulo finaliza exponiendo la disposición física de la implementación y las estrategias de verificación y pruebas ejecutadas.
+
 
 
 \section{Requisitos del Sistema}
@@ -61,6 +62,7 @@ En la Tabla~\ref{tab:requisitos_funcionales} se describen aquellos requisitos fu
     RF-11 & Gestión de Pujas & El usuario debe poder crear, modificar el importe o cancelar una puja antes de que expire el ciclo de mercado. & Alta \\ \hline
     RF-12 & Resolución de Mercado & El sistema adjudicará el jugador al mayor postor. En caso de empate, priorizará la puja más antigua (\textit{timestamp}). & Alta \\ \hline
     RF-13 & Venta Inmediata & Un mánager debe poder vender un jugador al sistema de forma instantánea a cambio del 50\% de su valor de mercado actual. & Media \\ \hline
+    RF-13b & Puesta en Venta & Un mánager debe poder poner a la venta a un jugador de su plantilla en el mercado para recibir ofertas de otros usuarios y pujas automáticas del sistema (máquina). & Media \\ \hline
     RF-14 & Control de Saldo & El sistema debe verificar que el usuario no puntúe en la jornada si su saldo es negativo en el momento del cierre del mismo. & Alta \\ \hline
     
     \multicolumn{4}{|c|}{\textbf{Módulo de Interacción entre Mánagers}} \\
@@ -223,6 +225,7 @@ El modelado conceptual de \textit{Retro Fantasy} se estructura en torno a las en
                 \item \texttt{releaseClause}: \textit{Float} - Cláusula de rescisión personalizada para evitar robos directos.
                 \item \texttt{isStarter}: \textit{Boolean} - Indica si está colocado en la alineación titular.
                 \item \texttt{purchasePrice}: \textit{Float} - Precio de compra histórico de la instancia.
+                \item \texttt{onSale}: \textit{Boolean} - Indica si el jugador está actualmente a la venta en el mercado de la liga.
             \end{itemize}
         \item \textbf{Operaciones:}
             \begin{itemize}
@@ -254,6 +257,7 @@ El modelado conceptual de \textit{Retro Fantasy} se estructura en torno a las en
                 \item \texttt{leagueId}: \textit{BigInt} [PK, FK] - Enlace a la liga.
                 \item \texttt{marketValue}: \textit{Float} - Precio de salida base actual.
                 \item \texttt{listedAt}: \textit{Timestamp} - Fecha de publicación en el mercado.
+                \item \texttt{sellerId}: \textit{UUID} [FK, Opcional] - Identificador del mánager vendedor (es nulo si es un agente libre del sistema).
             \end{itemize}
     \end{itemize}
 
@@ -391,12 +395,12 @@ Para procesar estos datos, se ha desarrollado un módulo que parsea estos datos,
 Dada la naturaleza competitiva del propio juego, necesita de herramientas de seguridad que mantengan íntegra y limpia la competición entre los usuarios, además del manejo seguro de los datos de estos, el diseño de la arquitectura incluye múltiples capas de seguridad, abarcando desde la autenticación hasta la protección de la infraestructura de red.
 
 \subsubsection{Autenticación sin estado mediante JWT}
-El sistema delega la gestión de usuarios e inicio de sesión al servicio Supabase Auth, el cual implementa el estándar abierto \textit{JSON Web Token} (JWT). A diferencia de los sistemas tradicionales basados en sesiones almacenadas en la memoria del servidor, JWT permite una autenticación \textit{stateless}. 
+El sistema delega la gestión de usuarios e inicio de sesión al servicio Supabase Auth, el cual implementa el estándar abierto \textit{JSON Web Token} (JWT), definido en el RFC 7519 \cite{rfc7519_jwt}. A diferencia de los sistemas tradicionales basados en sesiones almacenadas en la memoria del servidor, JWT permite una autenticación \textit{stateless}.
 
 Una vez que el usuario se autentica correctamente, el servidor emite un token firmado que el cliente almacena. En cada petición subsiguiente, el cliente adjunta este token en la cabecera HTTP \texttt{Authorization}. El backend puede verificar la integridad, la fecha de expiración y la identidad del emisor simplemente validando la firma matemática del token.
 
 \subsubsection{Row Level Security (RLS) en PostgreSQL}
-Para garantizar que un usuario malintencionado no pueda acceder a datos ajenos (por ejemplo, interceptar las pujas ocultas de otros usuarios o alterar el saldo de rivales), se ha implementado una tecnología que incorpora Supabase para proteger las tablas llamada \textit{Row Level Security} (RLS) nativa del motor PostgreSQL.
+Para garantizar que un usuario malintencionado no pueda acceder a datos ajenos (por ejemplo, interceptar las pujas ocultas de otros usuarios o alterar el saldo de rivales), se ha implementado una tecnología que incorpora Supabase para proteger las tablas llamada \textit{Row Level Security} (RLS) nativa del motor PostgreSQL \cite{postgresql_rls}.
 
 Esta tecnología representa una defensa en profundidad, ya que traslada las reglas de autorización desde la capa de aplicación directamente a la base de datos. Mediante la definición de políticas de acceso (\textit{Policies}), cada consulta SQL se evalúa dinámicamente contra el contexto del usuario autenticado (cuyo identificador es inyectado de forma segura desde el JWT). De este modo, incluso si un atacante descubriera una vulnerabilidad en la API REST de Express, el propio motor de la base de datos rechazaría a nivel de fila cualquier lectura o escritura no autorizada.
 
@@ -417,7 +421,7 @@ El sistema implementa tres núcleos algorítmicos fundamentales:
     \[ \text{Precio}_{\text{base}} = \left( (\text{Overall}^2 \times \text{Factor}_{\text{pos}}) + (\text{Potencial} \times 0.5) \right) \times 13\,000 \]
     Esto garantiza un valor de salida equilibrado basado en la demarcación.
     \item \textbf{Algoritmo del Motor de Puntuación (Patrón Strategy)}:
-    El backend procesa asíncronamente los XML de los partidos de la base de datos histórica. Mediante el patrón \textit{Strategy}, separamos la lógica pura del motor estadístico y la de los cronistas virtuales que simulan a los periodistas de la prensa.
+    El backend procesa asíncronamente los XML de los partidos de la base de datos histórica. Mediante el patrón \textit{Strategy} \cite{gof_patterns}, separamos la lógica pura del motor estadístico y la de los cronistas virtuales que simulan a los periodistas de la prensa.
 \end{enumerate}
 
 \subsection{Análisis de Tecnologías}
@@ -437,7 +441,7 @@ La elección de tecnologías obedece a un criterio de desarrollo robusto, actual
 En esta sección se integran las decisiones de diseño arquitectónico y de datos.
 
 \subsection{Arquitectura del Sistema}
-El diseño de la arquitectura de \textit{Retro Fantasy} se fundamenta en el modelo de \textit{Clean Architecture} combinada con un patrón \textit{Cliente-Servidor}. Esta elección de diseño busca garantizar la separación de conceptos (\textit{Separation of Concerns}), la mantenibilidad a largo plazo y la testabilidad del software, gracias al gran desacoplamiento entre capas de la arquitectura, rigiéndose por principios fundamentales como SRP (\textit{Single Responsibility Principle}) y DRY (\textit{Don't Repeat Yourself}).
+El diseño de la arquitectura de \textit{Retro Fantasy} se fundamenta en el modelo de \textit{Clean Architecture} \cite{martin_clean_arch} combinada con un patrón \textit{Cliente-Servidor}. Esta elección de diseño busca garantizar la separación de conceptos (\textit{Separation of Concerns}), la mantenibilidad a largo plazo y la testabilidad del software, gracias al gran desacoplamiento entre capas de la arquitectura, rigiéndose por principios fundamentales como SRP (\textit{Single Responsibility Principle}) \cite{martin_agile_solid} y DRY (\textit{Don't Repeat Yourself}) \cite{hunt_pragmatic}.
 
 El núcleo del diseño es la \textbf{Regla de Dependencia}: el código fuente solo puede apuntar hacia adentro en los círculos concéntricos. Las capas externas dependen de las internas, lo que significa que el dominio y las reglas de negocio no conocen nada sobre los frameworks, las bases de datos o los detalles de la interfaz de usuario. A continuación, se detallan los roles de cada capa en el diseño:
 
@@ -477,8 +481,8 @@ Este dominio gestiona el estado de las competiciones privadas creadas por los us
     \item \textbf{\texttt{profiles}:} Extensión directa de la tabla nativa de autenticación (\texttt{auth.users}). Centraliza los datos del mánager global, tales como su nombre de usuario, nombre de club y el cómputo total de puntos acumulados.
     \item \textbf{\texttt{fantasy\_leagues}:} Almacena las instancias de las ligas privadas creadas por los usuarios, registrando el código alfanumérico de invitación (\texttt{invite\_code}), la temporada histórica activa y la jornada en disputa (\texttt{jornada\_actual}).
     \item \textbf{\texttt{league\_participants}:} Tabla intermedia asociativa de cardinalidad muchos a muchos que mapea qué mánagers integran cada liga privada, abstrayendo de manera aislada el presupuesto (\texttt{budget}) del que dispone el participante en esa competición en particular.
-    \item \textbf{\texttt{user\_roster}:} Registra la propiedad de los futbolistas. Vincula unívocamente un \texttt{player\_api\_id} del catálogo con un mánager dentro de una liga específica, dictaminando el precio de compra original, su estado de alineación (\texttt{is\_starter}) y el valor de su cláusula de rescisión (\texttt{release\_clause}).
-    \item \textbf{\texttt{market} y \texttt{league\_market}:} Tablas encargadas de la persistencia del mercado de fichajes de cada liga, controlando la disponibilidad de jugadores libres, los precios de salida asignados y las fechas temporales de expiración del ciclo diario.
+    \item \textbf{\texttt{user\_roster}:} Registra la propiedad de los futbolistas. Vincula unívocamente un \texttt{player\_api\_id} del catálogo con un mánager dentro de una liga específica, dictaminando el precio de compra original, su estado de alineación (\texttt{is\_starter}), el valor de su cláusula de rescisión (\texttt{release\_clause}) y si el jugador está en venta activa (\texttt{onSale}).
+    \item \textbf{\texttt{market} y \texttt{league\_market}:} Tablas encargadas de la persistencia del mercado de fichajes de cada liga, controlando la disponibilidad de jugadores libres, los precios de salida asignados, las fechas temporales de expiración del ciclo diario y el identificador del mánager vendedor (\texttt{seller\_id}).
     \item \textbf{\texttt{league\_bids}:} Recopila las pujas emitidas por los mánagers a los futbolistas libres del mercado, almacenando el importe de la oferta económica para su posterior procesamiento en el cierre del ciclo.
     \item \textbf{\texttt{league\_direct\_offers}:} Almacena las pujas a los jugadores de otros mánagers de una misma liga para el traspaso de jugadores en propiedad, controlando los estados de flujo transaccional (\texttt{pending}, \texttt{accepted}, \texttt{rejected}, \texttt{cancelled}, \texttt{expired}).
     \item \textbf{\texttt{league\_transfer\_history}:} Registro histórico inmutable de auditoría que almacena cada traspaso completado dentro del juego, tipificando la naturaleza de la operación (\texttt{market}, \texttt{direct\_offer}, \texttt{release\_clause}, \texttt{dismissal}) con el fin de alimentar el \textit{feed} de actividad de la liga.
@@ -504,7 +508,7 @@ Para salvaguardar la coherencia estructural ante posibles eliminaciones de cuent
 \subsection{Reglas y Balance de Juego (GDD)}
 Las reglas de negocio detalladas del juego, incluyendo el algoritmo de tasación de futbolistas, la economía del mercado de fichajes con sus fórmulas de fluctuación diaria, la mecánica de venta inmediata y la matriz de puntuación por eventos, forman parte del \textbf{Documento de Diseño del Juego (GDD)}. Para evitar redundancia y separar la especificación de mecánicas de juego de la arquitectura del software, esta documentación se detalla íntegramente en el \textbf{Apéndice~\ref{app:gdd}}.
 
-\subsection{Diseño de la Interfaz y Experiencia de Usuario (UI/UX) (En desarrollo)}
+\subsection{Diseño de la Interfaz y Experiencia de Usuario (UI/UX)}
 El diseño visual de la plataforma web de \textit{Retro Fantasy} se ha desarrollado con el objetivo de desmarcarse de las aplicaciones tradicionales de gestión deportiva de tipo Fantasy, adoptando una dirección artística de estilo \textbf{Liquid Glass}. Esta estética no solo otorga una fuerte personalidad visual al proyecto, sino que estructura la información de forma atractiva e interactiva.
 
 \subsubsection{Paleta de Colores y Tipografía}
@@ -528,8 +532,8 @@ El sistema se compone de cinco pantallas principales diseñadas para ofrecer un 
     \item \textbf{Vista de Clasificación:} En esta vista se puede ver la clasificación general de la liga, por jornadas, además de los puntos de cada jugador. A su vez, desde esta parte se accede a los equipos de los distintos jugadores para poder ofertar y clausular los jugadores de las plantillas rivales.
     \item \textbf{Vista de Alineación:} Representa visualmente un campo de fútbol simplificado. El usuario puede seleccionar su disposición mediante un menú desplegable y colocar a sus jugadores en las diferentes demarcaciones.
     \item \textbf{Mercado de Fichajes:} Expone una cuadrícula con las Bento Cards de los agentes libres transferibles. Incluye un cronómetro de cuenta atrás en tiempo real para el cierre de mercado, e inputs sencillos para registrar pujas con validación del saldo disponible.
-    \item \textbf{Ajustes:}
-    \item \textbf{Perfil:}
+    \item \textbf{Ajustes:} Presenta 3 vistas dependiendo del nivel de rol que tiene el usuario, en el catálogo puedes añadir nuevas ligas para poder jugar subiendo el dataset necesario, en la liga puedes cerrar el mercado y regenerarlo y en la administración, puedes realizar algunas tareas CRUD de la base de datos desde la propia aplicación.
+    \item \textbf{Perfil:} En esta pestaña puedes cambiar tu nombre, el nombre del club, la contraseña, la foto de perfil, crear un ticket si es necesario, consultar el manual de usuario, los FAQ's y borrar tu cuenta si es necesario.
 \end{enumerate}
 
 \subsubsection{Diseño accesible en Móviles}
@@ -556,8 +560,8 @@ Para obtener resultados óptimos y evitar una de las mayores desventajas del có
 \begin{enumerate}
     \item \textbf{Asignación de Rol (Role Prompting):} Se contextualiza la respuesta del asistente asignándole un perfil experto en las áreas en las que se necesita mayor concentración en el desarrollo del código. Esto establece límites al vocabulario del modelo y guía su lógica hacia lo que se le requiere.
     \item \textbf{Inyección de Contexto Estructurado (Context Injection):} Antes de solicitar cualquier cambio, se establecen en el prompt las tablas de la base de datos que se van a tocar o los contratos en TypeScript, es decir, las clases del dominio o interfaces. Esto asegura que el código que genera se conecte con las entidades existentes sin inventar campos o dependencias ficticios, esto es importante para poder usar el asistente sobre el proyecto y no sobre casos ficticios, dotando de mayor calidad al código.
-    \item \textbf{Razonamiento en Cadena (Chain-of-Thought - CoT):} Se instruye al asistente a realizar una descomposición analítica previa de la solución propuesta antes de escribir la primera línea de código, desglosando cada uno de los casos de uso y edge cases, que habitualmente, son los que más bugs dejan en la aplicación. Esto resulta fundamental para algoritmos complejos como el del sistema de fluctuación de precios de mercado.
-    \item \textbf{Guía por Ejemplos (Few-Shot Prompting):} En algunos casos, se proporcionan ejemplos de implementaciones previas ya conocidas y validadas en el repositorio para unificar el estilo de programación, la captura de excepciones y guiar más si cabe el desarrollo del código.
+    \item \textbf{Razonamiento en Cadena (Chain-of-Thought - CoT):} Se instruye al asistente a realizar una descomposición analítica previa de la solución propuesta antes de escribir la primera línea de código, desglosando cada uno de los casos de uso y edge cases, que habitualmente, son los que más bugs dejan en la aplicación \cite{wei_cot}. Esto resulta fundamental para algoritmos complejos como el del sistema de fluctuación de precios de mercado.
+    \item \textbf{Guía por Ejemplos (Few-Shot Prompting):} En algunos casos, se proporcionan ejemplos de implementaciones previas ya conocidas y validadas en el repositorio para unificar el estilo de programación, la captura de excepciones y guiar más si cabe el desarrollo del código \cite{brown_fewshot}.
 \end{enumerate}
 
 \subsection{Ejemplos prácticos de interacción}
@@ -635,7 +639,7 @@ La incorporación del desarrollo asistido por Inteligencia Artificial en este Tr
 \end{itemize}
 
 
-\section{Sección de Implementación (En desarrollo)}
+\section{Sección de Implementación}
 \label{sec:seccion_implementacion}
 
 La implementación física de la plataforma traduce la CLEAN Architecture en un árbol estructurado de ficheros del backend en TypeScript y carpetas bien delimitadas, garantizando el aislamiento entre capas, sin mezclar responsabilidades.
@@ -665,7 +669,7 @@ retro-fantasy/
 Esta disposición física garantiza que el frontend (dentro de la carpeta \texttt{client/}) se limite a consumir la API HTTP expuesta por los enrutadores de la carpeta \texttt{server/src/presentation/}, sin tener acceso directo a la base de datos de Supabase ni a la lógica interna de negocio del backend. De igual modo, en el servidor, las clases en \texttt{domain/} no importan ningún módulo de \texttt{application/}, \texttt{infrastructure/} o \texttt{presentation/}, preservando la pureza de las entidades y puertos frente a cambios externos.
 
 
-\section{Sección de Pruebas (En desarrollo)}
+\section{Sección de Pruebas}
 \label{sec:seccion_pruebas}
 
 La fase de pruebas de Retro Fantasy se estructura a través de un plan de pruebas sistemático y la ejecución de simulaciones locales para validar la robustez de la app y la visualización de la interfaz en los clientes de correo.
@@ -678,7 +682,7 @@ npm run build
 Esto valida de forma automatizada que no existan inconsistencias de tipado, parámetros nulos, ni referencias inválidas en ninguno de los contratos de servicio o mapeos de Supabase.
 
 \subsection{Pruebas de Integración y Visualización de Email}
-Para certificar que el rediseño de las plantillas de correo con layouts HTML sólidos y saltos de línea de SMTP (límite de 998 caracteres) renderiza sin cortes ni fallos en Gmail, se cuenta con un script de previsualización local:
+Para certificar que el rediseño de las plantillas de correo con layouts HTML sólidos renderiza sin cortes ni fallos en Gmail, se cuenta con un script de previsualización local:
 \begin{lstlisting}[language=bash]
 npx tsx server/src/infrastructure/email/previewEmails.ts
 \end{lstlisting}

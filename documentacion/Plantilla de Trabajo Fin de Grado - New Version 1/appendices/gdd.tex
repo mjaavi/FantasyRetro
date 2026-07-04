@@ -6,17 +6,17 @@ En este apéndice se van a documentar todas las decisiones de diseño, mecánica
 \section{Ficha Técnica y Visión General}
 \begin{itemize}
     \item \textbf{Título del Juego:} Retro Fantasy.
-    \item \textbf{Género:} Simulador de Gestión Deportiva (\textit{Mánager Fantasy} asíncrono).
+    \item \textbf{Género:} Simulador de Gestión Deportiva de tipo \textit{Mánager Fantasy}.
     \item \textbf{Plataforma:} Aplicación Web (SPA).
     \item \textbf{Base de Datos:} European Soccer Database (Kaggle), con las temporadas desde 2008 hasta 2016, ampliable por los usuarios mediante la opción de catálogo.
     \item \textbf{Público Objetivo:} Todos los públicos, especialmente aquellos usuarios de otros fantasy, debido a que tiene una funcionalidad única en este tipo de juegos.
 \end{itemize}
 
 \subsection{Concepto General}
-\textit{Retro Fantasy} es un mánager de fútbol virtual que permite a los usuarios revivir la época dorada de la ligas de fútbol europeo. A diferencia de los \textit{fantasy} tradicionales que funcionan en tiempo real vinculados al calendario deportivo de las ligas, Retro Fantasy se apoya en un set de datos con el que los jugadores podrán jugar una temporada desde en un año hasta en una tarde, esto le da libertad total a los jugadores y elimina uno de los problemas más importante del fantasy como son los jugadores inactivos, ya que cada liga dura el tiempo que quieran sus miembros. Al igual que en otros fantasy, el jugador asume el rol de mánager, debiendo gestionar un presupuesto limitado para fichar jugadores, crear alineaciones y competir en ligas basándose en el rendimiento real que tuvieron esos futbolistas en el pasado.
+\textit{Retro Fantasy} es un mánager de fútbol virtual que permite a los usuarios revivir la época dorada de la ligas de fútbol europeo. A diferencia de los \textit{fantasy} tradicionales que funcionan en tiempo real vinculados al calendario deportivo de las ligas, Retro Fantasy se apoya en un set de datos con el que los jugadores podrán jugar una temporada desde en un año hasta en una tarde, esto le da libertad total a los jugadores y elimina uno de los problemas más importante del fantasy como son los parones que hay en mitad de las temporadas y que rompen con la dinámica y el mercado de este tipo de juegos, ya que cada liga dura el tiempo que quieran sus miembros. Al igual que en otros fantasy, el jugador asume el rol de mánager, debiendo gestionar un presupuesto limitado para fichar jugadores, crear alineaciones y competir en ligas basándose en el rendimiento real que tuvieron esos futbolistas en el pasado.
 
 \section{Bucle de Juego y Estados}
-El flujo principal de interacción del usuario está diseñado para que los usuarios decidan entre sesiones cortas, habituales en este tipo de juegos, que requiere conexiones diarias de entre 5 y 10 minutos o sesiones largas en las que los jugadores se junten para jugar la liga.
+El flujo principal de interacción del usuario está diseñado para que los usuarios decidan entre sesiones cortas, habituales en este tipo de juegos, que requiere conexiones diarias de entre 5 y 10 minutos o sesiones largas en las que los jugadores se junten para jugar la liga completa.
 
 \begin{enumerate}
     \item \textbf{Onboarding:} El usuario se registra, accede o crea una liga, recibe su plantilla y saldo iniciales.
@@ -31,21 +31,21 @@ Atendiendo a las mecánicas propias de gestión que tiene el juego, podemos obse
 \subsection{Límites de Once y Alineación}
 \begin{itemize}
     \item \textbf{Tamaño de la plantilla:} Un mánager puede tener un máximo de \textbf{25 jugadores} en su plantilla. Si alcanza el límite, el sistema bloqueará la opción de realizar nuevas pujas hasta que venda o le clausulen un jugador.
-    \item \textbf{Formaciones Permitidas:} El usuario tendrá que elegir entre las alineaciones disponibles para formar su once: 3-4-3, 3-5-2, 4-4-2, 4-3-3, 4-5-1 o 5-3-2. 
+    \item \textbf{Formaciones Permitidas:} El usuario tendrá que elegir entre las alineaciones disponibles para formar su once: 3-4-3, 3-5-2, 4-4-2, 4-3-3, 4-5-1, 5-3-2 o 5-2-3. 
 \end{itemize}
 
 \section{Economía y Reglas del Mercado}
-El mercado es el principal punto de interacción del juego. Toda la economía está aislada entre ligas (cada liga tiene su propia economía).
+El mercado es el principal punto de interacción del juego. Toda la economía está aislada entre ligas, es decir que cada liga tiene su propia economía.
 
 \subsection{Modelo de Inicio Híbrido}
 En el unboarding de \textit{Retro Fantasy} se asigna:
 \begin{itemize}
-    \item \textbf{Plantilla Base:} 15 jugadores generados procedimentalmente, con un valor de mercado conjunto de entre 180 y 200 millones como máximo. Las clausulas de estos jugadores serán por defecto de un 50\% más del valor inicial.
+    \item \textbf{Plantilla Base:} 11 jugadores generados aleatoriamente de entre los que estan libres, con un valor de mercado conjunto de entre 180 y 200 millones como máximo. Las clausulas de estos jugadores serán por defecto de un 50\% más del valor inicial.
     \item \textbf{Saldo:} 300 Millones en efectivo. Un saldo negativo impide que se pueda puntuar en la jornada siguiente.
 \end{itemize}
 
-\subsection{Tasación Inicial (Algoritmo de Precios)}
-El valor de salida (precio base) de un jugador en la base de datos se calcula mediante una fórmula que tiene como objetivo equilibrar los precios entre posiciones, aplicando factores por posición:
+\subsection{Tasación Inicial}
+El valor de salida, es decir, el precio base de un jugador en la base de datos se calcula mediante una fórmula que tiene como objetivo equilibrar los precios entre posiciones, aplicando factores por posición:
 \[ \text{Precio}_{\text{base}} = \left( (\text{Overall}^2 \times \text{Factor}_{\text{pos}}) + (\text{Potencial} \times 0.5) \right) \times 13\,000 \]
 \textit{Factores de posición:} Delanteros (1.5), Centrocampistas (1.3), Defensas (1.2) y Porteros (0.8).
 
@@ -57,30 +57,46 @@ El valor de salida (precio base) de un jugador en la base de datos se calcula me
     \item \textbf{Clausulazos:} Un mánager puede comprar a un jugador de una plantilla de un rival directamente sin negociar con el, abonando el valor de su clausula.
 \end{itemize}
 
-\subsection{Venta Inmediata (Despido de Jugadores)}
-Para agilizar la reestructuración de plantillas y dotar de liquidez inmediata a los mánagers, se establece la mecánica de \textbf{Venta Inmediata}. Cualquier mánager puede deshacerse de forma instantánea de un jugador de su propiedad bajo las siguientes reglas económicas del juego:
+\subsection{Venta Inmediata}
+Para agilizar la reestructuración de plantillas y dotar de liquidez inmediata a los mánagers, se establece la mecánica de \textbf{Venta Inmediata}. Cualquier mánager puede deshacerse de forma instantánea de un jugador de su propiedad bajo las siguientes reglas del juego:
 \begin{itemize}
-    \item \textbf{Penalización por Despido:} El club recupera exactamente el \textbf{50\% del valor de mercado actual} del futbolista (redondeado hacia abajo en caso de fracciones). El 50\% restante se pierde como penalización por rescisión unilateral del contrato.
-    \item \textbf{Destino del Jugador:} El jugador es liberado de manera inmediata, eliminándose de la plantilla y alineación del usuario, y pasando directamente al pozo común de agentes libres de la liga para volver a estar disponible en futuros ciclos de mercado diario.
-    \item \textbf{Inmediatez y Efectivo:} El saldo líquido recuperado se añade al presupuesto disponible del mánager de forma instantánea al procesarse el despido, permitiendo reinvertir ese capital de inmediato en el mercado diario de pujas ciegas o clausulazos.
+    \item \textbf{Penalización por Despido:} El club recupera exactamente el \textbf{50\% del valor de mercado actual} del futbolista (redondeado hacia abajo en caso de fracciones). El 50\% restante se pierde como penalización por rescisión del contrato.
+    \item \textbf{Destino del Jugador:} El jugador es liberado de manera inmediata, eliminándose de la plantilla y alineación del usuario, y pasando directamente al pool común de agentes libres de la liga para volver a estar disponible en futuros ciclos de mercado diario.
+    \item \textbf{Inmediatez y Efectivo:} El saldo líquido conseguido se añade al presupuesto disponible del mánager de forma instantánea al procesarse el despido, permitiendo reinvertir ese capital de inmediato en el mercado diario de pujas o en clausulazos a otros managers.
+\end{itemize}
+
+\subsection{Venta al Mercado y Puja de la Máquina}
+Además de la rescisión inmediata por despido al 50\% de su valor, un mánager puede optar por poner en venta a un jugador de su plantilla en el mercado de fichajes de la liga para recibir ofertas competitivas.
+
+\begin{itemize}
+    \item \textbf{Puesta en Mercado:} Al poner a la venta al jugador, este es publicado en el mercado y queda expuesto durante el ciclo diario activo de fichajes. Las pujas recibidas se gestionan en régimen de puja ciega.
+    \item \textbf{Puja del Sistema (Bot):} Al cerrarse el mercado (ya sea por el temporizador diario de la liga o mediante una acción forzada por el administrador), el sistema generará de forma automática una oferta ciega simulando una puja de un club virtual de la máquina.
+    \item \textbf{Rango de Oferta del Bot:} El importe ofertado por la máquina se calcula aplicando un factor aleatorio en el rango de \textbf{[-10\%, +20\%]} sobre el valor de mercado actual del futbolista.
+    \item \textbf{Resolución de la Venta:} Al resolverse el mercado, se compara la puja del bot del sistema frente a las posibles pujas emitidas por los mánagers rivales de la liga:
+    \begin{itemize}
+        \item El jugador es traspasado al postor que haya ofrecido la mayor cantidad económica.
+        \item El mánager vendedor recibe el importe total de la puja ganadora en su presupuesto, recuperando potencialmente más del 100\% del valor de mercado.
+        \item Si la puja ganadora pertenece a la máquina (bot), el jugador abandona la plantilla del mánager y vuelve a la bolsa general de agentes libres del sistema. Si la gana un rival, el jugador se incorpora directamente a su plantilla.
+    \end{itemize}
+    \item \textbf{Restricción de Auto-Puja:} Un mánager no puede emitir pujas por los jugadores que él mismo haya puesto en venta en el mercado, previniendo la manipulación artificial de precios o saldo.
 \end{itemize}
 
 \subsection{Fluctuación Dinámica (Subidas y Bajadas)}
 
 \begin{itemize}
-    \item \textbf{Por Demanda:} Si un jugador es fichado por una puja superior a su valor, su nuevo valor de mercado absorbe el 50\% de la diferencia. Si el jugador completa el ciclo de mercado sin recibir pujas, se devalúa un 3\% diario.
-    \item \textbf{Por Rendimiento:} Obtener \(\geq\) 10 puntos en una jornada incrementa su valor un 5\%. Obtener puntos negativos (por expulsiones o goles en propia) lo reduce un 5\%.
+    \item \textbf{Por Demanda:} Si un jugador es fichado por una puja superior a su valor, su nuevo valor de mercado absorbe el 50\% de la diferencia. Si el jugador completa el ciclo de mercado sin recibir pujas, se devalúa un 3\%.
+    \item \textbf{Por Rendimiento:} Obtener \(\geq\) 10 puntos en una jornada incrementa su valor un 5\%. Obtener puntos negativos lo reduce un 5\%.
 \end{itemize}
 
 \subsection{Ampliación del Catálogo Histórico}
 Para garantizar la longevidad del juego y permitir a la comunidad revivir cualquier período del fútbol europeo, el sistema incorpora una mecánica de expansión del catálogo global:
 \begin{itemize}
     \item \textbf{Carga Dinámica de Competiciones:} Los administradores de catálogos pueden suministrar archivos CSV estructurados con partidos y estadísticas de nuevas ligas o temporadas no incluidas en el catálogo original.
-    \item \textbf{Verificación Estricta:} El motor de catálogo del sistema valida la integridad de los datos (existencia de identificadores de jugadores, coherencia de fechas y formato de eventos XML) antes de permitir su importación.
+    \item \textbf{Verificación Estricta:} El motor de catálogo del sistema valida la integridad de los datos, es decir, la existencia de identificadores de jugadores, coherencia de fechas y formato de eventos XML antes de permitir su importación.
     \item \textbf{Disponibilidad Global:} Una vez aprobados y publicados por el administrador, los nuevos datos pasan a formar parte de las opciones seleccionables por cualquier usuario al crear una nueva liga privada, enriqueciendo la base de datos relacional.
 \end{itemize}
 
-\section{Sistema de Puntuación (Mecánica Principal)}
+\section{Sistema de Puntuación}
 \label{sec:gdd_puntuacion}
 
 La simulación de los partidos históricos alimenta un sistema de puntuación mixto diseñado aplicando el patrón \textit{Strategy}.
@@ -121,7 +137,7 @@ Calcula una nota objetiva basada en la ponderación de las acciones del XML del 
 
 \subsection{Motor del Cronista Virtual}
 \label{app:gdd_cronistas}
-Para emular la volatilidad de la prensa deportiva, el sistema cuenta con perfiles de cronistas virtuales (Analítico, Exigente, Pasional) que evalúan la puntuación estadística pura y, mediante algoritmos de probabilidad, otorgan \textit{Picas}.
+Para emular la volatilidad de la prensa deportiva, el sistema cuenta con perfiles de cronistas virtuales estos son: Analítico, Exigente, Pasional. Evalúan la puntuación estadística pura y, mediante algoritmos de probabilidad, otorgan \textit{Picas}.
 
 \begin{table}[H]
     \centering
@@ -174,13 +190,13 @@ Para emular la volatilidad de la prensa deportiva, el sistema cuenta con perfile
     \centering
     \begin{tabular}{|p{3.5cm}|c|c|c|p{4.5cm}|}
         \hline
-        \textbf{Jugador y Contexto} & \textbf{LaLiga} & \textbf{Biwenger} & \textbf{Stats/Mixto} & \textbf{Conclusión del Modelo} \\
+        \textbf{Jugador y Contexto} & \textbf{LaLiga} & \textbf{Biwenger} & \textbf{RetroFantasy} & \textbf{Conclusión del Modelo} \\
         \hline
-        \textbf{K. Mbappé} \newline \textit{Valencia 0-2 R. Madrid} & 11 & 9 & \textbf{5/9} & Nota buena pero no muy alta, ya que marcó pero no destacó. \\ 
+        \textbf{K. Mbappé} \newline \textit{Valencia 0-2 R. Madrid} & 11 & 9 & \textbf{9} & Nota buena pero no muy alta, ya que marcó pero no destacó. \\ 
         \hline
-        \textbf{Vinícius Jr.} \newline \textit{R. Madrid 4-1 R. Soc.} & 18 & 16 & \textbf{9/17} & Capta perfectamente el gran partido con doblete de goles y victoria. \\ 
+        \textbf{Vinícius Jr.} \newline \textit{R. Madrid 4-1 R. Soc.} & 18 & 16 & \textbf{17} & Capta perfectamente el gran partido con doblete de goles y victoria. \\ 
         \hline
-        \textbf{Lamine Yamal} \newline \textit{Girona 2-1 Barcelona} & 5 & -2 & \textbf{2/2} & El sistema no penaliza severamente por estadísticas válidas a pesar de la derrota. \\
+        \textbf{Lamine Yamal} \newline \textit{Girona 2-1 Barcelona} & 5 & -2 & \textbf{2} & El sistema no penaliza severamente por estadísticas válidas a pesar de la derrota. \\
         \hline
     \end{tabular}
     \caption{Comparativa de ejemplo de puntuaciones del GDD frente a otras plataformas.}
@@ -189,23 +205,22 @@ Para emular la volatilidad de la prensa deportiva, el sistema cuenta con perfile
 
 \section{Dirección de Arte e Interfaz de Usuario (UI/UX)}
 
-El diseño visual tiene como objetivo desmarcarse de las aplicaciones corporativas y asépticas, acercándose a un estilo \textit{arcade}.
+El diseño visual tiene como objetivo desmarcarse de las interfaces arcaicas de este tipo de juegos, acercándose a un estilo \textit{moderno}.
 
-\subsection{Estética Retro-Futurista Neón}
+\subsection{Estética Glassmorphism}
 \begin{itemize}
-    \item \textbf{Fondo:} Espacios negativos en tonos antracita y negro absoluto (orientado a pantallas OLED de móviles).
+    \item \textbf{Fondo:} Espacios negativos en tonos antracita y azul muy oscuro.
     \item \textbf{Acentos:} Cian brillante, Magenta y Verde Lima para resaltar datos interactivos, subidas de precio e interacciones (botones, \textit{sliders}).
-    \item \textbf{Tipografía:} \textit{Sans-serif} modernas para las estadísticas (maximizando la legibilidad) y fuentes de corte 8-bits para títulos y marcadores.
+    \item \textbf{Tipografía:} \textit{Jakarta Plus Sans} tipografía moderna que se da uso en toda la web, para unificar fuentes y dar mayor coherencia y sentido visual.
 \end{itemize}
 
 \subsection{Navegación y Bento Cards}
 
 La estructura de pantallas obedece a un patrón \textit{Mobile-First}:
 \begin{itemize}
-    \item \textbf{Barra de Navegación Inferior (Bottom Bar):} Acceso rápido a las cuatro pantallas principales: Dashboard, Alineación, Mercado y Clasificación.
-    \item \textbf{Patrón Bento Cards:} Las estadísticas de los futbolistas (Valor de Mercado, Histórico de Puntos, Radar de Atributos) no se muestran en listas tabulares, sino encapsuladas en tarjetas modulares con bordes redondeados (estilo \textit{Bento}), permitiendo un escaneo visual instantáneo de la jerarquía de los datos.
+    \item \textbf{Barra de Navegación Inferior (Bottom Bar):} Acceso rápido a las cinco pantallas principales: Dashboard, Alineación, Mercado, Clasificación y Ajustes.
+    \item \textbf{Patrón Bento Cards:} En el dashboard los widgets con la información más util no se muestra en tablas o vistas, sino encapsuladas en tarjetas modulares con bordes redondeados (estilo \textit{Bento}), permitiendo un vistazo rápido e instantáneo de una gran cantidad de datos al mismo tiempo.
 \end{itemize}
 
-\section{Condiciones de Victoria y Retención}
-El juego fomenta la retención del usuario al dividir el progreso histórico en \textbf{Ligas de Temporada}.
-El vencedor absoluto es el mánager que acumula la mayor cantidad de puntos totales al finalizar la simulación completa de las 38 jornadas históricas. Se otorgan insignias y recompensas visuales en el perfil del mánager por hitos como "Mayor goleada", "Mánager más rico" o "Mejor racha de imbatibilidad", fomentando metas secundarias más allá de la victoria general.
+\section{Condiciones de Victoria}
+El vencedor es el mánager que acumula la mayor cantidad de puntos totales al finalizar la simulación completa de las jornadas que tiene la liga.

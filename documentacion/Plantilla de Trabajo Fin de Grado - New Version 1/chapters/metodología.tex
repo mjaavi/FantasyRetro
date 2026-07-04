@@ -1,32 +1,33 @@
 \chapter{Metodología de desarrollo}
 \label{chap:metodologia}
 
-A continuación, se va a proceder a describir y documentar la metodología escogida para realizar el desarrollo de este Trabajo de Fin de Grado. A diferencia de los enfoques más tradicionales, los cuáles cada vez se usan menos en entornos de desarrollo, en este proyecto se ha adoptado un paradigma de desarrollo asistido por Inteligencia Artificial (IA Generativa), trabajando en un formato de programación en pareja (\textit{Pair Programming}) con el asistente de código \textit{Antigravity} usando los modelos de Gemini 3.5 Flash en modo de razonamiento alto, Claude Opus 4.6 y \textit{Cursor} usando el modelo GPT 5.0. A su vez, se van a detallar el flujo de trabajo, las técnicas de estructuración de instrucciones, que se denominan, (\textit{prompts}), ejemplos prácticos de estas interacciones y un análisis crítico de las ventajas y desafíos derivados de este enfoque.
+En este capítulo se describe y documenta la metodología organizativa escogida para estructurar el proceso de desarrollo de este Trabajo de Fin de Grado. Para ello, se analizan los modelos clásicos del ciclo de vida del software y se justifica la adopción de una metodología en Cascada de tipo iterativo, detallando cómo sus fases y bucles de retroalimentación se han adaptado a las necesidades de evaluación del proyecto. Cabe destacar que, si bien la fase de codificación se ha sustentado en un paradigma moderno de programación asistida por Inteligencia Artificial (\textit{Pair Programming}), las técnicas específicas de ingeniería de \textit{prompts} y los ejemplos prácticos de interacción se detallarán más adelante en el Capítulo 4 (Descripción Informática), reservando el presente apartado exclusivamente para la gestión y organización del ciclo de vida del software.
+
 
 \section{Modelos de Ciclo de Vida del Software}
 \label{sec:modelos_ciclo_vida}
 
-En la ingeniería de software, el ciclo de vida del desarrollo describe el proceso de concepción, diseño, implementación y mantenimiento de un producto. Históricamente, se han distinguido dos grandes paradigmas metodológicos:
+En la ingeniería de software, el ciclo de vida del desarrollo describe el proceso de concepción, diseño, implementación y mantenimiento de un producto software. Históricamente, se han distinguido dos grandes paradigmas metodológicos:
 
 \begin{itemize}
-    \item \textbf{Modelos Predictivos (Tradicionales)}: El modelo en Cascada clásico (\textit{Waterfall}) plantea un flujo lineal y secuencial dividido en fases estrictas. Cada fase depende del resultado de la anterior y no se inicia una nueva etapa hasta haber concluido y validado la precedente. Aunque garantiza un gran control documental y de planificación, presenta rigidez ante los cambios.
-    \item \textbf{Modelos Adaptativos (Ágiles)}: Metodologías como Scrum o Kanban se centran en el desarrollo incremental a través de iteraciones cortas (\textit{sprints}) con entregables funcionales. Priorizan la adaptabilidad al cambio frente a la planificación rígida, facilitando la corrección rápida de desviaciones en los requisitos.
+    \item \textbf{Modelos Predictivos (Tradicionales)}: El modelo en Cascada clásico (\textit{Waterfall}), formalizado por Royce \cite{royce_waterfall}, plantea un flujo lineal y secuencial dividido en fases estrictas. Cada fase depende del resultado de la anterior y no se inicia una nueva etapa hasta haber concluido y validado la anterior. Aunque garantiza un gran control documental y de planificación, presenta rigidez ante los cambios.
+    \item \textbf{Modelos Adaptativos (Ágiles)}: Metodologías como Scrum \cite{schwaber_scrum} o Kanban se centran en el desarrollo incremental a través de iteraciones cortas (\textit{sprints}) con entregables funcionales. Priorizan la adaptabilidad al cambio frente a la planificación rígida, facilitando la corrección rápida de desviaciones en los requisitos.
 \end{itemize}
 
 \section{Metodología Adoptada: Cascada de Tipo Iterativo}
 \label{sec:cascada_iterativa}
 
-Para este Trabajo de Fin de Grado, se ha adoptado una metodología de desarrollo basada en una \textbf{Cascada de tipo Iterativa}. Este enfoque combina la estructura organizada del modelo secuencial con la flexibilidad de los ciclos de retroalimentación de las metodologías ágiles. La justificación de esta elección radica en la dinámica de supervisión y tutoría del proyecto: las reuniones periódicas con el profesor y tutor del TFG actuaban como hitos de validación e inspección del trabajo realizado.
+Para este Trabajo de Fin de Grado, se ha adoptado una metodología de desarrollo basada en una \textbf{Cascada de tipo Iterativa}. Este enfoque combina la estructura organizada del modelo secuencial con la flexibilidad de los ciclos de retroalimentación de las metodologías ágiles. La justificación de esta elección radica en la dinámica de supervisión y tutoría del proyecto: las reuniones periódicas con Eduardo García Pardo actuaban como los hitos de validación e inspección del trabajo realizado, por lo que tras esa iteración se seguía desarrollando el producto bajo el proceso establecido en la planificación en Cascada, sumando los cambios necesarios identificados en esa reunión.
 
 Las fases del desarrollo se organizan secuencialmente pero con bucles de retroalimentación entre ellas:
 
 \begin{enumerate}
-    \item \textbf{Análisis de Requisitos e Investigación}: Definición de las reglas de juego del simulador y análisis de la estructura del dataset de Kaggle (incluyendo el parseo de eventos XML).
-    \item \textbf{Diseño de la Arquitectura y de la Base de Datos}: Modelado del esquema conceptual, la definición de las tablas en Supabase y la especificación del patrón \textit{Clean Architecture}.
-    \item \textbf{Implementación (Codificación)}: Desarrollo físico del servidor en Node.js/TypeScript y del cliente en Vanilla JavaScript/Tailwind CSS.
-    \item \textbf{Verificación y Pruebas}: Validación funcional de la lógica de fluctuación, políticas RLS y visualización del correo transaccional.
+    \item \textbf{Análisis de Requisitos e Investigación}: Definición de las reglas del juego fantasy y análisis de la estructura del dataset de Kaggle (incluyendo el parseo de eventos XML), además de la creación de la lista de requsiitos funcionales y no funcionales.
+    \item \textbf{Diseño de la Arquitectura y de la Base de Datos}: Modelado del esquema conceptual, la definición de las tablas en Supabase y la especificación del patrón \textit{Clean Architecture} \cite{martin_clean_arch}.
+    \item \textbf{Implementación (Codificación)}: Desarrollo físico de cada una de las capas del proyecto.
+    \item \textbf{Verificación y Pruebas}: Validación funcional de la lógica de la aplicación, de las funciones y algoritmos y pruebas con usuarios.
     \item \textbf{Despliegue y Validación del Tutor}: Presentación de versiones funcionales en Render y Cloudflare para su revisión y posterior entrega.
 \end{enumerate}
 
-El carácter iterativo del modelo se materializaba en los bucles de retorno (\textit{feedback loops}). Tras cada reunión con el tutor, las observaciones o correcciones propuestas sobre el prototipo funcional o el diseño de datos obligaban a retroceder a la fase de requisitos o de diseño para refinar el sistema antes de continuar. Esto garantizó que el desarrollo no fuese rígido y se adaptara a las directrices académicas a lo largo del curso.
+El carácter iterativo del modelo se materializaba en los bucles de retorno (\textit{feedback loops}). Tras cada reunión con el tutor, las observaciones o correcciones propuestas sobre el prototipo funcional o el diseño de datos obligaban a retroceder a la fase de requisitos o de diseño para refinar el sistema antes de continuar. Esto garantizó que el desarrollo no fuese rígido y se adaptara a las directrices académicas a lo largo del desarrollo del proyecto.
 

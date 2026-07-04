@@ -1,36 +1,36 @@
 \chapter{Conclusiones}
 \label{chap:conclusiones}
 
-Este Trabajo de Fin de Grado ha abordado y resuelto con éxito la carencia detectada en el mercado de simuladores de fútbol virtual: la imposibilidad de revivir temporadas históricas con leyendas del deporte en un formato \textit{Fantasy} asíncrono y autogestionado por los usuarios. 
+Este Trabajo de Fin de Grado ha abordado uno de los principales problemas de los juegos Fantasy actuales, y es que no es posible jugar temporadas históricas que por cualquier motivo, los managers fantasy no pudieron jugar, además centrando la experiencia totalmente en el usuario, dándole toda la libertad de cargar las temporadas que quiera, y jugarlas a la velocidad que quiera, simulando los algoritmos de puntuación de la época cruzándolo con datos y eventos reales. 
 
-A continuación, se detallan los logros alcanzados y las futuras líneas de investigación sugeridas para expandir la plataforma.
+A continuación, se detallan las conclusiones alcanzadas y las futuras líneas de desarrollo sugeridas para expandir la plataforma.
 
 \section{Consecución de Objetivos y Logros}
 El desarrollo del proyecto ha completado de manera satisfactoria todos los objetivos específicos planteados en la fase de introducción:
 \begin{itemize}
-    \item \textbf{Diseño de un Modelo de Datos Histórico y Dinámico}: Se implementó un esquema de base de datos relacional robusto en PostgreSQL alojado en Supabase, integrando las estadísticas de juego estáticas con el catálogo de entidades dinámicas (pujas, mercado de fichajes y control de ligas) de forma consistente.
-    \item \textbf{Desarrollo del Backend Asíncrono}: Construido en Node.js, TypeScript y Express siguiendo los principios de la \textit{Clean Architecture}. Se programó un motor de puntuación mixto e híbrido que calcula y simula el impacto estadístico y subjetivo (cronista virtual) de partidos históricos basándose en micro-eventos XML.
+    \item \textbf{Diseño de un Modelo de Datos Histórico y Dinámico}: Se implementó un esquema de base de datos relacional robusto en PostgreSQL alojado en Supabase, integrando las estadísticas de juego estáticas del dataset escogido con las entidades dinámicas del juego Fantasy.
+    \item \textbf{Desarrollo del Backend Asíncrono}: Construido en Node.js, TypeScript y Express siguiendo los principios de la \textit{Clean Architecture}. Se programó un motor de puntuación híbrido que calcula y simula el impacto estadístico y subjetivo mediante un cronista virtual de partidos históricos basándose en los micro-eventos XML.
     \item \textbf{Implementación del Frontend Moderno}: Diseñado bajo el paradigma \textit{Bento Cards Layout} con estética \textit{Glassmorphism} usando Vanilla JavaScript y Tailwind CSS. Se eliminaron por completo las recargas de páginas, logrando una experiencia fluida tipo SPA (\textit{Single Page Application}) adaptada a dispositivos móviles.
-    \item \textbf{Sistema de Email Transaccional de Alta Compatibilidad}: Integración de un servicio de notificaciones asíncronas con failover secundario redundante (Gmail API + SMTP de Nodemailer). El diseño e implementación final de las plantillas resolvió los fallos de visibilidad de botones y el truncamiento de líneas del protocolo SMTP, logrando una renderización perfecta en Gmail y Outlook.
 \end{itemize}
 
 \section{Experiencia y Valoración del Uso de la Inteligencia Artificial}
 \label{sec:valoracion_ia}
 
-Una de las particularidades más innovadoras en el desarrollo de este proyecto ha sido la adopción sistemática de herramientas de Inteligencia Artificial (asistentes de código basados en LLMs) bajo un esquema de programación en pareja (\textit{Pair Programming}). Esta experiencia permite realizar una valoración crítica sobre su utilidad real, productividad y el impacto en el aprendizaje del desarrollador:
+Una de las particularidades más innovadoras en el desarrollo de este proyecto ha sido la adopción de herramientas de Inteligencia Artificial bajo un esquema de programación en pareja (\textit{Pair Programming}). Esta experiencia permite realizar una valoración crítica sobre su utilidad real, productividad y el impacto en el aprendizaje del desarrollador:
 
 \begin{itemize}
-    \item \textbf{Utilidad Práctica y Aceleración}: La IA ha demostrado ser una herramienta sumamente útil, especialmente en la generación de código boilerplate, la traducción de especificaciones de diseño a estilos y la optimización de consultas y triggers de base de datos. Ha permitido reducir drásticamente el tiempo empleado en tareas repetitivas y de baja complejidad cognitiva.
-    \item \textbf{Soporte en el Razonamiento y Diseño de Algoritmos}: En la implementación del motor de puntuación a partir del parseo de eventos XML o en la lógica económica de la fluctuación de mercado, la IA actuó como un excelente interlocutor para depurar lógica. Su capacidad para proponer edge cases y simular flujos lógicos complejos antes de escribir el código aceleró la maduración del software.
-    \item \textbf{Curva de Aprendizaje y Rol del Desarrollador}: El uso de estas herramientas desplaza el foco de atención del desarrollador. En lugar de centrarse en la sintaxis particular de un lenguaje o librería, el esfuerzo se reorienta hacia el diseño arquitectónico de alto nivel (como la correcta aplicación de los contratos de la \textit{Clean Architecture}) y la especificación rigurosa de las reglas de negocio. No obstante, para que la IA sea efectiva, es imprescindible que el desarrollador posea sólidos conocimientos teóricos; de lo contrario, resulta imposible guiar los prompts de forma correcta o auditar el código para detectar alucinaciones y corregir fallos sutiles de lógica.
+    \item \textbf{Utilidad Práctica y Aceleración}: La IA ha demostrado ser una herramienta sumamente útil, especialmente en la generación de código, la traducción de especificaciones de diseño a estilos y la optimización de consultas y triggers de base de datos. Ha permitido reducir drásticamente el tiempo empleado en tareas repetitivas y de baja complejidad cognitiva, aumentando exponencialmente el alcance del proyecto, el cuál no hubiese sido tal sin la asistencia de la IA.
+    \item \textbf{Soporte en el Razonamiento y Diseño de Algoritmos}: En la implementación del motor de puntuación a partir del parseo de eventos XML o en la lógica económica de la fluctuación de mercado, la IA actuó como una herramienta muy útil para depurar lógica. Su capacidad para proponer edge cases y simular flujos lógicos complejos antes de escribir el código aceleró el proceso de creación del software.
+    \item \textbf{Curva de Aprendizaje y Rol del Desarrollador}: El uso de estas herramientas desplaza el foco de atención del desarrollador. En lugar de centrarse en la sintaxis particular de un lenguaje o librería, el esfuerzo se reorienta hacia el diseño arquitectónico de alto nivel, como la correcta aplicación de los contratos de la \textit{Clean Architecture} y la especificación rigurosa de las reglas de negocio. No obstante, para que la IA sea efectiva, es imprescindible que el desarrollador posea sólidos conocimientos teóricos; de lo contrario, resulta imposible guiar los prompts de forma correcta o auditar el código para detectar alucinaciones y corregir fallos sutiles de lógica.
 \end{itemize}
 
-En conclusión, la Inteligencia Artificial no reemplaza la labor de ingeniería, sino que la complementa. Actúa como un catalizador que, bajo la supervisión humana experta, eleva significativamente la eficiencia y robustez de los desarrollos de software modernos.
+En conclusión, la Inteligencia Artificial no reemplaza la labor de ingeniería, sino que la complementa. Actúa como un catalizador que, bajo la supervisión humana, aumenta significativamente la eficiencia y robustez de los desarrollos de software modernos.
 
 \section{Líneas de Trabajo Futuro}
 Para continuar enriqueciendo el ecosistema de Retro Fantasy, se sugieren las siguientes líneas de desarrollo e investigación futura:
 \begin{itemize}
-    \item \textbf{Simulación Multi-Liga Simultánea}: Ampliar la arquitectura del backend para permitir que una misma liga privada de usuarios configure calendarios mixtos de diferentes ligas históricas europeas (por ejemplo, combinar la Serie A de 1998 con LaLiga de 2004 en una misma temporada).
-    \item \textbf{Inteligencia Artificial para Mánagers Inactivos}: Implementar un módulo de aprendizaje automático o heurística avanzada que asuma el control de los equipos inactivos de una liga privada, realizando alineaciones lógicas y pujas en el mercado para mantener competitiva la experiencia de los jugadores humanos activos.
-    \item \textbf{Sincronización Avanzada de Notificaciones}: Diseñar integraciones asíncronas adicionales más allá del correo transaccional, tales como alertas automáticas vía Webhooks o mensajería instantánea (bots en Discord o Telegram) ante pujas sobrepasadas, clausulazos en tiempo real o el inicio de una nueva jornada histórica.
+    \item \textbf{Nuevo sistema de puntuación}: Ampliar la arquitectura del motor de puntuación para permitir un nuevo sistema basado solo en estadísticas.
+    \item \textbf{Inteligencia Artificial para Mánagers Inactivos}: Implementar un módulo de aprendizaje automático o heurística avanzada que asuma el control de los equipos inactivos de una liga privada, realizando alineaciones lógicas y pujas en el mercado para mantener competitiva la experiencia de los jugadores activos, eliminando otro de los mayores problemas de los fantasy actuales.
+    \item \textbf{Añadir potenciadores}: Diseñar modificadores como el capitán o ariete que altere los puntos de ciertos jugadores de la alineación de los managers.
+    \item \textbf{Modo Copa:}Permitir que a partir de cierta jornada, el sistema de la liga cambie de clasificatoria a un cuadro con eliminatorias, estilo Champions para fomentar la competitividad entre usuarios.
 \end{itemize}
