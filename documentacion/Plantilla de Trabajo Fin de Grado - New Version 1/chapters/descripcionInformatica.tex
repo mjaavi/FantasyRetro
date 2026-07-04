@@ -417,13 +417,35 @@ Para el alojamiento y distribución de la capa de presentación web se ha optado
 El sistema implementa tres núcleos algorítmicos fundamentales:
 \begin{enumerate}
     \item \textbf{Algoritmo de Tasación de Precios de Jugadores}:
-    Este algoritmo hace uso de los potenciales de los jugadores de las tablas del dataset que provienen del juego FIFA de EA, factorizado por las posiciones para equilibrar precios, ya que los delanteros aportan más puntos usualmente que los defensas:
-    \[ \text{Precio}_{\text{base}} = \left( (\text{Overall}^2 \times \text{Factor}_{\text{pos}}) + (\text{Potencial} \times 0.5) \right) \times 13\,000 \]
-    Esto garantiza un valor de salida equilibrado basado en la demarcación.
+    Este algoritmo calcula el precio base de salida de un jugador en función de su valoración media (\textit{Overall}) y su posición táctica en el campo, compensando económicamente a los delanteros (que acumulan más puntos) frente a los guardametas y defensores:
+    \[ \text{Precio}_{\text{raw}} = (\text{Overall} - 50)^3 \times 2\,000 \times \text{Factor}_{\text{pos}} \]
+    \[ \text{Precio}_{\text{base}} = \max\left( 500\,000, \, \text{redondear\_a\_100k}(\text{Precio}_{\text{raw}}) \right) \]
+    Donde el multiplicador de posición ($\text{Factor}_{\text{pos}}$) se define como:
+    \begin{itemize}
+        \item Porteros (PT): $0.7$
+        \item Defensas (DF): $0.8$
+        \item Centrocampistas (MC): $1.0$
+        \item Delanteros (DL): $1.2$
+    \end{itemize}
+    Esto garantiza un valor de mercado inicial equilibrado y exponencial a la calidad del futbolista.
+
     \item \textbf{Algoritmo del Motor de Puntuación (Patrón Strategy)}:
-    El backend procesa asíncronamente los XML de los partidos de la base de datos histórica. Mediante el patrón \textit{Strategy} \cite{gof_patterns}, separamos la lógica pura del motor estadístico y la de los cronistas virtuales que simulan a los periodistas de la prensa.
+    El backend procesa asíncronamente los eventos XML detallados de cada encuentro. La puntuación total del jugador en una jornada se calcula sumando sus acciones estadísticas ponderadas más la valoración subjetiva asignada por el cronista virtual:
+    \[ \text{Puntos}_{\text{jornada}} = \sum (\text{Evento}_i \times \text{Puntos}_{\text{acción}}) + \text{Nota}_{\text{cronista}} \]
+    Donde los pesos del motor de acciones son fijos (ej. gol anotado $= 5$ pts, tarjeta roja $= -3$ pts, asistencia $= 3$ pts) y la nota del cronista se traduce a puntos de la siguiente manera:
+    \begin{itemize}
+        \item Nota 0 (Sin calificar/Muy mal): $-2$ pts
+        \item Nota 1 (Regular): $2$ pts
+        \item Nota 2 (Bien): $6$ pts
+        \item Nota 3 (Excelente): $10$ pts
+    \end{itemize}
+
     \item \textbf{Algoritmo de Fluctuación de Precios y Generación de Pujas del Bot (Cierre de Mercado)}:
-    Al finalizar cada ciclo de mercado de fichajes de la liga, el sistema ejecuta de forma automática el cálculo de la fluctuación de los precios de mercado de los jugadores basándose en su rendimiento (puntos obtenidos en la última jornada) y su demanda de compra. Además, el algoritmo simula el comportamiento de pujas ciegas por parte de la máquina para los futbolistas que los mánagers hayan puesto en venta, generando una oferta simulada en el rango de \textbf{[-10\%, +10\%]} de su valor actual. Finalmente, este proceso convierte de forma atómica todas las pujas activas en ofertas directas pendientes, quedando la resolución del traspaso de forma manual en manos del mánager vendedor.
+    Al cerrarse el ciclo diario de fichajes, se calcula la variación del valor de mercado del jugador basándose en su rendimiento reciente y la demanda de ofertas:
+    \[ \text{Precio}_{\text{nuevo}} = \text{Precio}_{\text{actual}} \times (1 + \Delta_{\text{mercado}}) \]
+    Simultáneamente, si un jugador está en venta en el mercado, la máquina simula una puja ciega de la máquina aplicando un factor aleatorio de entre un $-10\%$ y un $+10\%$ sobre su valor actual de mercado:
+    \[ \text{Oferta}_{\text{máquina}} = \text{Precio}_{\text{mercado}} \times (0.9 + \text{rand}(0, \, 0.2)) \]
+    Donde $\text{rand}(0, \, 0.2)$ devuelve un número decimal aleatorio entre $0.0$ y $0.2$ de manera uniforme. Finalmente, el motor convierte todas las pujas (tanto humanas como de la máquina) en ofertas directas pendientes.
 \end{enumerate}
 
 \subsection{Análisis de Tecnologías}
