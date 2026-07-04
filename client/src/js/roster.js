@@ -1,6 +1,6 @@
 import { fetchRoster, fetchRosterLineups, fetchRosterScores, saveRosterFormation, toggleStarter } from './api.js';
 import { abrirPlayerDrawer } from './player-drawer.js';
-import { raiseReleaseClause, dismissPlayer } from './market.js';
+import { raiseReleaseClause, dismissPlayer, sellPlayer } from './market.js';
 import { getLigaActiva } from './leagues.js';
 import { createPlayerAvatar, createPlayerPortrait, createClubLogo } from './player-image.js';
 
@@ -738,6 +738,7 @@ function abrirPanelJugador(jugador) {
         releaseClause: jugador.release_clause ?? jugador.purchase_price ?? 0,
         faceUrl: jugador.faceUrl ?? null,
         clubLogoUrl: jugador.clubLogoUrl ?? null,
+        alreadyOnSale: jugador.onSale ?? false,
         onRaiseReleaseClause: async ({ playerApiId, contribution }) => {
             const errorEl = document.getElementById('pd-bid-error');
             const submitBtn = document.getElementById('pd-submit-btn');
@@ -788,6 +789,31 @@ function abrirPanelJugador(jugador) {
                 if (submitBtn) {
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'Despedir Jugador';
+                }
+            }
+        },
+        onSellPlayer: async ({ playerApiId }) => {
+            const errorEl = document.getElementById('pd-bid-error');
+            const submitBtn = document.getElementById('pd-submit-btn');
+            if (errorEl) errorEl.classList.add('hidden');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Poniendo a la venta...';
+            }
+
+            try {
+                await sellPlayer({ playerApiId });
+                jugador.onSale = true;
+                window.cerrarPlayerDrawer?.();
+            } catch (error) {
+                if (errorEl) {
+                    errorEl.textContent = error.message ?? 'Error al poner a la venta al jugador.';
+                    errorEl.classList.remove('hidden');
+                }
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Poner a la Venta';
                 }
             }
         },

@@ -135,6 +135,10 @@ export class LeagueMarketService {
             throw new AppError('Este jugador no esta disponible en el mercado de tu liga.', 404);
         }
 
+        if (jugadorEnMercado.sellerId === userId) {
+            throw new AppError('No puedes pujar por un jugador de tu propio equipo que has puesto en venta.', 400);
+        }
+
         if (amount < jugadorEnMercado.marketValue) {
             throw new AppError('La puja no puede ser inferior al valor de mercado del jugador.', 400);
         }
@@ -187,10 +191,36 @@ export class LeagueMarketService {
         let resueltos = 0;
         let sinPujas = 0;
 
-        for (const jugador of mercado) {
-            const pujas = todasLasPujas
-                .filter(puja => puja.playerApiId === jugador.playerApiId)
-                .sort((a, b) => b.amount - a.amount);
+        // Fetch market values to determine bot bid amounts
+        const marketValues = this.marketValueRepo
+            ? await this.marketValueRepo.findMarketValues(
+                leagueId,
+                mercado.map(snapshot => snapshot.playerApiId),
+            )
+            : [];
+        const projected = this.marketValueProjector.projectPlayers(
+            mercado,
+            new Map(marketValues.map(value => [value.playerApiId, value])),
+        );
+
+        for (const jugador of projected) {
+            let pujas = todasLasPujas.filter(puja => puja.playerApiId === jugador.playerApiId);
+
+            // Generate bot bid if player listed by user
+            if (jugador.sellerId) {
+                const randomFactor = 0.9 + Math.random() * 0.3; // between -10% and +20%
+                const botBidAmount = Math.round(jugador.marketValue * randomFactor);
+                pujas.push({
+                    id: 'bot-bid',
+                    leagueId,
+                    userId: 'bot',
+                    playerApiId: jugador.playerApiId,
+                    amount: botBidAmount,
+                    createdAt: new Date().toISOString()
+                });
+            }
+
+            pujas.sort((a, b) => b.amount - a.amount);
 
             if (!pujas.length) {
                 sinPujas++;
@@ -201,15 +231,41 @@ export class LeagueMarketService {
             const perdedores = pujas.slice(1);
 
             try {
-                await this.repo.addPlayerToRoster(leagueId, ganador.userId, jugador.playerApiId, ganador.amount);
-                await this.repo.addTransferHistory(leagueId, jugador.playerApiId, ganador.userId, ganador.amount);
+                if (jugador.sellerId) {
+                    // Remove player from seller's roster
+                    await this.repo.removePlayerFromRoster(leagueId, jugador.sellerId, jugador.playerApiId);
+
+                    // Add player to winner's roster if not bot
+                    if (ganador.userId !== 'bot') {
+                        await this.repo.addPlayerToRoster(leagueId, ganador.userId, jugador.playerApiId, ganador.amount);
+                    }
+
+                    // Register transfer history from seller to winner (winner is null if bot won)
+                    const toUserId = ganador.userId === 'bot' ? null : ganador.userId;
+                    await this.repo.addTransferHistory(leagueId, jugador.playerApiId, toUserId, ganador.amount, jugador.sellerId);
+
+                    // Pay the seller (add winning amount to seller's budget)
+                    const budgetActual = await this.repo.getUserBudget(jugador.sellerId, leagueId);
+                    await this.repo.updateUserBudget(jugador.sellerId, leagueId, budgetActual + ganador.amount);
+                } else {
+                    // Standard system player resolution
+                    if (ganador.userId !== 'bot') {
+                        await this.repo.addPlayerToRoster(leagueId, ganador.userId, jugador.playerApiId, ganador.amount);
+                        await this.repo.addTransferHistory(leagueId, jugador.playerApiId, ganador.userId, ganador.amount);
+                    }
+                }
             } catch (err: any) {
-                console.error(`[CloseMarket] Error anadiendo jugador ${jugador.playerApiId} al roster:`, err.message);
+                console.error(`[CloseMarket] Error resolviendo jugador ${jugador.playerApiId}:`, err.message);
             }
 
             for (const perdedor of perdedores) {
-                const budgetActual = await this.repo.getUserBudget(perdedor.userId, leagueId);
-                await this.repo.updateUserBudget(perdedor.userId, leagueId, budgetActual + perdedor.amount);
+                if (perdedor.userId === 'bot') continue;
+                try {
+                    const budgetActual = await this.repo.getUserBudget(perdedor.userId, leagueId);
+                    await this.repo.updateUserBudget(perdedor.userId, leagueId, budgetActual + perdedor.amount);
+                } catch (err: any) {
+                    console.error(`[CloseMarket] Error al devolver presupuesto a perdedor ${perdedor.userId}:`, err.message);
+                }
             }
 
             resueltos++;
@@ -220,6 +276,32 @@ export class LeagueMarketService {
 
         console.log(`[CloseMarket] Liga ${leagueId} - resueltos: ${resueltos}, sin pujas: ${sinPujas}`);
         return { resueltos, sin_pujas: sinPujas };
+    }
+
+    async sellPlayer(
+        leagueId: number,
+        userId: string,
+        playerApiId: number,
+    ): Promise<{ message: string }> {
+        const exists = await this.repo.isPlayerInUserRoster(leagueId, userId, playerApiId);
+        if (!exists) {
+            throw new AppError('Este jugador no pertenece a tu plantilla.', 400);
+        }
+
+        const mercadoActivo = await this.repo.getActiveMarket(leagueId);
+        const yaPuesto = mercadoActivo.some(j => j.playerApiId === playerApiId);
+        if (yaPuesto) {
+            throw new AppError('Este jugador ya esta a la venta en el mercado.', 400);
+        }
+
+        let expiresAt = new Date(Date.now() + HORAS_MERCADO * 60 * 60 * 1000);
+        if (mercadoActivo.length > 0) {
+            expiresAt = new Date(mercadoActivo[0].expiresAt);
+        }
+
+        await this.repo.listPlayerOnMarket(leagueId, playerApiId, expiresAt, userId);
+
+        return { message: 'Jugador puesto a la venta en el mercado.' };
     }
 
     async processExpiredMarkets(): Promise<{ liga: number; resueltos: number; sin_pujas: number }[]> {

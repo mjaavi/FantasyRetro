@@ -13,6 +13,7 @@ export interface LeagueMarketPlayerSnapshot {
     playerFifaApiId: number | null;
     faceUrl: string | null;      // URL publica de la cara del jugador
     clubLogoUrl: string | null;  // URL publica del escudo del club
+    sellerId?: string | null;    // UUID del vendedor si es un jugador puesto a la venta por usuario
 }
 
 export interface LeagueMarketPlayer extends LeagueMarketPlayerSnapshot {
@@ -58,7 +59,10 @@ export interface ILeagueMarketRepository {
     getUserBudget(userId: string, leagueId: number): Promise<number>;
     updateUserBudget(userId: string, leagueId: number, newBudget: number): Promise<void>;
     addPlayerToRoster(leagueId: number, userId: string, playerApiId: number, purchasePrice: number, isStarter?: boolean): Promise<void>;
-    addTransferHistory(leagueId: number, playerApiId: number, toUserId: string, amount: number): Promise<void>;
+    addTransferHistory(leagueId: number, playerApiId: number, toUserId: string | null, amount: number, fromUserId?: string | null): Promise<void>;
+    isPlayerInUserRoster(leagueId: number, userId: string, playerApiId: number): Promise<boolean>;
+    listPlayerOnMarket(leagueId: number, playerApiId: number, expiresAt: Date, sellerId: string): Promise<void>;
+    removePlayerFromRoster(leagueId: number, userId: string, playerApiId: number): Promise<void>;
 
     /**
      * Inserta los 11 jugadores iniciales de un usuario en UNA SOLA TRANSACCIÓN

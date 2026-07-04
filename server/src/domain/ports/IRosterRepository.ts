@@ -10,6 +10,7 @@ export interface RosterPlayer {
     playerFifaApiId: number | null;
     faceUrl:        string | null;  // URL publica de la cara del jugador
     clubLogoUrl:    string | null;  // URL publica del escudo del club
+    onSale?:        boolean;        // Indica si está a la venta
 }
 
 export interface RosterScoreRow {

@@ -68,4 +68,19 @@ export class LeagueMarketController {
             res.json({ status: 'ok', data: resultado });
         } catch (err) { next(err); }
     };
+
+    sellPlayer = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const leagueId = Number(req.params.leagueId);
+            const playerApiId = Number(req.params.playerApiId);
+            if (!Number.isInteger(leagueId) || leagueId <= 0) {
+                throw new ValidationError('ID de liga inválido.');
+            }
+            if (!Number.isInteger(playerApiId) || playerApiId <= 0) {
+                throw new ValidationError('ID de jugador inválido.');
+            }
+            const resultado = await this.leagueMarketService.sellPlayer(leagueId, req.userId!, playerApiId);
+            res.json({ status: 'ok', data: resultado });
+        } catch (err) { next(err); }
+    };
 }

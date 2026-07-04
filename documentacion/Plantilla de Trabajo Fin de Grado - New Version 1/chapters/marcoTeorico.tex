@@ -1,5 +1,5 @@
-\chapter{Estado de la cuestión}
-\label{chap:estado_arte}
+\chapter{Marco teórico}
+\label{chap:marco_teorico}
 
 \section{Orígenes} El fantasy es un juego que tiene más años de los que se cree de forma popular, ya después de la segunda guerra mundial empezó la primera forma, más rudimentaria y primitiva de juego fantasy, que fué evolucionando, añadiendo estadísticas y sistemas de puntuación hasta transformarse en lo que es hoy en día.
 
@@ -172,18 +172,20 @@ Además, algunas plataformas modernas oficiales, como \textbf{LaLiga Fantasy}, e
 
 La inclusión de estas métricas anteriormente mencionadas (Tabla \ref{tab:puntuacion_laliga_fantasy}) demuestra la evolución de la granularidad de los datos recogidos por las empresas encargadas de conseguirlos y tratarlos. Mientras que un juego 'antiguo' puede funcionar leyendo un simple resumen de partido en el que aparecen datos como los goles, asistencias y tarjetas, un juego 'moderno' en muchas ocasiones requiere de procesar archivos o bases de datos que registren cada acción individual del jugador sobre el terreno de juego.
 
-\section{Dataset y Origen de los Datos}
-Como se ha podido observar en el punto anterior de los sistemas de puntuación modernos (Tabla \ref{tab:puntuacion_laliga_fantasy}), la implementación de un sistema \textit{Fantasy} contemporáneo requiere procesar cierto número de micro-eventos por partido. Para poder usarlo y alimentar la base de datos de este Trabajo de Fin de Grado, se ha recurrido a fuentes de datos estructurados de terceros.
+\section{La Inteligencia Artificial en el Ecosistema del Desarrollo de Software}
+\label{sec:ia_desarrollo_software}
 
-Después de considerar diferentes fuentes, se ha seleccionado un \textit{dataset} alojado en la plataforma \textbf{Kaggle} \cite{kaggle_dataset}, esta es un repositorio de datos con gran cantidad de bases de datos. Este conjunto de datos proporciona el nivel de detalle justo y necesario para poder usar un sistema basado en estadísticas. En el siguiente capítulo, se podrá ver como se han extraído los datos para generar el sistema de puntuación.
+En los últimos años, el desarrollo de software ha experimentado una transformación profunda debido a la irrupción de la Inteligencia Artificial (IA) Generativa y los Modelos de Lenguaje de Gran Tamaño (LLMs, por sus siglas en inglés). Esta tecnología ha dejado de ser una mera herramienta experimental para convertirse en un componente fundamental en los flujos de trabajo de ingeniería de software modernos.
 
-\subsection{Estructura y Formato de los Datos}
-El \textit{dataset} seleccionado se compone de un archivo en formato  .sqlite que ha sido extraído y exportado, dividido en tablas con formato CSV, a Supabase, una plataforma muy potente y usada actualmente, de gestión de bases de datos PostgreSQL. La información extraída se puede dividir principalmente en tres bloques:
+\subsection{Estado Actual de la Inteligencia Artificial Generativa}
+Los modelos actuales, tales como los pertenecientes a las familias GPT de OpenAI, Claude de Anthropic y Gemini de Google, demuestran capacidades avanzadas de razonamiento lógico, traducción de lenguajes y generación de código estructurado. La capacidad de estos modelos para comprender el contexto de bases de código completas, analizar dependencias y sugerir algoritmos complejos ha propiciado su integración directa en entornos de desarrollo integrado (IDEs) a través de herramientas de asistencia como GitHub Copilot, Cursor o asistentes especializados en razonamiento de alto nivel.
 
+\subsection{Uso de la IA en Proyectos de Ingeniería de Software}
+En proyectos que implican el manejo de grandes volúmenes de datos históricos e interacciones en tiempo real, como la plataforma de simulación deportiva \textit{Retro Fantasy}, el uso de asistentes de IA se orienta a optimizar varias fases críticas:
 \begin{itemize}
-    \item \textbf{Entidades Estáticas:} Son aquellas tablas que contienen la información inmutable, en este grupo podemos identificar las tablas de Country, Leage, Player, PlayerAttributes y Team, estas contienen información como los ids de los jugadores y de las ligas, nombres de las ligas, nombres de los países, datos de los jugadores, etc.
-    \item \textbf{Entidad Match:} Esta es la tabla que contiene la información que define el contexto de un encuentro específico, incluyendo la fecha, la jornada, el árbitro, las alineaciones titulares y el resultado final.
-    \item \textbf{Datos de Eventos:} Es el núcleo de los micro-eventos. Es el conjunto de columnas de la tabla Match que contiene los xmls con la información cronológica específica de los eventos de cada partido como quién marca los goles, quién da las asistencias, tiros a puerta, tiros fuera, etc. Cada columna incluye el minuto exacto, el identificador del jugador que lo realiza y, en muchos casos, sus coordenadas espaciales ($X, Y$) en el campo.
+    \item \textbf{Generación y optimización de código de bajo nivel}: Automatización de tareas repetitivas o código de infraestructura (controladores, configuraciones de API y modelos de datos) permitiendo al desarrollador enfocarse en la arquitectura general y la lógica de negocio.
+    \item \textbf{Diseño de consultas de base de datos y optimización}: La IA facilita la creación y verificación de scripts SQL complejos, políticas de seguridad a nivel de fila (RLS) en sistemas relacionales como PostgreSQL y el diseño de disparadores (\textit{triggers}) consistentes.
+    \item \textbf{Auditoría y refactorización}: Ayuda en la identificación de fallos de lógica, redundancia de código y vulnerabilidades comunes, aplicando principios de diseño como \textit{SOLID} y \textit{Clean Architecture}.
 \end{itemize}
 
-Debido a que hay un gran volumen de datos y no todos pueden ser leídos directamente, el backend diseñado parseará los datos de las columnas de eventos que contienen los xml, para posteriormente agregarlos en limpio, a tablas que pueda leer el algoritmo que se ha usado en el sistema de puntuación, para ser asignado a cada jugador. Esto se detallará a continuación.
+Esta sinergia entre el desarrollador humano (que actúa como arquitecto y supervisor de la lógica del sistema) y el asistente de Inteligencia Artificial (como redactor técnico de código y depurador asíncrono) define un nuevo paradigma de programación en pareja (\textit{Pair Programming}) que redefine los tiempos de desarrollo y la fiabilidad del producto final.

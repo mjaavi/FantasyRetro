@@ -11,6 +11,7 @@ import {
     payReleaseClauseRequest,
     raiseReleaseClauseRequest,
     dismissPlayerRequest,
+    sellPlayerRequest,
 } from './api.js';
 import { abrirPlayerDrawer, cerrarPlayerDrawer } from './player-drawer.js';
 import { createPlayerCard } from './market-renderer.js';
@@ -346,6 +347,14 @@ export async function dismissPlayer({ playerApiId }) {
     return result;
 }
 
+export async function sellPlayer({ playerApiId }) {
+    const liga = getLigaActiva();
+    if (!liga) return;
+
+    const result = await sellPlayerRequest(liga.id, playerApiId);
+    return result;
+}
+
 export async function loadReceivedTransferOffers() {
     const list = document.getElementById('market-received-offers-list');
     const liga = getLigaActiva();
@@ -485,6 +494,7 @@ window.submitDirectOffer = submitDirectOffer;
 window.payReleaseClause = payReleaseClause;
 window.raiseReleaseClause = raiseReleaseClause;
 window.dismissPlayer = dismissPlayer;
+window.sellPlayer = sellPlayer;
 window.loadReceivedTransferOffers = loadReceivedTransferOffers;
 window.loadTransferHistory = loadTransferHistory;
 

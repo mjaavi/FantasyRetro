@@ -21,7 +21,22 @@ export class SupabaseRosterRepository implements IRosterRepository {
         }
 
         const playerIds = rosterData.map(row => Number(row.player_api_id));
-        const playerData = await loadLeaguePlayerData(leagueId, playerIds);
+        const [playerData, { data: marketData, error: marketError }] = await Promise.all([
+            loadLeaguePlayerData(leagueId, playerIds),
+            supabaseAdmin
+                .from('league_market')
+                .select('player_api_id')
+                .eq('league_id', leagueId)
+                .eq('is_active', true)
+                .gt('expires_at', new Date().toISOString()),
+        ]);
+
+        const onSaleSet = new Set<number>();
+        if (!marketError && marketData) {
+            for (const row of marketData) {
+                onSaleSet.add(Number(row.player_api_id));
+            }
+        }
 
         return rosterData.map(row => {
             const playerId = Number(row.player_api_id);
@@ -39,6 +54,7 @@ export class SupabaseRosterRepository implements IRosterRepository {
                 playerFifaApiId: player?.playerFifaApiId ?? null,
                 faceUrl:        player?.faceUrl ?? null,
                 clubLogoUrl:    player?.clubLogoUrl ?? null,
+                onSale:         onSaleSet.has(playerId),
             };
         });
     }

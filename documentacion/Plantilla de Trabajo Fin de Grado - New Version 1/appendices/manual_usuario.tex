@@ -3,14 +3,12 @@
 
 Este apéndice contiene el manual de usuario completo de la plataforma \textit{Retro Fantasy}. Su propósito es guiar tanto a los nuevos mánagers como a los administradores de ligas en el funcionamiento de la aplicación, detallando los pasos para registrarse, gestionar plantillas, operar en el mercado de fichajes y comprender el motor de puntuaciones de las jornadas.
 
----
 
 \section{Introducción y Concepto de Juego}
 \textit{Retro Fantasy} es un simulador de gestión deportiva (\textit{Mánager Fantasy}) asíncrono. A diferencia de las plataformas tradicionales que dependen del calendario de partidos del año en curso, este juego permite a los usuarios competir en temporadas de fútbol históricas (por ejemplo, LaLiga 2011/2012 o la Premier League 2008/2009). 
 
 Los usuarios asumen el rol de un director deportivo o mánager, compitiendo entre sí en ligas privadas. El objetivo es acumular la mayor cantidad de puntos a lo largo de las 38 jornadas de la liga, gestionando de forma eficiente un presupuesto limitado para fichar estrellas del pasado y alinear una formación competitiva.
 
----
 
 \section{Primeros Pasos y Registro}
 
@@ -28,17 +26,16 @@ El flujo inicial del usuario desde que accede a la plataforma web por primera ve
 Una vez dentro del panel principal, el mánager debe tener al menos una liga activa para poder jugar. Dispone de dos opciones:
 \begin{itemize}
     \item \textbf{Crear una Liga:} Introduzca un nombre personalizado para su liga, seleccione la competición (ej. \textit{Spain LIGA BBVA}) y elija una de las temporadas históricas disponibles en el catálogo (desde 2008/2009 hasta 2015/2016). Al crearla, usted se convertirá en el \textbf{Administrador} de esa liga.
-    \item \textbf{Unirse a una Liga:} Introduzca el código único de invitación (proporcionado por otro mánager administrador, con el formato \texttt{RF-XXXXXX}).
+    \item \textbf{Unirse a una Liga:} Introduzca el código único de invitación (proporcionado por otro mánager administrador).
 \end{itemize}
 
 \subsection{Asignación Inicial (Modelo Híbrido)}
 Al unirse a una liga, el sistema ejecuta de manera automática y transaccional el algoritmo de asignación inicial para asegurar el equilibrio de la competición:
 \begin{itemize}
-    \item \textbf{Plantilla Base:} Se le asignan procedimentalmente \textbf{15 futbolistas} de perfil medio-bajo pertenecientes a la liga y temporada elegidas (1 portero, 5 defensas, 6 centrocampistas y 3 delanteros). El valor de mercado conjunto de estos jugadores suma aproximadamente 180-200 millones de euros.
+    \item \textbf{Plantilla Base:} Se le asignan \textbf{11 futbolistas} pertenecientes a la liga y temporada elegidas (1 portero, 4 defensas, 4 centrocampistas y 2 delanteros). El valor de mercado conjunto de estos jugadores suma aproximadamente 180-200 millones de euros.
     \item \textbf{Saldo Líquido:} Se le otorgan \textbf{300 millones de euros} en efectivo para realizar fichajes.
 \end{itemize}
 
----
 
 \section{Gestión del Equipo y Alineación}
 
@@ -59,9 +56,9 @@ El mánager puede seleccionar su esquema táctico preferido desde el desplegable
 \subsection{Alinear Jugadores (Titulares y Suplentes)}
 El campo de juego muestra de forma visual la disposición táctica de los 11 slots titulares.
 \begin{enumerate}
-    \item Los futbolistas asignados en la alineación titular aparecen sobre el césped verde.
-    \item Los futbolistas en el banquillo aparecen en la sección inferior derecha (\textbf{Banquillo}).
-    \item Para intercambiar un jugador del banquillo por un titular, pulse sobre el slot vacío de la posición correspondiente en el campo y seleccione el sustituto deseado de la lista flotante, o pulse en el botón de intercambio rápido de su ficha.
+    \item Los futbolistas asignados en la alineación titular aparecen en la pestaña Equipo.
+    \item Los futbolistas en el banquillo aparecen en la sección de la derecha en ordenador o inferior en móvil.
+    \item Para intercambiar un jugador del banquillo por un titular, pulse sobre el slot vacío de la posición correspondiente en el campo y seleccione el sustituto deseado de la lista flotante, o arrastre a un jugador desde el banquillo a la posición deseada o viceversa.
 \end{enumerate}
 
 \subsection{Gestión de la Cláusula de Rescisión}
@@ -69,7 +66,7 @@ Cada jugador de su propiedad tiene una cláusula de rescisión que actúa como p
 \begin{itemize}
     \item Al inicio, la cláusula se fija por defecto en un \textbf{50\% más} del valor de mercado del jugador.
     \item El mánager puede modificar esta cláusula libremente en la pestaña del jugador dentro de la plantilla.
-    \item \textbf{Regla del ajuste de cláusula:} Ajustar la cláusula no tiene un coste directo en saldo, pero fijar cláusulas excesivamente bajas facilitará que los rivales le "roben" al futbolista de forma inmediata mediante un clausulazo.
+    \item \textbf{Regla del ajuste de cláusula:} Ajustar la cláusula tiene un coste de la mitad del valor añadido a la misma, facilitando en parte el uso de las mismas, pero sin favorecerlas.
 \end{itemize}
 
 \subsection{Venta Inmediata (Despido)}
@@ -81,7 +78,6 @@ Si un mánager necesita liberar espacio en su plantilla (límite máximo de 25 j
     \item El jugador se convierte en agente libre y volverá a aparecer en futuros ciclos del mercado.
 \end{enumerate}
 
----
 
 \section{El Mercado de Fichajes y Traspasos}
 
@@ -99,7 +95,7 @@ El mercado de fichajes es el núcleo interactivo y económico de la liga. Se sub
 \subsection{Compraventa Directa entre Mánagers}
 Los usuarios pueden comerciar directamente entre ellos sin mediación de la computadora:
 \begin{itemize}
-    \item \textbf{Poner Transferible:} Un mánager puede colgar a un jugador de su plantilla en el mercado directo, estableciendo un precio mínimo de venta para indicar que está abierto a ofertas.
+    \item \textbf{Poner Transferible:} Un mánager puede ofrecer dinero a otros managers por sus jugadores mientras esta oferta se igual o superior al valorde mercado del jugador.
     \item \textbf{Enviar Oferta Directa:} Cualquier usuario de la liga puede abrir la plantilla de un rival, seleccionar un futbolista y enviarle una oferta económica directa en efectivo. El saldo de la oferta se retiene de forma virtual para garantizar la transacción.
     \item \textbf{Aceptar o Rechazar:} El propietario del jugador recibirá una notificación por email y una alerta en su panel de ofertas entrantes. Puede aceptar la oferta (el traspaso se ejecuta al instante) o rechazarla (el saldo bloqueado se devuelve al comprador).
 \end{itemize}
@@ -113,7 +109,6 @@ Si un mánager dispone de saldo líquido suficiente, puede arrebatarle un futbol
     \item Al pulsar, la transacción se procesa inmediatamente: el saldo se deduce de su cuenta y se transfiere al mánager vendedor, y el jugador pasa a formar parte de su plantilla al instante sin requerir aprobación. El sistema envía una alerta por email al mánager robado.
 \end{enumerate}
 
----
 
 \section{Simulación de Jornadas y Puntuación}
 
@@ -125,7 +120,7 @@ Cuando el administrador de la liga pulsa en \textbf{Procesar Jornada} en el pane
 \subsection{Motor de Puntos Mixto (Estadísticas + Picas)}
 La puntuación final de un jugador en una jornada es la suma de dos bloques:
 \begin{enumerate}
-    \item \textbf{Puntos Estadísticos (Objetivos):} El sistema parsea los eventos en formato XML del partido real. Acciones como goles anotados, asistencias, tarjetas amarillas o rojas, faltas, disparos a puerta, tiros al palo y mantener la portería a cero suman o restan puntos según la matriz por posición (ver Tabla~\ref{tab:estadisticas_kaggle} en el capítulo anterior). Por ejemplo, un gol anotado otorga +6 puntos a un portero, +5 a un defensa, +4 a un centrocampista y +3 a un delantero.
+    \item \textbf{Puntos Estadísticos (Objetivos):} El sistema parsea los eventos en formato XML del partido real. Acciones como goles anotados, asistencias, tarjetas amarillas o rojas, faltas, disparos a puerta, tiros al palo y mantener la portería a cero suman o restan puntos según la matriz por posición (ver Tabla~\ref{tab:estadisticas_gdd} en el Apéndice~\ref{app:gdd}). Por ejemplo, un gol anotado otorga +6 puntos a un portero, +5 a un defensa, +4 a un centrocampista y +3 a un delantero.
     \item \textbf{Puntos del Cronista (Subjetivos):} Para emular a la prensa deportiva, un cronista virtual evalúa el rendimiento del jugador y le otorga picas (Negativo, Sin Calificar, 1, 2, 3 o 4 picas) aplicando matrices probabilísticas según su perfil (\textit{Analítico, Exigente o Pasional}). Estas picas se convierten en modificadores de puntos directos (ej. 3 picas equivalen a +8 puntos).
 \end{enumerate}
 
@@ -137,7 +132,6 @@ Un pilar fundamental de la gestión económica es evitar el endeudamiento antes 
     \item \textbf{Penalización:} El equipo en números rojos sumará exactamente \textbf{0 puntos} en la clasificación para esa jornada simulada, independientemente de los goles o picas que hayan obtenido sus futbolistas alineados.
 \end{itemize}
 
----
 
 \section{Manual del Administrador de Ligas y Plataforma}
 

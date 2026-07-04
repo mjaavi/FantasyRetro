@@ -39,6 +39,7 @@ export function createLeagueMarketRouter(ctrl: LeagueMarketController): Router {
     r.get('/leagues/:leagueId/market/bids',                  ...participantGuard, ctrl.getMyLeagueBids);
     r.post('/leagues/:leagueId/market/bids',                 ...participantGuard, validateBody(PlaceLeagueBidSchema), ctrl.placeLeagueBid);
     r.delete('/leagues/:leagueId/market/bids/:playerApiId',  ...participantGuard, ctrl.cancelLeagueBid);
+    r.post('/leagues/:leagueId/market/sell/:playerApiId',    ...participantGuard, ctrl.sellPlayer);
     r.post('/leagues/:leagueId/market/open',                 ...adminGuard, ctrl.openLeagueMarket);
     r.post('/leagues/:leagueId/market/close',                ...adminGuard, ctrl.closeLeagueMarket);
     r.post('/market/process-expired',                                     ctrl.processExpiredMarkets);

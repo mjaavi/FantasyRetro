@@ -21,7 +21,7 @@ export class SupabaseLeagueMarketRepository implements ILeagueMarketRepository {
     async getActiveMarket(leagueId: number): Promise<LeagueMarketPlayerSnapshot[]> {
         const { data: marketData, error: marketError } = await supabaseAdmin
             .from('league_market')
-            .select('id, league_id, player_api_id, expires_at, is_active')
+            .select('id, league_id, player_api_id, expires_at, is_active, seller_id')
             .eq('league_id', leagueId)
             .eq('is_active', true)
             .gt('expires_at', new Date().toISOString());
@@ -41,7 +41,7 @@ export class SupabaseLeagueMarketRepository implements ILeagueMarketRepository {
     async getMarketForLeague(leagueId: number): Promise<LeagueMarketPlayerSnapshot[]> {
         const { data: marketData, error: marketError } = await supabaseAdmin
             .from('league_market')
-            .select('id, league_id, player_api_id, expires_at, is_active')
+            .select('id, league_id, player_api_id, expires_at, is_active, seller_id')
             .eq('league_id', leagueId)
             .eq('is_active', true);
 
@@ -315,13 +315,13 @@ export class SupabaseLeagueMarketRepository implements ILeagueMarketRepository {
         }
     }
 
-    async addTransferHistory(leagueId: number, playerApiId: number, toUserId: string, amount: number): Promise<void> {
+    async addTransferHistory(leagueId: number, playerApiId: number, toUserId: string | null, amount: number, fromUserId: string | null = null): Promise<void> {
         const { error } = await supabaseAdmin
             .from('league_transfer_history')
             .insert({
                 league_id: leagueId,
                 player_api_id: playerApiId,
-                from_user_id: null,
+                from_user_id: fromUserId,
                 to_user_id: toUserId,
                 amount,
                 transfer_type: 'market',
@@ -390,7 +390,52 @@ export class SupabaseLeagueMarketRepository implements ILeagueMarketRepository {
                 playerFifaApiId: player?.playerFifaApiId ?? null,
                 faceUrl: player?.faceUrl ?? null,
                 clubLogoUrl: player?.clubLogoUrl ?? null,
+                sellerId: row.seller_id as string | null,
             };
         });
+    }
+
+    async isPlayerInUserRoster(leagueId: number, userId: string, playerApiId: number): Promise<boolean> {
+        const { data, error } = await supabaseAdmin
+            .from('user_roster')
+            .select('player_api_id')
+            .eq('league_id', leagueId)
+            .eq('user_id', userId)
+            .eq('player_api_id', playerApiId)
+            .maybeSingle();
+
+        if (error) {
+            throw new AppError('Error al verificar el roster del usuario.', 500);
+        }
+        return !!data;
+    }
+
+    async listPlayerOnMarket(leagueId: number, playerApiId: number, expiresAt: Date, sellerId: string): Promise<void> {
+        const { error } = await supabaseAdmin
+            .from('league_market')
+            .insert({
+                league_id: leagueId,
+                player_api_id: playerApiId,
+                expires_at: expiresAt.toISOString(),
+                is_active: true,
+                seller_id: sellerId
+            });
+
+        if (error) {
+            throw new AppError(`Error al poner el jugador en el mercado: ${error.message}`, 500);
+        }
+    }
+
+    async removePlayerFromRoster(leagueId: number, userId: string, playerApiId: number): Promise<void> {
+        const { error } = await supabaseAdmin
+            .from('user_roster')
+            .delete()
+            .eq('league_id', leagueId)
+            .eq('user_id', userId)
+            .eq('player_api_id', playerApiId);
+
+        if (error) {
+            throw new AppError(`Error al remover jugador del roster: ${error.message}`, 500);
+        }
     }
 }

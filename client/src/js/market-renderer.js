@@ -104,7 +104,7 @@ export function createPlayerCard(player, userBid) {
         bidsTag.style.borderColor = 'rgba(239, 68, 68, 0.3)';
         bidsTag.style.background = 'rgba(239, 68, 68, 0.12)';
         bidsTag.style.color = '#ef4444';
-        bidsTag.textContent = `🔥 ${player.totalBids} PUJA${player.totalBids > 1 ? 'S' : ''}`;
+        bidsTag.textContent = `${player.totalBids} PUJA${player.totalBids > 1 ? 'S' : ''}`;
         tagsContainer.appendChild(bidsTag);
     }
 

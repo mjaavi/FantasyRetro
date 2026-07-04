@@ -1,0 +1,82 @@
+\chapter{Resultados}
+\label{chap:resultados}
+
+En este capítulo se van a mostrar los resultados del juego Retro Fantasy, el alcance de la plataforma y cuál ha sido el nivel de cumplimientos de los objetivos que se establecieron al inicio del desarrollo.
+
+\section{Resultados de la Integración de Datos y Motor de Juego}
+\label{sec:resultados_datos}
+
+Uno de los principales logros técnicos del proyecto es el procesamiento e integración de la base de datos histórica. Los resultados más destacables en este ámbito son:
+
+\begin{itemize}
+    \item \textbf{Carga y Migración Exitosa del Catálogo}: Se ha migrado y estructurado un volumen de datos correspondiente a más de 10.000 jugadores y 25.000 partidos históricos de la base de datos SQLite de Kaggle al motor relacional de PostgreSQL en Supabase.
+    \item \textbf{Parseo de Micro-Eventos XML en Tiempo Real}: El motor del backend ha demostrado una precisión del 100\% en la lectura y agregación de las etiquetas XML de la tabla \texttt{Match}. Se han procesado con éxito eventos complejos de gol, tarjetas y tiros para traducirlos dinámicamente a notas decimales SofaScore y picas subjetivas por medio del cronista virtual.
+    \item \textbf{Consistencia Transaccional}: Las pruebas realizadas confirman la robustez del sistema frente a condiciones de carrera (como pujas duplicadas o clausulazos simultáneos) gracias al uso de bloqueos explícitos (\texttt{FOR UPDATE}) y transacciones SQL atómicas, manteniendo los presupuestos y plantillas siempre consistentes.
+\end{itemize}
+
+\section{Resultados de la Interfaz y Vistas de la Aplicación}
+\label{sec:resultados_interfaz}
+
+La aplicación web se ha desarrollado implementando una estética de tipo \textit{Liquid Glass} y maquetación con \textit{Bento Cards}, optimizada para dispositivos móviles mediante un diseño responsivo. 
+
+Para demostrar la implementación y funcionamiento visual de cada pantalla, a continuación se detallan las principales vistas funcionales de la aplicación, incluyendo los contenedores para las capturas de pantalla de la interfaz final.
+
+\subsection{Pantalla de Inicio de Sesión y Registro}
+La puerta de acceso a la plataforma está integrada con Supabase Auth. Garantiza una entrada rápida y segura para el usuario, validando las credenciales y almacenando el token JWT.
+
+\begin{figure}[H]
+    \centering
+    % \includegraphics[width=0.8\textwidth]{figures/resultados_login}
+    % NOTA: Reemplazar el archivo anterior con la captura real de la pantalla de login.
+    \caption{Interfaz de acceso y registro de usuarios en Retro Fantasy.}
+    \label{fig:res_login}
+\end{figure}
+
+\subsection{Dashboard de Mánager (Home)}
+Es el centro de control del usuario. Muestra Bento Cards con la jornada activa en juego, el saldo disponible actual, el valor estimado de su plantilla y un feed de actividad reciente (traspasos, clausulazos o avisos de la liga).
+
+\begin{figure}[H]
+    \centering
+    % \includegraphics[width=0.8\textwidth]{figures/resultados_dashboard}
+    % NOTA: Reemplazar el archivo anterior con la captura real del Dashboard.
+    \caption{Dashboard principal del mánager en Retro Fantasy.}
+    \label{fig:res_dashboard}
+\end{figure}
+
+\subsection{Vista de Alineación y Gestión de Plantilla}
+Representa de forma interactiva el terreno de juego. Permite arrastrar los jugadores de la plantilla hacia el once titular, modificar la formación táctica (ej. 4-4-2, 3-5-2) y gestionar los blindajes económicos de las cláusulas de rescisión de cada futbolista.
+
+\begin{figure}[H]
+    \centering
+    % \includegraphics[width=0.8\textwidth]{figures/resultados_alineacion}
+    % NOTA: Reemplazar el archivo anterior con la captura real de la alineación.
+    \caption{Vista interactiva del campo de fútbol para la alineación y tácticas.}
+    \label{fig:res_alineacion}
+\end{figure}
+
+\subsection{Mercado de Fichajes y Pujas}
+Muestra los agentes libres transferibles que publica el sistema diariamente. Incluye el valor de mercado base, un temporizador de cuenta atrás para el cierre del ciclo y el formulario para registrar y modificar las ofertas de compra.
+
+\begin{figure}[H]
+    \centering
+    % \includegraphics[width=0.8\textwidth]{figures/resultados_mercado}
+    % NOTA: Reemplazar el archivo anterior con la captura real del Mercado.
+    \caption{Mercado de fichajes activo con listado de agentes libres y campos de puja.}
+    \label{fig:res_mercado}
+\end{figure}
+
+\subsection{Clasificación General y Equipos Rivales}
+Muestra la tabla clasificatoria de los participantes de la liga privada ordenados por su puntuación acumulada. Permite hacer clic en cualquier rival para auditar su plantilla actual y realizar ofertas directas de transferencia o ejecutar un clausulazo.
+
+\begin{figure}[H]
+    \centering
+    % \includegraphics[width=0.8\textwidth]{figures/resultados_clasificacion}
+    % NOTA: Reemplazar el archivo anterior con la captura real de la clasificación.
+    \caption{Tabla de clasificación de la liga y acceso a plantillas rivales.}
+    \label{fig:res_clasificacion}
+\end{figure}
+
+\section{Referencias a los Anexos y Guías Visuales}
+\label{sec:res_anexos}
+
+Para no sobrecargar el cuerpo principal de la memoria académica con un número excesivo de capturas de flujos de navegación secundarios (como los formularios de perfil, la creación de tickets de soporte o la recuperación de contraseñas), el manual detallado de la aplicación y las guías paso a paso de uso se han recopilado e integrado en el \textbf{Apéndice~\ref{app:manual_usuario}} (Manual de Usuario). De este modo, se garantiza una lectura más fluida de la memoria de diseño sin descuidar el detalle documental.

@@ -146,6 +146,15 @@ export async function dismissPlayerRequest(leagueId, playerApiId) {
     });
 }
 
+export async function sellPlayerRequest(leagueId, playerApiId) {
+    invalidateCache(`league-market-${leagueId}-0`);
+    invalidateCache(`roster-${leagueId}`);
+    return apiFetch(`/leagues/${leagueId}/market/sell/${playerApiId}`, {
+        method: 'POST',
+        body: JSON.stringify({}),
+    });
+}
+
 
 // Endpoints de ligas
 
