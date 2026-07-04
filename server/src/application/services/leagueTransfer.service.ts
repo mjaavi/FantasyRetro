@@ -111,7 +111,7 @@ export class LeagueTransferService {
 
         const [rosterPlayer, buyerParticipant, sellerParticipant] = await Promise.all([
             this.repo.getRosterPlayer(leagueId, sellerUserId, offer.playerApiId),
-            this.leagueRepo.findParticipant(leagueId, offer.buyerUserId),
+            offer.buyerUserId ? this.leagueRepo.findParticipant(leagueId, offer.buyerUserId) : Promise.resolve(null),
             this.leagueRepo.findParticipant(leagueId, sellerUserId),
         ]);
         const playerName = rosterPlayer?.name ?? 'Desconocido';
@@ -119,7 +119,7 @@ export class LeagueTransferService {
         await this.repo.acceptDirectOffer(offerId, sellerUserId);
         const newBudget = await this.repo.getUserBudget(sellerUserId, leagueId);
 
-        if (this.emailService) {
+        if (offer.buyerUserId && this.emailService) {
             this.getUserEmail(offer.buyerUserId).then(buyerEmail => {
                 if (buyerEmail) {
                     const buyerName = buyerParticipant?.profiles?.username || buyerParticipant?.profiles?.team_name || 'Manager';
@@ -155,38 +155,41 @@ export class LeagueTransferService {
 
         const [rosterPlayer, buyerParticipant, sellerParticipant] = await Promise.all([
             this.repo.getRosterPlayer(leagueId, sellerUserId, offer.playerApiId),
-            this.leagueRepo.findParticipant(leagueId, offer.buyerUserId),
+            offer.buyerUserId ? this.leagueRepo.findParticipant(leagueId, offer.buyerUserId) : Promise.resolve(null),
             this.leagueRepo.findParticipant(leagueId, sellerUserId),
         ]);
         const playerName = rosterPlayer?.name ?? 'Desconocido';
 
-        const buyerBudget = await this.repo.getUserBudget(offer.buyerUserId, leagueId);
+        const buyerBudget = offer.buyerUserId ? await this.repo.getUserBudget(offer.buyerUserId, leagueId) : 0;
         await this.repo.markDirectOfferStatus(offerId, 'rejected');
-        await this.repo.updateUserBudget(offer.buyerUserId, leagueId, buyerBudget + offer.amount);
+        
+        if (offer.buyerUserId) {
+            await this.repo.updateUserBudget(offer.buyerUserId, leagueId, buyerBudget + offer.amount);
 
-        if (this.emailService) {
-            this.getUserEmail(offer.buyerUserId).then(buyerEmail => {
-                if (buyerEmail) {
-                    const buyerName = buyerParticipant?.profiles?.username || buyerParticipant?.profiles?.team_name || 'Manager';
-                    const sellerName = sellerParticipant?.profiles?.username || sellerParticipant?.profiles?.team_name || 'Un manager';
-                    const html = buildTransferNotificationEmail({
-                        userName: buyerName,
-                        playerName,
-                        amount: `${offer.amount.toLocaleString()} €`,
-                        fromUser: sellerName,
-                        toUser: buyerName,
-                        status: 'rejected',
-                        marketUrl: 'https://fantasyretro.pages.dev',
-                    });
+            if (this.emailService) {
+                this.getUserEmail(offer.buyerUserId).then(buyerEmail => {
+                    if (buyerEmail) {
+                        const buyerName = buyerParticipant?.profiles?.username || buyerParticipant?.profiles?.team_name || 'Manager';
+                        const sellerName = sellerParticipant?.profiles?.username || sellerParticipant?.profiles?.team_name || 'Un manager';
+                        const html = buildTransferNotificationEmail({
+                            userName: buyerName,
+                            playerName,
+                            amount: `${offer.amount.toLocaleString()} €`,
+                            fromUser: sellerName,
+                            toUser: buyerName,
+                            status: 'rejected',
+                            marketUrl: 'https://fantasyretro.pages.dev',
+                        });
 
-                    this.emailService!.sendEmail({
-                        to: buyerEmail,
-                        subject: `Oferta rechazada por ${playerName}`,
-                        html,
-                        text: `Hola ${buyerName}, ${sellerName} ha rechazado tu oferta de ${offer.amount.toLocaleString()} € por ${playerName}. Se te ha devuelto el presupuesto.`,
-                    }).catch(err => console.error('[EmailService] Error al enviar email de oferta rechazada:', err));
-                }
-            }).catch(err => console.error('[EmailService] Error al obtener email de comprador:', err));
+                        this.emailService!.sendEmail({
+                            to: buyerEmail,
+                            subject: `Oferta rechazada por ${playerName}`,
+                            html,
+                            text: `Hola ${buyerName}, ${sellerName} ha rechazado tu oferta de ${offer.amount.toLocaleString()} € por ${playerName}. Se te ha devuelto el presupuesto.`,
+                        }).catch(err => console.error('[EmailService] Error al enviar email de oferta rechazada:', err));
+                    }
+                }).catch(err => console.error('[EmailService] Error al obtener email de comprador:', err));
+            }
         }
 
         return { message: 'Oferta rechazada. Presupuesto devuelto al comprador.' };

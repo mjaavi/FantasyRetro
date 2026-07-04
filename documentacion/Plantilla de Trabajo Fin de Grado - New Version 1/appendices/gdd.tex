@@ -69,16 +69,17 @@ Para agilizar la reestructuración de plantillas y dotar de liquidez inmediata a
 Además de la rescisión inmediata por despido al 50\% de su valor, un mánager puede optar por poner en venta a un jugador de su plantilla en el mercado de fichajes de la liga para recibir ofertas competitivas.
 
 \begin{itemize}
-    \item \textbf{Puesta en Mercado:} Al poner a la venta al jugador, este es publicado en el mercado y queda expuesto durante el ciclo diario activo de fichajes. Las pujas recibidas se gestionan en régimen de puja ciega.
-    \item \textbf{Puja del Sistema (Bot):} Al cerrarse el mercado (ya sea por el temporizador diario de la liga o mediante una acción forzada por el administrador), el sistema generará de forma automática una oferta ciega simulando una puja de un club virtual de la máquina.
-    \item \textbf{Rango de Oferta del Bot:} El importe ofertado por la máquina se calcula aplicando un factor aleatorio en el rango de \textbf{[-10\%, +20\%]} sobre el valor de mercado actual del futbolista.
-    \item \textbf{Resolución de la Venta:} Al resolverse el mercado, se compara la puja del bot del sistema frente a las posibles pujas emitidas por los mánagers rivales de la liga:
+    \item \textbf{Puesta en Mercado:} Al poner a la venta al jugador, este es publicado en el mercado y queda expuesto durante el ciclo diario activo de fichajes. Otros mánagers de la liga pueden pujar de forma ciega por él.
+    \item \textbf{Puja del Sistema (Bot):} Al finalizar el ciclo de mercado, el sistema generará de forma automática una puja ciega simulando el interés de un club virtual controlado por la máquina.
+    \item \textbf{Rango de Oferta del Bot:} El importe ofertado por la máquina se calcula aplicando un factor aleatorio en el rango de \textbf{[-10\%, +10\%]} sobre el valor de mercado actual del futbolista.
+    \item \textbf{Conversión a Ofertas Directas:} Al cerrarse el mercado, las pujas recibidas (tanto de otros mánagers como la puja simulada del bot) no se resuelven de forma automática. En su lugar, se desactivan del mercado y se convierten en ofertas directas pendientes dirigidas al mánager propietario.
+    \item \textbf{Resolución Exclusiva por el Propietario:} Es el mánager vendedor quien decide manualmente qué oferta aceptar o si rechazarlas todas desde su panel de ofertas recibidas:
     \begin{itemize}
-        \item El jugador es traspasado al postor que haya ofrecido la mayor cantidad económica.
-        \item El mánager vendedor recibe el importe total de la puja ganadora en su presupuesto, recuperando potencialmente más del 100\% del valor de mercado.
-        \item Si la puja ganadora pertenece a la máquina (bot), el jugador abandona la plantilla del mánager y vuelve a la bolsa general de agentes libres del sistema. Si la gana un rival, el jugador se incorpora directamente a su plantilla.
+        \item Si el propietario acepta la oferta de un mánager rival, el jugador se transfiere a la plantilla de este y el vendedor cobra el importe.
+        \item Si acepta la oferta de la máquina (bot), el jugador abandona su plantilla pasando a ser agente libre común del sistema, y el vendedor cobra el importe.
+        \item Si rechaza o expira una oferta, el presupuesto retenido es reembolsado al mánager pujador correspondiente.
     \end{itemize}
-    \item \textbf{Restricción de Auto-Puja:} Un mánager no puede emitir pujas por los jugadores que él mismo haya puesto en venta en el mercado, previniendo la manipulación artificial de precios o saldo.
+    \item \textbf{Restricción de Auto-Puja:} Un mánager no puede emitir pujas por los jugadores de su propiedad que él mismo haya puesto en venta en el mercado.
 \end{itemize}
 
 \subsection{Fluctuación Dinámica (Subidas y Bajadas)}

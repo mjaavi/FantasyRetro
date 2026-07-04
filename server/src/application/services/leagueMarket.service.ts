@@ -206,20 +206,34 @@ export class LeagueMarketService {
         for (const jugador of projected) {
             let pujas = todasLasPujas.filter(puja => puja.playerApiId === jugador.playerApiId);
 
-            // Generate bot bid if player listed by user
             if (jugador.sellerId) {
-                const randomFactor = 0.9 + Math.random() * 0.3; // between -10% and +20%
-                const botBidAmount = Math.round(jugador.marketValue * randomFactor);
-                pujas.push({
-                    id: 'bot-bid',
-                    leagueId,
-                    userId: 'bot',
-                    playerApiId: jugador.playerApiId,
-                    amount: botBidAmount,
-                    createdAt: new Date().toISOString()
-                });
+                try {
+                    // Generate bot bid (factor is between -10% and +10%)
+                    const randomFactor = 0.9 + Math.random() * 0.2; // between -10% and +10%
+                    const botBidAmount = Math.round(jugador.marketValue * randomFactor);
+
+                    // 1. Create bot direct offer (buyerUserId is null)
+                    await this.repo.createDirectOffer(leagueId, null, jugador.sellerId, jugador.playerApiId, botBidAmount);
+
+                    // 2. Convert all other user bids on this player to pending direct offers
+                    for (const bid of pujas) {
+                        await this.repo.createDirectOffer(leagueId, bid.userId, jugador.sellerId, jugador.playerApiId, bid.amount);
+                    }
+
+                    // 3. Deactivate the player in the market
+                    await this.repo.deactivateMarketPlayer(leagueId, jugador.playerApiId);
+
+                    // 4. Remove these bids from league_bids table (they are now represented as pending direct offers)
+                    await this.repo.clearPlayerBids(leagueId, jugador.playerApiId);
+
+                    resueltos++;
+                } catch (err: any) {
+                    console.error(`[CloseMarket] Error al convertir pujas a ofertas directas para jugador ${jugador.playerApiId}:`, err.message);
+                }
+                continue;
             }
 
+            // Standard system player resolution
             pujas.sort((a, b) => b.amount - a.amount);
 
             if (!pujas.length) {
@@ -231,28 +245,9 @@ export class LeagueMarketService {
             const perdedores = pujas.slice(1);
 
             try {
-                if (jugador.sellerId) {
-                    // Remove player from seller's roster
-                    await this.repo.removePlayerFromRoster(leagueId, jugador.sellerId, jugador.playerApiId);
-
-                    // Add player to winner's roster if not bot
-                    if (ganador.userId !== 'bot') {
-                        await this.repo.addPlayerToRoster(leagueId, ganador.userId, jugador.playerApiId, ganador.amount);
-                    }
-
-                    // Register transfer history from seller to winner (winner is null if bot won)
-                    const toUserId = ganador.userId === 'bot' ? null : ganador.userId;
-                    await this.repo.addTransferHistory(leagueId, jugador.playerApiId, toUserId, ganador.amount, jugador.sellerId);
-
-                    // Pay the seller (add winning amount to seller's budget)
-                    const budgetActual = await this.repo.getUserBudget(jugador.sellerId, leagueId);
-                    await this.repo.updateUserBudget(jugador.sellerId, leagueId, budgetActual + ganador.amount);
-                } else {
-                    // Standard system player resolution
-                    if (ganador.userId !== 'bot') {
-                        await this.repo.addPlayerToRoster(leagueId, ganador.userId, jugador.playerApiId, ganador.amount);
-                        await this.repo.addTransferHistory(leagueId, jugador.playerApiId, ganador.userId, ganador.amount);
-                    }
+                if (ganador.userId !== 'bot') {
+                    await this.repo.addPlayerToRoster(leagueId, ganador.userId, jugador.playerApiId, ganador.amount);
+                    await this.repo.addTransferHistory(leagueId, jugador.playerApiId, ganador.userId, ganador.amount);
                 }
             } catch (err: any) {
                 console.error(`[CloseMarket] Error resolviendo jugador ${jugador.playerApiId}:`, err.message);

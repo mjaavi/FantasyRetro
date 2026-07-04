@@ -438,4 +438,42 @@ export class SupabaseLeagueMarketRepository implements ILeagueMarketRepository {
             throw new AppError(`Error al remover jugador del roster: ${error.message}`, 500);
         }
     }
+
+    async createDirectOffer(leagueId: number, buyerUserId: string | null, sellerUserId: string, playerApiId: number, amount: number): Promise<void> {
+        const { error } = await supabaseAdmin
+            .from('league_direct_offers')
+            .insert({
+                league_id: leagueId,
+                buyer_user_id: buyerUserId,
+                seller_user_id: sellerUserId,
+                player_api_id: playerApiId,
+                amount: amount,
+                status: 'pending'
+            });
+        if (error) {
+            throw new AppError(`Error al crear la oferta directa desde el mercado: ${error.message}`, 500);
+        }
+    }
+
+    async deactivateMarketPlayer(leagueId: number, playerApiId: number): Promise<void> {
+        const { error } = await supabaseAdmin
+            .from('league_market')
+            .update({ is_active: false })
+            .eq('league_id', leagueId)
+            .eq('player_api_id', playerApiId);
+        if (error) {
+            throw new AppError(`Error al desactivar el jugador del mercado: ${error.message}`, 500);
+        }
+    }
+
+    async clearPlayerBids(leagueId: number, playerApiId: number): Promise<void> {
+        const { error } = await supabaseAdmin
+            .from('league_bids')
+            .delete()
+            .eq('league_id', leagueId)
+            .eq('player_api_id', playerApiId);
+        if (error) {
+            throw new AppError(`Error al limpiar pujas del jugador: ${error.message}`, 500);
+        }
+    }
 }

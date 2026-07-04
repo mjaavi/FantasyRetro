@@ -5,7 +5,7 @@ export type DirectOfferStatus = 'pending' | 'accepted' | 'rejected' | 'cancelled
 export interface LeagueDirectOffer {
     id: string;
     leagueId: number;
-    buyerUserId: string;
+    buyerUserId: string | null;
     sellerUserId: string;
     playerApiId: number;
     amount: number;

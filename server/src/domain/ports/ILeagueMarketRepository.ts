@@ -63,6 +63,9 @@ export interface ILeagueMarketRepository {
     isPlayerInUserRoster(leagueId: number, userId: string, playerApiId: number): Promise<boolean>;
     listPlayerOnMarket(leagueId: number, playerApiId: number, expiresAt: Date, sellerId: string): Promise<void>;
     removePlayerFromRoster(leagueId: number, userId: string, playerApiId: number): Promise<void>;
+    createDirectOffer(leagueId: number, buyerUserId: string | null, sellerUserId: string, playerApiId: number, amount: number): Promise<void>;
+    deactivateMarketPlayer(leagueId: number, playerApiId: number): Promise<void>;
+    clearPlayerBids(leagueId: number, playerApiId: number): Promise<void>;
 
     /**
      * Inserta los 11 jugadores iniciales de un usuario en UNA SOLA TRANSACCIÓN

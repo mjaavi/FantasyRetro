@@ -259,7 +259,7 @@ export class SupabaseLeagueTransferRepository implements ILeagueTransferReposito
 
     private async enrichOffers(leagueId: number, offers: LeagueDirectOffer[]): Promise<LeagueDirectOfferView[]> {
         const playerIds = offers.map(offer => offer.playerApiId);
-        const userIds = offers.flatMap(offer => [offer.buyerUserId, offer.sellerUserId]);
+        const userIds = offers.flatMap(offer => [offer.buyerUserId, offer.sellerUserId].filter(Boolean) as string[]);
         const [players, profiles] = await Promise.all([
             loadLeaguePlayerData(leagueId, playerIds),
             this.getProfiles(leagueId, userIds),
@@ -267,7 +267,7 @@ export class SupabaseLeagueTransferRepository implements ILeagueTransferReposito
 
         return offers.map(offer => {
             const player = players.get(offer.playerApiId);
-            const buyer = profiles.get(offer.buyerUserId);
+            const buyer = offer.buyerUserId ? profiles.get(offer.buyerUserId) : null;
             const seller = profiles.get(offer.sellerUserId);
 
             return {
@@ -278,8 +278,8 @@ export class SupabaseLeagueTransferRepository implements ILeagueTransferReposito
                 playerFifaApiId: player?.playerFifaApiId ?? null,
                 faceUrl: player?.faceUrl ?? null,
                 clubLogoUrl: player?.clubLogoUrl ?? null,
-                buyerUsername: buyer?.username ?? 'Manager',
-                buyerTeamName: buyer?.teamName ?? 'Equipo comprador',
+                buyerUsername: offer.buyerUserId ? (buyer?.username ?? 'Manager') : 'La Máquina',
+                buyerTeamName: offer.buyerUserId ? (buyer?.teamName ?? 'Equipo') : 'Mercado',
                 sellerUsername: seller?.username ?? 'Manager',
                 sellerTeamName: seller?.teamName ?? 'Equipo vendedor',
             };
